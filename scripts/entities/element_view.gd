@@ -24,6 +24,12 @@ var _sprite: Sprite2D
 var _selection_indicator: Node2D
 var _is_selected: bool = false
 
+## FoW関連
+var _contact_state: GameEnums.ContactState = GameEnums.ContactState.CONFIRMED
+var _estimated_position: Vector2 = Vector2.ZERO
+var _position_error: float = 0.0
+var _is_friendly: bool = true
+
 # =============================================================================
 # ライフサイクル
 # =============================================================================
@@ -60,6 +66,7 @@ func setup(p_element: ElementData.ElementInstance, p_symbol_manager: SymbolManag
 	element = p_element
 	symbol_manager = p_symbol_manager
 	viewer_faction = p_viewer
+	_is_friendly = (element.faction == viewer_faction)
 	# _ready() がまだ呼ばれていない場合はスプライトを先に作成
 	if not _sprite:
 		_setup_sprite()
@@ -103,6 +110,61 @@ func _apply_rotation(facing: float) -> void:
 		_sprite.rotation = -facing
 
 # =============================================================================
+# FoW（視界）更新
+# =============================================================================
+
+## 敵ユニットの視界状態を更新
+func update_contact_state(state: GameEnums.ContactState, est_pos: Vector2 = Vector2.ZERO, error: float = 0.0) -> void:
+	_contact_state = state
+	_estimated_position = est_pos
+	_position_error = error
+	_update_visibility()
+
+
+## 視界状態に応じた表示更新
+func _update_visibility() -> void:
+	if _is_friendly:
+		# 味方は常に表示
+		visible = true
+		modulate.a = 1.0
+		return
+
+	# 敵の表示は視界状態に依存
+	match _contact_state:
+		GameEnums.ContactState.CONFIRMED:
+			visible = true
+			modulate.a = 1.0
+		GameEnums.ContactState.SUSPECTED:
+			visible = true
+			modulate.a = 0.5  # 半透明
+			# SUS時は推定位置を使用
+			position = _estimated_position
+		GameEnums.ContactState.LOST:
+			visible = true
+			modulate.a = 0.25  # さらに薄く
+			position = _estimated_position
+		GameEnums.ContactState.UNKNOWN:
+			visible = false
+
+
+## 敵ユニットの位置更新（FoW考慮）
+func update_position_with_fow(alpha: float) -> void:
+	if _is_friendly:
+		# 味方は実際の位置
+		update_position_interpolated(alpha)
+	else:
+		# 敵はContact状態に応じた位置
+		match _contact_state:
+			GameEnums.ContactState.CONFIRMED:
+				# CONFなら実際の位置
+				update_position_interpolated(alpha)
+			GameEnums.ContactState.SUSPECTED, GameEnums.ContactState.LOST:
+				# SUS/LOSTなら推定位置（既にupdate_contact_stateで設定済み）
+				pass
+			_:
+				pass
+
+# =============================================================================
 # 選択
 # =============================================================================
 
@@ -124,16 +186,21 @@ func _draw() -> void:
 	if not element:
 		return
 
+	# 敵のSUS/LOST時は位置誤差円を描画
+	if not _is_friendly and _contact_state == GameEnums.ContactState.SUSPECTED and _position_error > 0:
+		_draw_error_ellipse()
+
 	# 選択時のハイライト（円なので回転の影響を受けない）
 	if _is_selected:
 		draw_arc(Vector2.ZERO, 40, 0, TAU, 32, Color.YELLOW, 3.0)
 
-	# 移動パス表示 (選択時)
-	if _is_selected and element.current_path.size() > 0:
+	# 移動パス表示 (選択時、味方のみ)
+	if _is_selected and _is_friendly and element.current_path.size() > 0:
 		_draw_path()
 
-	# HP/状態バー（回転を打ち消して常に水平に描画）
-	_draw_status_bar()
+	# HP/状態バー（味方のみ、または敵CONF時）
+	if _is_friendly or _contact_state == GameEnums.ContactState.CONFIRMED:
+		_draw_status_bar()
 
 
 ## ワールド座標をローカル座標に変換（回転を考慮）
@@ -141,6 +208,28 @@ func _world_to_local_point(world_pos: Vector2) -> Vector2:
 	var offset := world_pos - position
 	# 回転の逆変換を適用
 	return offset.rotated(-rotation)
+
+
+## 位置誤差楕円の描画
+func _draw_error_ellipse() -> void:
+	if _position_error <= 0:
+		return
+
+	# 回転を打ち消して描画
+	draw_set_transform(Vector2.ZERO, -rotation, Vector2.ONE)
+
+	# 誤差円（破線風に複数の弧で描画）
+	var error_color := Color(1.0, 0.5, 0.0, 0.4)
+	var segments := 8
+	var gap := PI / 16.0
+
+	for i in range(segments):
+		var start_angle := (TAU / segments) * i + gap
+		var end_angle := (TAU / segments) * (i + 1) - gap
+		draw_arc(Vector2.ZERO, _position_error, start_angle, end_angle, 8, error_color, 2.0)
+
+	# 変換をリセット
+	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
 
 
 func _draw_path() -> void:

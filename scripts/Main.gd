@@ -1,10 +1,14 @@
 extends Node2D
 
+const CompanyControllerAIClass = preload("res://scripts/ai/company_controller_ai.gd")
+
 ## Company Commander - メインシーン
 ## 2D現代戦リアルタイムストラテジー
 ##
 ## Phase 1: GameLoop + マップ読み込み
 ## Phase 2: Element表示 + ナビゲーション + 移動
+## Phase 3: 視界・索敵システム（FoW）
+## Phase 4: 中隊AIシステム
 
 # =============================================================================
 # ノード参照
@@ -26,6 +30,11 @@ var world_model: WorldModel
 var nav_manager: NavigationManager
 var movement_system: MovementSystem
 var symbol_manager: SymbolManager
+var vision_system: VisionSystem
+var event_bus: CombatEventBus
+
+## 中隊AI（陣営別）
+var company_ais: Dictionary = {}  # faction -> CompanyControllerAI
 
 var background_sprite: Sprite2D
 var _element_views: Dictionary = {}  # element_id -> ElementView
@@ -86,6 +95,12 @@ func _setup_systems() -> void:
 	# MovementSystem
 	movement_system = MovementSystem.new()
 
+	# VisionSystem
+	vision_system = VisionSystem.new()
+
+	# CombatEventBus
+	event_bus = CombatEventBus.new()
+
 
 func _load_test_map_async() -> void:
 	var map_path := "res://maps/MVP_01_CROSSROADS/"
@@ -99,6 +114,9 @@ func _load_test_map_async() -> void:
 
 		# MovementSystem をセットアップ (nav_managerへの参照を先に設定)
 		movement_system.setup(nav_manager, map_data)
+
+		# VisionSystem をセットアップ
+		vision_system.setup(world_model, map_data)
 
 		# ナビゲーション構築 (完了を待機)
 		await nav_manager.build_from_map_data(map_data)
@@ -215,6 +233,29 @@ func _spawn_test_units() -> void:
 
 	print("テストユニット生成完了: ", world_model.elements.size(), " elements")
 
+	# 中隊AIをセットアップ
+	_setup_company_ais()
+
+
+func _setup_company_ais() -> void:
+	# 各陣営の中隊AIを作成
+	for faction_value in [GameEnums.Faction.BLUE, GameEnums.Faction.RED]:
+		var company_ai = CompanyControllerAIClass.new()
+		company_ai.faction = faction_value
+		company_ai.setup(world_model, map_data, vision_system, movement_system, event_bus)
+
+		# 陣営のElementを登録
+		var faction_elements := world_model.get_elements_for_faction(faction_value)
+		var element_ids: Array[String] = []
+		for element in faction_elements:
+			element_ids.append(element.id)
+		company_ai.set_elements(element_ids)
+
+		company_ais[faction_value] = company_ai
+
+		print("中隊AI作成: ", "BLUE" if faction_value == GameEnums.Faction.BLUE else "RED",
+			" (", element_ids.size(), " elements)")
+
 # =============================================================================
 # Element表示
 # =============================================================================
@@ -238,7 +279,18 @@ func _update_element_views() -> void:
 
 	for element_id in _element_views:
 		var view: ElementView = _element_views[element_id]
-		view.update_position_interpolated(alpha)
+		var element := view.element
+
+		# 敵ユニットはFoW状態を更新
+		if element and element.faction != player_faction:
+			var contact := vision_system.get_contact(player_faction, element_id)
+			if contact:
+				view.update_contact_state(contact.state, contact.pos_est_m, contact.pos_error_m)
+			else:
+				view.update_contact_state(GameEnums.ContactState.UNKNOWN)
+
+		# 位置更新（FoW考慮）
+		view.update_position_with_fow(alpha)
 		view.queue_redraw()
 
 # =============================================================================
@@ -362,13 +414,36 @@ func _add_to_selection(element: ElementData.ElementInstance) -> void:
 # Tick処理
 # =============================================================================
 
-func _on_tick_advanced(_tick: int) -> void:
+func _on_tick_advanced(tick: int) -> void:
 	# 全Elementの状態を保存
 	world_model.save_prev_states()
 
 	# 移動更新
 	for element in world_model.elements:
 		movement_system.update_element(element, GameConstants.SIM_DT)
+
+	# 視界更新
+	vision_system.update(tick, GameConstants.SIM_DT)
+
+	# 中隊AI更新
+	_update_company_ais(tick)
+
+
+func _update_company_ais(tick: int) -> void:
+	for faction in company_ais:
+		var ai = company_ais[faction]
+
+		# 毎tick更新（10Hz）
+		ai.update_micro(tick, GameConstants.SIM_DT)
+
+		# 接触評価（2Hz）
+		ai.update_contact_eval(tick)
+
+		# 戦術評価（1Hz）
+		ai.update_tactical(tick)
+
+		# 大局評価（0.2Hz）
+		ai.update_operational(tick)
 
 
 func _on_speed_changed(_new_speed: float) -> void:
@@ -386,12 +461,60 @@ func _update_status_label() -> void:
 	var time_text := "%.1f" % sim_runner.get_sim_time()
 	var selected_text := str(_selected_elements.size()) + " selected"
 
-	status_label.text = "Tick: %d | Time: %s sec | Speed: %s | %s | RClick=Move" % [
+	# AI状態を取得
+	var ai_text := ""
+	if player_faction in company_ais:
+		var ai = company_ais[player_faction]
+		var tpl_name := _get_template_name(ai.get_current_template_type())
+		var phase: int = ai.get_current_phase()
+		var combat := _get_combat_state_name(ai.get_combat_state())
+		ai_text = " | AI: %s P%d (%s)" % [tpl_name, phase, combat]
+
+	status_label.text = "Tick: %d | Time: %s sec | Speed: %s | %s%s | RClick=Move" % [
 		sim_runner.tick_index,
 		time_text,
 		speed_text,
-		selected_text
+		selected_text,
+		ai_text
 	]
+
+
+func _get_template_name(tpl: GameEnums.TacticalTemplate) -> String:
+	match tpl:
+		GameEnums.TacticalTemplate.TPL_NONE:
+			return "NONE"
+		GameEnums.TacticalTemplate.TPL_MOVE:
+			return "MOVE"
+		GameEnums.TacticalTemplate.TPL_ATTACK_CP:
+			return "ATK_CP"
+		GameEnums.TacticalTemplate.TPL_DEFEND_CP:
+			return "DEF_CP"
+		GameEnums.TacticalTemplate.TPL_RECON:
+			return "RECON"
+		GameEnums.TacticalTemplate.TPL_ATTACK_AREA:
+			return "ATK_AREA"
+		GameEnums.TacticalTemplate.TPL_BREAK_CONTACT:
+			return "BREAK"
+		GameEnums.TacticalTemplate.TPL_RESUPPLY:
+			return "RESUP"
+		_:
+			return "UNK"
+
+
+func _get_combat_state_name(state: GameEnums.CombatState) -> String:
+	match state:
+		GameEnums.CombatState.QUIET:
+			return "Quiet"
+		GameEnums.CombatState.ALERT:
+			return "Alert"
+		GameEnums.CombatState.ENGAGED:
+			return "Engaged"
+		GameEnums.CombatState.DISENGAGING:
+			return "Diseng"
+		GameEnums.CombatState.RECOVERING:
+			return "Recov"
+		_:
+			return "?"
 
 # =============================================================================
 # マーカー作成ヘルパー

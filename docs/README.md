@@ -38,6 +38,7 @@ Company Commander v0.1 の設計仕様書インデックスです。
 | ドキュメント | 内容 |
 |-------------|------|
 | [combat_v0.1.md](combat_v0.1.md) | 戦闘システム概要（射撃フロー、命中判定） |
+| [combat_events_v0.1.md](combat_events_v0.1.md) | 戦闘イベント（イベント構造、状態遷移、エスカレーションルール） |
 | [damage_model_v0.1.md](damage_model_v0.1.md) | ダメージモデル（貫通判定、Wound/KIA、車両状態遷移） |
 | [weapon_system_profile_v0.1.md](weapon_system_profile_v0.1.md) | 武器システムプロファイル（WSP構造、射撃モード） |
 | [concrete_weapons_v0.1.md](concrete_weapons_v0.1.md) | 具体武器データ（M4、M240B、M2HB、Javelin等） |
@@ -59,6 +60,8 @@ Company Commander v0.1 の設計仕様書インデックスです。
 
 | ドキュメント | 内容 |
 |-------------|------|
+| [company_ai_v0.1.md](company_ai_v0.1.md) | 中隊AI（CompanyControllerAI、戦術テンプレート、役割配分） |
+| [risk_assessment_v0.1.md](risk_assessment_v0.1.md) | リスク評価（装甲脅威、AT脅威、OPEN横断コスト、ミティゲーション） |
 | [sop_v0.1.md](sop_v0.1.md) | SOP（Standard Operating Procedure、Element自律行動） |
 | [order_queue_v0.1.md](order_queue_v0.1.md) | 命令キュー（コマンド構造、実行フロー） |
 
@@ -96,6 +99,7 @@ docs/
 ├── units_v0.1.md                # ユニットデータモデル
 ├── spawn_v0.1.md                # スポーン・増援
 ├── combat_v0.1.md               # 戦闘システム
+├── combat_events_v0.1.md        # 戦闘イベント
 ├── damage_model_v0.1.md         # ダメージモデル
 ├── weapon_system_profile_v0.1.md # 武器システム
 ├── concrete_weapons_v0.1.md     # 具体武器データ
@@ -103,6 +107,8 @@ docs/
 ├── munition_system_v0.1.md      # 弾薬システム
 ├── munition_classes_v0.1.md     # 弾薬クラス
 ├── vision_v0.1.md               # 視界システム
+├── company_ai_v0.1.md           # 中隊AI
+├── risk_assessment_v0.1.md      # リスク評価
 ├── sop_v0.1.md                  # SOP
 ├── order_queue_v0.1.md          # 命令キュー
 ├── capture_v0.1.md              # 拠点キャプチャ

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://cvision_system_test"]
+
+[ext_resource type="Script" path="res://tests/test_vision_system.gd" id="1_test"]
+
+[node name="TestVisionSystem" type="Node"]
+script = ExtResource("1_test")
