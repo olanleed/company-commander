@@ -1,0 +1,279 @@
+{
+  "type": "FeatureCollection",
+  "name": "MVP_01_CROSSROADS",
+  "properties": {
+    "schema": "map_v0.1",
+    "size_m": [2000, 2000],
+    "coord": {
+      "origin": "top_left",
+      "units": "m",
+      "axis": "x_east_y_south"
+    },
+    "background": {
+      "file": "background.png",
+      "size_px": [2048, 2048],
+      "meters_per_pixel": 0.9765625
+    },
+    "cp_radius_m": 40,
+    "initial_cp_control": {
+      "A": "BLUE",
+      "B": "NEUTRAL",
+      "C": "NEUTRAL",
+      "D": "NEUTRAL",
+      "E": "RED"
+    },
+    "terrain_grid": {
+      "cell_m": 10,
+      "mask_file": "terrain_mask.png"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "kind": "cp", "id": "A", "attribute": "COM" },
+      "geometry": { "type": "Point", "coordinates": [350, 1000] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "cp", "id": "B", "attribute": "LOG" },
+      "geometry": { "type": "Point", "coordinates": [1000, 450] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "cp", "id": "C", "attribute": "OBS" },
+      "geometry": { "type": "Point", "coordinates": [1000, 1000] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "cp", "id": "D", "attribute": "LOG" },
+      "geometry": { "type": "Point", "coordinates": [1000, 1550] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "cp", "id": "E", "attribute": "COM" },
+      "geometry": { "type": "Point", "coordinates": [1650, 1000] }
+    },
+
+    {
+      "type": "Feature",
+      "properties": { "kind": "arrival_point", "id": "A1", "cp_id": "A" },
+      "geometry": { "type": "Point", "coordinates": [280, 1000] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "arrival_point", "id": "A2", "cp_id": "A" },
+      "geometry": { "type": "Point", "coordinates": [350, 930] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "arrival_point", "id": "A3", "cp_id": "A" },
+      "geometry": { "type": "Point", "coordinates": [350, 1070] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "arrival_point", "id": "B1", "cp_id": "B" },
+      "geometry": { "type": "Point", "coordinates": [930, 450] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "arrival_point", "id": "B2", "cp_id": "B" },
+      "geometry": { "type": "Point", "coordinates": [1070, 450] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "arrival_point", "id": "B3", "cp_id": "B" },
+      "geometry": { "type": "Point", "coordinates": [1000, 520] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "arrival_point", "id": "C1", "cp_id": "C" },
+      "geometry": { "type": "Point", "coordinates": [930, 1000] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "arrival_point", "id": "C2", "cp_id": "C" },
+      "geometry": { "type": "Point", "coordinates": [1070, 1000] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "arrival_point", "id": "C3", "cp_id": "C" },
+      "geometry": { "type": "Point", "coordinates": [1000, 930] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "arrival_point", "id": "C4", "cp_id": "C" },
+      "geometry": { "type": "Point", "coordinates": [1000, 1070] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "arrival_point", "id": "D1", "cp_id": "D" },
+      "geometry": { "type": "Point", "coordinates": [930, 1550] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "arrival_point", "id": "D2", "cp_id": "D" },
+      "geometry": { "type": "Point", "coordinates": [1070, 1550] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "arrival_point", "id": "D3", "cp_id": "D" },
+      "geometry": { "type": "Point", "coordinates": [1000, 1480] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "arrival_point", "id": "E1", "cp_id": "E" },
+      "geometry": { "type": "Point", "coordinates": [1720, 1000] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "arrival_point", "id": "E2", "cp_id": "E" },
+      "geometry": { "type": "Point", "coordinates": [1650, 930] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "arrival_point", "id": "E3", "cp_id": "E" },
+      "geometry": { "type": "Point", "coordinates": [1650, 1070] }
+    },
+
+    {
+      "type": "Feature",
+      "properties": { "kind": "entry_point", "id": "BLUE_N", "faction": "BLUE" },
+      "geometry": { "type": "Point", "coordinates": [120, 450] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "entry_point", "id": "BLUE_C", "faction": "BLUE" },
+      "geometry": { "type": "Point", "coordinates": [120, 1000] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "entry_point", "id": "BLUE_S", "faction": "BLUE" },
+      "geometry": { "type": "Point", "coordinates": [120, 1550] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "entry_point", "id": "RED_N", "faction": "RED" },
+      "geometry": { "type": "Point", "coordinates": [1880, 450] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "entry_point", "id": "RED_C", "faction": "RED" },
+      "geometry": { "type": "Point", "coordinates": [1880, 1000] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "entry_point", "id": "RED_S", "faction": "RED" },
+      "geometry": { "type": "Point", "coordinates": [1880, 1550] }
+    },
+
+    {
+      "type": "Feature",
+      "properties": { "kind": "deployment_region", "faction": "BLUE" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[0, 0], [220, 0], [220, 2000], [0, 2000], [0, 0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "deployment_region", "faction": "RED" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[1780, 0], [2000, 0], [2000, 2000], [1780, 2000], [1780, 0]]]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": { "kind": "terrain_zone", "terrain_type": "ROAD" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[0, 985], [2000, 985], [2000, 1015], [0, 1015], [0, 985]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "terrain_zone", "terrain_type": "ROAD" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[985, 0], [1015, 0], [1015, 2000], [985, 2000], [985, 0]]]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": { "kind": "terrain_zone", "terrain_type": "URBAN" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[850, 850], [1150, 850], [1150, 1150], [850, 1150], [850, 850]]]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": { "kind": "terrain_zone", "terrain_type": "FOREST" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[850, 300], [1150, 300], [1150, 600], [850, 600], [850, 300]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "terrain_zone", "terrain_type": "FOREST" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[850, 1400], [1150, 1400], [1150, 1700], [850, 1700], [850, 1400]]]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": { "kind": "hardblock", "id": "BLDG_C1", "block_type": "BUILDING" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[900, 900], [950, 900], [950, 950], [900, 950], [900, 900]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "hardblock", "id": "BLDG_C2", "block_type": "BUILDING" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[1050, 900], [1100, 900], [1100, 950], [1050, 950], [1050, 900]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "hardblock", "id": "BLDG_C3", "block_type": "BUILDING" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[900, 1050], [950, 1050], [950, 1100], [900, 1100], [900, 1050]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "hardblock", "id": "BLDG_C4", "block_type": "BUILDING" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[1050, 1050], [1100, 1050], [1100, 1100], [1050, 1100], [1050, 1050]]]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": { "kind": "road_centerline", "id": "ROAD_EW", "road_type": "ROAD" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[0, 1000], [2000, 1000]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "kind": "road_centerline", "id": "ROAD_NS", "road_type": "ROAD" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[1000, 0], [1000, 2000]]
+      }
+    }
+  ]
+}
