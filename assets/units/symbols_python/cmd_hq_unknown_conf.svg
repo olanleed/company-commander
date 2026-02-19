@@ -1,0 +1,16 @@
+<!-- python-military-symbols generated symbol
+     unit_id: cmd_hq
+     label: 中隊本部（HQ）
+     query: unknown infantry headquarters
+     affiliation: unknown
+     confidence: conf
+     weight: light
+     category: command
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="178.5" height="209.25" viewBox="10.75 10.75 178.5 209.25">
+<path d="M63,63 C63,20 137,20 137,63 C180,63 180,137 137,137 C137,180 63,180 63,137 C20,137 20,63 63,63 Z" fill="rgb(255, 255, 0)" stroke="#ffffff" stroke-width="32.0" stroke-linecap="round" />
+<path d="m 30.75,100 l 0,100" fill="none" stroke="#ffffff" stroke-width="32.0" stroke-linecap="round" />
+<path d="M63,63 C63,20 137,20 137,63 C180,63 180,137 137,137 C137,180 63,180 63,137 C20,137 20,63 63,63 Z" fill="rgb(255, 255, 0)" stroke="rgb(0, 0, 0)" stroke-width="4.0" stroke-linecap="round" />
+<path d="m 30.75,100 l 0,100" fill="none" stroke="rgb(0, 0, 0)" stroke-width="4.0" stroke-linecap="round" />
+<path d="M50,65L150,135M50,135L150,65" fill="none" stroke="rgb(0, 0, 0)" stroke-width="4.0" stroke-linecap="round" />
+</svg>

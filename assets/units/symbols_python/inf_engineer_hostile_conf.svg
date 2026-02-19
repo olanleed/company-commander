@@ -1,0 +1,14 @@
+<!-- python-military-symbols generated symbol
+     unit_id: inf_engineer
+     label: 工兵
+     query: enemy engineer
+     affiliation: hostile
+     confidence: conf
+     weight: light
+     category: infantry
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="184.0" height="184.0" viewBox="8.0 8.0 184.0 184.0">
+<path d="M 100,28 L172,100 100,172 28,100 100,28 Z" fill="rgb(255, 48, 49)" stroke="#ffffff" stroke-width="32.0" stroke-linecap="round" />
+<path d="M 100,28 L172,100 100,172 28,100 100,28 Z" fill="rgb(255, 48, 49)" stroke="rgb(0, 0, 0)" stroke-width="4.0" stroke-linecap="round" />
+<path d="M60,120 L60,80 140,80 140,120 M100,80 L100,110" fill="none" stroke="rgb(0, 0, 0)" stroke-width="4.0" stroke-linecap="round" />
+</svg>

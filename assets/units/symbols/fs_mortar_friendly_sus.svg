@@ -1,0 +1,10 @@
+<!-- milsymbol APP-6E symbol
+     unit_id: fs_mortar
+     label: 迫撃砲
+     sidc: 130310000013080000000000000000
+     affiliation: friendly
+     confidence: sus
+     weight: light
+     category: fire_support
+-->
+<svg opacity="0.55" xmlns="http://www.w3.org/2000/svg" version="1.2" baseProfile="tiny" width="94.8" height="64.8" viewBox="21 46 158 108"><path d="M25,50 l150,0 0,100 -150,0 z" stroke-width="4" stroke="black" fill="rgb(128,224,255)" fill-opacity="1" ></path><circle cx="100" cy="115" r="5" stroke-width="3" stroke="black" fill="none" ></circle><path d="M100,111 l0,-30 M90,90 l10,-10 10,10" stroke-width="3" stroke="black" fill="none" ></path></svg>

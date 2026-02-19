@@ -1,0 +1,15 @@
+<!-- python-military-symbols generated symbol
+     unit_id: inf_mech
+     label: 機械化歩兵
+     query: enemy mechanized infantry
+     affiliation: hostile
+     confidence: sus
+     weight: medium
+     category: infantry
+-->
+<svg opacity="0.55" xmlns="http://www.w3.org/2000/svg" width="184.0" height="184.0" viewBox="8.0 8.0 184.0 184.0">
+<path d="M 100,28 L172,100 100,172 28,100 100,28 Z" fill="rgb(255, 48, 49)" stroke="#ffffff" stroke-width="32.0" stroke-linecap="round" />
+<path d="M 100,28 L172,100 100,172 28,100 100,28 Z" fill="rgb(255, 48, 49)" stroke="rgb(0, 0, 0)" stroke-width="4.0" stroke-linecap="round" />
+<path d="M60,70L140,130M60,130L140,70" fill="none" stroke="rgb(0, 0, 0)" stroke-width="4.0" stroke-linecap="round" />
+<path d="M125,80 C150,80 150,120 125,120 L75,120 C50,120 50,80 75,80 Z" fill="none" stroke="rgb(0, 0, 0)" stroke-width="4.0" stroke-linecap="round" />
+</svg>

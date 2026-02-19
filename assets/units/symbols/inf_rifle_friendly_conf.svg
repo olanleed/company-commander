@@ -1,0 +1,10 @@
+<!-- milsymbol APP-6E symbol
+     unit_id: inf_rifle
+     label: ライフル歩兵
+     sidc: 130310000012110000000000000000
+     affiliation: friendly
+     confidence: conf
+     weight: light
+     category: infantry
+-->
+<svg xmlns="http://www.w3.org/2000/svg" version="1.2" baseProfile="tiny" width="94.8" height="64.8" viewBox="21 46 158 108"><path d="M25,50 l150,0 0,100 -150,0 z" stroke-width="4" stroke="black" fill="rgb(128,224,255)" fill-opacity="1" ></path><path d="M25,50 L175,150 M25,150 L175,50" stroke-width="3" stroke="black" fill="black" ></path></svg>

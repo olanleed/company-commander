@@ -1,0 +1,15 @@
+<!-- python-military-symbols generated symbol
+     unit_id: armor_apc
+     label: APC（装甲兵員輸送車）
+     query: enemy motorized infantry
+     affiliation: hostile
+     confidence: conf
+     weight: medium
+     category: armor
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="184.0" height="184.0" viewBox="8.0 8.0 184.0 184.0">
+<path d="M 100,28 L172,100 100,172 28,100 100,28 Z" fill="rgb(255, 48, 49)" stroke="#ffffff" stroke-width="32.0" stroke-linecap="round" />
+<path d="M 100,28 L172,100 100,172 28,100 100,28 Z" fill="rgb(255, 48, 49)" stroke="rgb(0, 0, 0)" stroke-width="4.0" stroke-linecap="round" />
+<path d="M60,70L140,130M60,130L140,70" fill="none" stroke="rgb(0, 0, 0)" stroke-width="4.0" stroke-linecap="round" />
+<path d="M 100,28 V 100,172" fill="none" stroke="rgb(0, 0, 0)" stroke-width="4.0" stroke-linecap="round" />
+</svg>

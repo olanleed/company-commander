@@ -1,0 +1,14 @@
+<!-- python-military-symbols generated symbol
+     unit_id: sup_logistics
+     label: 兵站/補給
+     query: enemy combat service support
+     affiliation: hostile
+     confidence: sus
+     weight: light
+     category: support
+-->
+<svg opacity="0.55" xmlns="http://www.w3.org/2000/svg" width="184.0" height="184.0" viewBox="8.0 8.0 184.0 184.0">
+<path d="M 100,28 L172,100 100,172 28,100 100,28 Z" fill="rgb(255, 48, 49)" stroke="#ffffff" stroke-width="32.0" stroke-linecap="round" />
+<path d="M 100,28 L172,100 100,172 28,100 100,28 Z" fill="rgb(255, 48, 49)" stroke="rgb(0, 0, 0)" stroke-width="4.0" stroke-linecap="round" />
+<text x="100" y="110" font-size="35" text-anchor="middle" fill="rgb(0, 0, 0)" stroke="none" stroke-linecap="round">CSS</text>
+</svg>

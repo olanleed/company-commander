@@ -1,0 +1,15 @@
+<!-- python-military-symbols generated symbol
+     unit_id: inf_mech
+     label: 機械化歩兵
+     query: unknown mechanized infantry
+     affiliation: unknown
+     confidence: conf
+     weight: medium
+     category: infantry
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="178.5" height="178.5" viewBox="10.75 10.75 178.5 178.5">
+<path d="M63,63 C63,20 137,20 137,63 C180,63 180,137 137,137 C137,180 63,180 63,137 C20,137 20,63 63,63 Z" fill="rgb(255, 255, 0)" stroke="#ffffff" stroke-width="32.0" stroke-linecap="round" />
+<path d="M63,63 C63,20 137,20 137,63 C180,63 180,137 137,137 C137,180 63,180 63,137 C20,137 20,63 63,63 Z" fill="rgb(255, 255, 0)" stroke="rgb(0, 0, 0)" stroke-width="4.0" stroke-linecap="round" />
+<path d="M50,65L150,135M50,135L150,65" fill="none" stroke="rgb(0, 0, 0)" stroke-width="4.0" stroke-linecap="round" />
+<path d="M125,80 C150,80 150,120 125,120 L75,120 C50,120 50,80 75,80 Z" fill="none" stroke="rgb(0, 0, 0)" stroke-width="4.0" stroke-linecap="round" />
+</svg>

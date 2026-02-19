@@ -1,0 +1,14 @@
+<!-- python-military-symbols generated symbol
+     unit_id: recon_uav
+     label: UAV（無人偵察機）
+     query: friendly unmanned aircraft
+     affiliation: friendly
+     confidence: sus
+     weight: light
+     category: recon
+-->
+<svg opacity="0.55" xmlns="http://www.w3.org/2000/svg" width="150.0" height="160.0" viewBox="25.0 10.0 150.0 160.0">
+<path d="M 155,150 C 155,50 115,30 100,30 85,30 45,50 45,150" fill="rgb(0, 168, 220)" stroke="#ffffff" stroke-width="32.0" stroke-linecap="round" />
+<path d="M 155,150 C 155,50 115,30 100,30 85,30 45,50 45,150" fill="rgb(0, 168, 220)" stroke="rgb(0, 0, 0)" stroke-width="4.0" stroke-linecap="round" />
+<path d="m 60,84 40,20 40,-20 0,8 -40,25 -40,-25 z" fill="rgb(0, 0, 0)" stroke="none" stroke-linecap="round" />
+</svg>

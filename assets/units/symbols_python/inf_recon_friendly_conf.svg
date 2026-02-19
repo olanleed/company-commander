@@ -1,0 +1,14 @@
+<!-- python-military-symbols generated symbol
+     unit_id: inf_recon
+     label: 偵察
+     query: friendly reconnaissance
+     affiliation: friendly
+     confidence: conf
+     weight: light
+     category: infantry
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="190.0" height="140.0" viewBox="5.0 30.0 190.0 140.0">
+<path d="M25,50 l150,0 0,100 -150,0 z" fill="rgb(0, 168, 220)" stroke="#ffffff" stroke-width="32.0" stroke-linecap="round" />
+<path d="M25,50 l150,0 0,100 -150,0 z" fill="rgb(0, 168, 220)" stroke="rgb(0, 0, 0)" stroke-width="4.0" stroke-linecap="round" />
+<path d="M25,150L175,50" fill="none" stroke="rgb(0, 0, 0)" stroke-width="4.0" stroke-linecap="round" />
+</svg>
