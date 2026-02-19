@@ -1,0 +1,13 @@
+{
+  "name": "company-commander-tools",
+  "version": "0.1.0",
+  "description": "SVG symbol generation tools for Company Commander",
+  "type": "module",
+  "scripts": {
+    "generate": "node generate_symbols.js",
+    "generate:all": "node generate_symbols.js --all"
+  },
+  "dependencies": {
+    "milsymbol": "^3.0.3"
+  }
+}
