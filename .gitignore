@@ -1,0 +1,27 @@
+# Godot 4 generated files
+.godot/
+*.uid
+
+# Import metadata (Godotが自動生成する .import ファイル)
+*.import
+
+# Export templates / export builds
+export/
+*.pck
+*.apk
+*.aab
+*.ipa
+*.zip
+
+# Node.js (symbol generation tools)
+tools/node_modules/
+tools/package-lock.json
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
