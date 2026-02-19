@@ -85,14 +85,22 @@ func update_symbol() -> void:
 func update_position_immediate() -> void:
 	if element:
 		position = element.position
-		rotation = element.facing
+		_apply_rotation(element.facing)
 
 
 ## 補間位置更新
 func update_position_interpolated(alpha: float) -> void:
 	if element:
 		position = element.get_interpolated_position(alpha)
-		rotation = element.get_interpolated_facing(alpha)
+		_apply_rotation(element.get_interpolated_facing(alpha))
+
+
+## 回転を適用（スプライトは逆回転で補正）
+func _apply_rotation(facing: float) -> void:
+	rotation = facing
+	# スプライトは常に上向きを維持（親の回転を打ち消す）
+	if _sprite:
+		_sprite.rotation = -facing
 
 # =============================================================================
 # 選択
@@ -116,7 +124,7 @@ func _draw() -> void:
 	if not element:
 		return
 
-	# 選択時のハイライト
+	# 選択時のハイライト（円なので回転の影響を受けない）
 	if _is_selected:
 		draw_arc(Vector2.ZERO, 40, 0, TAU, 32, Color.YELLOW, 3.0)
 
@@ -124,8 +132,15 @@ func _draw() -> void:
 	if _is_selected and element.current_path.size() > 0:
 		_draw_path()
 
-	# HP/状態バー
+	# HP/状態バー（回転を打ち消して常に水平に描画）
 	_draw_status_bar()
+
+
+## ワールド座標をローカル座標に変換（回転を考慮）
+func _world_to_local_point(world_pos: Vector2) -> Vector2:
+	var offset := world_pos - position
+	# 回転の逆変換を適用
+	return offset.rotated(-rotation)
 
 
 func _draw_path() -> void:
@@ -135,15 +150,15 @@ func _draw_path() -> void:
 	var path_color := Color(0.2, 0.8, 0.2, 0.5)
 	var start_index := element.path_index
 
-	# ローカル座標に変換して描画
+	# ローカル座標に変換して描画（回転を考慮）
 	for i in range(start_index, element.current_path.size() - 1):
-		var from := element.current_path[i] - position
-		var to := element.current_path[i + 1] - position
+		var from := _world_to_local_point(element.current_path[i])
+		var to := _world_to_local_point(element.current_path[i + 1])
 		draw_line(from, to, path_color, 2.0)
 
 	# 目標地点マーカー
 	if element.current_path.size() > 0:
-		var target := element.current_path[-1] - position
+		var target := _world_to_local_point(element.current_path[-1])
 		draw_circle(target, 8, Color(0.2, 0.8, 0.2, 0.7))
 
 
@@ -154,6 +169,10 @@ func _draw_status_bar() -> void:
 	var bar_width := 50.0
 	var bar_height := 6.0
 	var bar_y := 35.0
+
+	# 回転を打ち消すためにdraw_set_transformを使用
+	# ローカル座標系を回転前の状態に戻す
+	draw_set_transform(Vector2.ZERO, -rotation, Vector2.ONE)
 
 	# 背景
 	var bg_rect := Rect2(-bar_width / 2, bar_y, bar_width, bar_height)
@@ -171,6 +190,9 @@ func _draw_status_bar() -> void:
 		var sup_rect := Rect2(-bar_width / 2, sup_y, bar_width * element.suppression, bar_height)
 		draw_rect(sup_rect, Color(1.0, 0.5, 0.0, 0.8))
 
+	# 変換をリセット
+	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+
 
 func _get_hp_color(ratio: float) -> Color:
 	if ratio > 0.6:
@@ -184,12 +206,17 @@ func _get_hp_color(ratio: float) -> Color:
 # ユーティリティ
 # =============================================================================
 
-## クリック判定用の矩形を取得
+## クリック判定用の半径
+const CLICK_RADIUS: float = 32.0
+
+
+## クリック判定用の矩形を取得（後方互換性のため維持）
 func get_click_rect() -> Rect2:
-	var half_size := Vector2(32, 32) * symbol_scale
+	var half_size := Vector2(CLICK_RADIUS, CLICK_RADIUS) * symbol_scale
 	return Rect2(position - half_size, half_size * 2)
 
 
-## ポイントがこのElementの上にあるか
+## ポイントがこのElementの上にあるか（円形判定で回転に依存しない）
 func contains_point(point: Vector2) -> bool:
-	return get_click_rect().has_point(point)
+	var distance := position.distance_to(point)
+	return distance <= CLICK_RADIUS * symbol_scale
