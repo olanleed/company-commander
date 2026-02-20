@@ -111,7 +111,8 @@ class ElementInstance:
 	var order_target_id: String = ""  ## 命令の対象ID（ATTACKコマンドなど）
 
 	## 戦闘
-	var primary_weapon: WeaponData.WeaponType = null  ## 主武装
+	var primary_weapon: WeaponData.WeaponType = null  ## 主武装（後方互換）
+	var weapons: Array[WeaponData.WeaponType] = []    ## 全武装リスト
 	var current_target_id: String = ""  ## 現在の射撃目標
 	var forced_target_id: String = ""  ## プレイヤー指定の強制交戦目標
 	var last_fire_tick: int = -1  ## 最後に射撃したtick
@@ -122,6 +123,11 @@ class ElementInstance:
 	var mobility_hp: int = 100      ## 機動力HP (0-100)
 	var firepower_hp: int = 100     ## 火力HP (0-100)
 	var sensors_hp: int = 100       ## センサーHP (0-100)
+
+	## 破壊関連
+	var is_destroyed: bool = false       ## 完全破壊フラグ（フェードアウト開始）
+	var destroy_tick: int = -1           ## 破壊開始tick
+	var catastrophic_kill: bool = false  ## 爆発・炎上による破壊か（車両用）
 
 	## 初期化
 	func _init(p_type: ElementType = null) -> void:
@@ -233,3 +239,172 @@ class ElementInstance:
 		if is_vehicle():
 			return clampi((mobility_hp + firepower_hp + sensors_hp) / 3, 0, 100)
 		return current_strength
+
+
+# =============================================================================
+# ElementArchetypes（8種のユニットアーキタイプ）
+# 仕様書: docs/units_v0.1.md, docs/concrete_weapons_v0.1.md
+# =============================================================================
+
+class ElementArchetypes:
+	## INF_LINE: ライフル分隊（9人）
+	static func create_inf_line() -> ElementType:
+		var t := ElementType.new()
+		t.id = "INF_LINE"
+		t.display_name = "Rifle Squad"
+		t.category = Category.INF
+		t.symbol_type = SymbolType.INF_RIFLE
+		t.armor_class = 0  # Soft
+		t.mobility_class = GameEnums.MobilityType.FOOT
+		t.road_speed = 5.0   # m/s
+		t.cross_speed = 3.5  # m/s
+		t.base_strength = 9
+		t.max_strength = 9   # 9人分隊
+		t.spot_range_base = 300.0
+		t.spot_range_moving = 200.0
+		return t
+
+	## INF_AT: 対戦車分隊（4人）
+	static func create_inf_at() -> ElementType:
+		var t := ElementType.new()
+		t.id = "INF_AT"
+		t.display_name = "AT Team"
+		t.category = Category.INF
+		t.symbol_type = SymbolType.FS_ATGM
+		t.armor_class = 0  # Soft
+		t.mobility_class = GameEnums.MobilityType.FOOT
+		t.road_speed = 4.5
+		t.cross_speed = 3.0
+		t.base_strength = 4
+		t.max_strength = 4
+		t.spot_range_base = 400.0
+		t.spot_range_moving = 250.0
+		return t
+
+	## INF_MG: 機関銃班（3人）
+	static func create_inf_mg() -> ElementType:
+		var t := ElementType.new()
+		t.id = "INF_MG"
+		t.display_name = "MG Team"
+		t.category = Category.WEAP
+		t.symbol_type = SymbolType.INF_RIFLE  # MGシンボルがない場合
+		t.armor_class = 0  # Soft
+		t.mobility_class = GameEnums.MobilityType.FOOT
+		t.road_speed = 4.0
+		t.cross_speed = 2.5
+		t.base_strength = 3
+		t.max_strength = 3
+		t.spot_range_base = 350.0
+		t.spot_range_moving = 200.0
+		return t
+
+	## TANK_PLT: 戦車小隊（4両=1ユニット）
+	static func create_tank_plt() -> ElementType:
+		var t := ElementType.new()
+		t.id = "TANK_PLT"
+		t.display_name = "Tank Platoon"
+		t.category = Category.VEH
+		t.symbol_type = SymbolType.ARMOR_TANK
+		t.armor_class = 3  # Heavy
+		t.mobility_class = GameEnums.MobilityType.TRACKED
+		t.road_speed = 12.0
+		t.cross_speed = 8.0
+		t.base_strength = 100  # 車両HP（サブシステム管理）
+		t.max_strength = 100
+		t.spot_range_base = 800.0
+		t.spot_range_moving = 600.0
+		return t
+
+	## RECON_VEH: 偵察車両（軽装甲）
+	static func create_recon_veh() -> ElementType:
+		var t := ElementType.new()
+		t.id = "RECON_VEH"
+		t.display_name = "Recon Vehicle"
+		t.category = Category.REC
+		t.symbol_type = SymbolType.INF_RECON
+		t.armor_class = 1  # Light
+		t.mobility_class = GameEnums.MobilityType.WHEELED
+		t.road_speed = 18.0
+		t.cross_speed = 10.0
+		t.base_strength = 100
+		t.max_strength = 100
+		t.spot_range_base = 1000.0
+		t.spot_range_moving = 800.0
+		return t
+
+	## RECON_TEAM: 偵察チーム（4人）
+	static func create_recon_team() -> ElementType:
+		var t := ElementType.new()
+		t.id = "RECON_TEAM"
+		t.display_name = "Recon Team"
+		t.category = Category.REC
+		t.symbol_type = SymbolType.INF_RECON
+		t.armor_class = 0  # Soft
+		t.mobility_class = GameEnums.MobilityType.FOOT
+		t.road_speed = 5.5
+		t.cross_speed = 4.0
+		t.base_strength = 4
+		t.max_strength = 4
+		t.spot_range_base = 500.0
+		t.spot_range_moving = 350.0
+		return t
+
+	## MORTAR_SEC: 迫撃砲班（6人 + 2門）
+	static func create_mortar_sec() -> ElementType:
+		var t := ElementType.new()
+		t.id = "MORTAR_SEC"
+		t.display_name = "Mortar Section"
+		t.category = Category.WEAP
+		t.symbol_type = SymbolType.FS_MORTAR
+		t.armor_class = 0  # Soft
+		t.mobility_class = GameEnums.MobilityType.FOOT
+		t.road_speed = 3.5
+		t.cross_speed = 2.0
+		t.base_strength = 6
+		t.max_strength = 6
+		t.spot_range_base = 200.0
+		t.spot_range_moving = 100.0
+		return t
+
+	## LOG_TRUCK: 補給トラック
+	static func create_log_truck() -> ElementType:
+		var t := ElementType.new()
+		t.id = "LOG_TRUCK"
+		t.display_name = "Supply Truck"
+		t.category = Category.LOG
+		t.symbol_type = SymbolType.SUP_LOGISTICS
+		t.armor_class = 0  # Soft
+		t.mobility_class = GameEnums.MobilityType.WHEELED
+		t.road_speed = 15.0
+		t.cross_speed = 6.0
+		t.base_strength = 2
+		t.max_strength = 2
+		t.spot_range_base = 150.0
+		t.spot_range_moving = 100.0
+		return t
+
+	## 全アーキタイプを取得
+	static func get_all_archetypes() -> Dictionary:
+		return {
+			"INF_LINE": create_inf_line(),
+			"INF_AT": create_inf_at(),
+			"INF_MG": create_inf_mg(),
+			"TANK_PLT": create_tank_plt(),
+			"RECON_VEH": create_recon_veh(),
+			"RECON_TEAM": create_recon_team(),
+			"MORTAR_SEC": create_mortar_sec(),
+			"LOG_TRUCK": create_log_truck(),
+		}
+
+	## IDからアーキタイプを取得
+	static func get_archetype(archetype_id: String) -> ElementType:
+		match archetype_id:
+			"INF_LINE": return create_inf_line()
+			"INF_AT": return create_inf_at()
+			"INF_MG": return create_inf_mg()
+			"TANK_PLT": return create_tank_plt()
+			"RECON_VEH": return create_recon_veh()
+			"RECON_TEAM": return create_recon_team()
+			"MORTAR_SEC": return create_mortar_sec()
+			"LOG_TRUCK": return create_log_truck()
+			_: return create_inf_line()  # デフォルト

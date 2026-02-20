@@ -120,6 +120,10 @@ func transition_to_phase(new_phase: int, current_tick: int) -> void:
 	current_phase = new_phase
 	phase_start_tick = current_tick
 
+	# デバッグ出力
+	var faction_name := "BLUE" if _company_ai and _company_ai.faction == GameEnums.Faction.BLUE else "RED"
+	print("[Template] %s: Phase %d -> %d (tick=%d)" % [faction_name, old_phase, new_phase, current_tick])
+
 	_on_phase_enter(new_phase, current_tick)
 	phase_changed.emit(old_phase, new_phase)
 
@@ -185,6 +189,9 @@ func issue_move_order(element: ElementData.ElementInstance, target: Vector2, cur
 		"target": target,
 		"tick": current_tick,
 	}
+
+	# デバッグ出力
+	print("[Template] Order: %s -> MOVE to %s" % [element.id, target])
 
 	order_generated.emit(element.id, element_orders[element.id])
 	return true

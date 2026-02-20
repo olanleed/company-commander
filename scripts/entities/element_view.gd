@@ -30,6 +30,10 @@ var _estimated_position: Vector2 = Vector2.ZERO
 var _position_error: float = 0.0
 var _is_friendly: bool = true
 
+## フェードアウト関連
+var _is_fading: bool = false
+var _fade_start_tick: int = -1
+
 # =============================================================================
 # ライフサイクル
 # =============================================================================
@@ -73,6 +77,8 @@ func setup(p_element: ElementData.ElementInstance, p_symbol_manager: SymbolManag
 		_setup_selection_indicator()
 	update_symbol()
 	update_position_immediate()
+	# 初期状態で視認性を設定（味方は不透明、敵はFoW次第）
+	_update_visibility()
 
 
 ## シンボルを更新
@@ -126,22 +132,26 @@ func _update_visibility() -> void:
 	if _is_friendly:
 		# 味方は常に表示
 		visible = true
-		modulate.a = 1.0
+		modulate = Color(1, 1, 1, 1)
+		if _sprite:
+			_sprite.modulate = Color(1, 1, 1, 1)
 		return
 
 	# 敵の表示は視界状態に依存
 	match _contact_state:
 		GameEnums.ContactState.CONFIRMED:
 			visible = true
-			modulate.a = 1.0
+			modulate = Color(1, 1, 1, 1)
+			if _sprite:
+				_sprite.modulate = Color(1, 1, 1, 1)
 		GameEnums.ContactState.SUSPECTED:
 			visible = true
-			modulate.a = 0.5  # 半透明
+			modulate = Color(1, 1, 1, 0.5)  # 半透明
 			# SUS時は推定位置を使用
 			position = _estimated_position
 		GameEnums.ContactState.LOST:
 			visible = true
-			modulate.a = 0.25  # さらに薄く
+			modulate = Color(1, 1, 1, 0.25)  # さらに薄く
 			position = _estimated_position
 		GameEnums.ContactState.UNKNOWN:
 			visible = false
@@ -184,6 +194,14 @@ func is_selected() -> bool:
 
 func _draw() -> void:
 	if not element:
+		return
+
+	# 破壊済みユニットは爆発マークのみ描画
+	if element.is_destroyed:
+		if element.catastrophic_kill:
+			_draw_explosion_mark()
+		else:
+			_draw_destroyed_mark()
 		return
 
 	# 敵のSUS/LOST時は位置誤差円を描画
@@ -305,6 +323,39 @@ func _draw_firing_indicator() -> void:
 		draw_line(icon_pos + dir * icon_size * 0.6, icon_pos + dir * icon_size * 1.2, flash_color, 2.0)
 
 
+## 爆発マーク描画（catastrophic kill用）
+func _draw_explosion_mark() -> void:
+	var center := Vector2.ZERO
+	var size := 25.0
+
+	# オレンジ〜赤のグラデーション円
+	draw_circle(center, size, Color(1.0, 0.3, 0.0, 0.8))
+	draw_circle(center, size * 0.6, Color(1.0, 0.6, 0.0, 0.9))
+	draw_circle(center, size * 0.3, Color(1.0, 0.9, 0.3, 1.0))
+
+	# 爆発の放射線
+	var explosion_color := Color(1.0, 0.5, 0.0, 0.7)
+	for i in range(8):
+		var angle := TAU * float(i) / 8.0
+		var dir := Vector2.from_angle(angle)
+		draw_line(center + dir * size * 0.8, center + dir * size * 1.4, explosion_color, 3.0)
+
+
+## 破壊マーク描画（通常破壊用）
+func _draw_destroyed_mark() -> void:
+	var center := Vector2.ZERO
+	var size := 20.0
+
+	# 暗いグレーの円
+	draw_circle(center, size, Color(0.3, 0.3, 0.3, 0.7))
+
+	# Xマーク
+	var x_color := Color(0.8, 0.2, 0.2, 0.9)
+	var offset := size * 0.7
+	draw_line(center + Vector2(-offset, -offset), center + Vector2(offset, offset), x_color, 4.0)
+	draw_line(center + Vector2(offset, -offset), center + Vector2(-offset, offset), x_color, 4.0)
+
+
 func _get_hp_color(ratio: float) -> Color:
 	if ratio > 0.6:
 		return Color(0.2, 0.8, 0.2)
@@ -331,3 +382,32 @@ func get_click_rect() -> Rect2:
 func contains_point(point: Vector2) -> bool:
 	var distance := position.distance_to(point)
 	return distance <= CLICK_RADIUS * symbol_scale
+
+# =============================================================================
+# フェードアウト処理
+# =============================================================================
+
+## フェードアウトを開始
+func start_fade_out(start_tick: int) -> void:
+	_is_fading = true
+	_fade_start_tick = start_tick
+
+
+## フェードを更新（完全に消えたらtrueを返す）
+func update_fade(current_tick: int) -> bool:
+	if not _is_fading:
+		return false
+
+	var elapsed := current_tick - _fade_start_tick
+	var progress := clampf(
+		float(elapsed) / float(GameConstants.DESTROY_FADE_DURATION_TICKS),
+		0.0, 1.0
+	)
+	modulate.a = 1.0 - progress
+
+	return progress >= 1.0  # 完全に消えたらtrue
+
+
+## フェード中かどうか
+func is_fading() -> bool:
+	return _is_fading

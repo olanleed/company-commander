@@ -217,14 +217,34 @@ func _activate_template(
 
 	# テンプレートにオプションを設定
 	if options.has("use_road") and current_template is TemplateMove:
-		(current_template as TemplateMove).use_road = options["use_road"]
+		(current_template as TemplateMove).use_road_priority = options["use_road"]
 
 	# テンプレート開始
 	var elements := _get_elements()
 	current_template.start(current_tick, elements, target_pos, cp_id)
 
+	# デバッグ出力
+	var faction_name := "BLUE" if faction == GameEnums.Faction.BLUE else "RED"
+	var template_name := _get_template_name(template_type)
+	print("[CompanyAI] %s: Template activated -> %s (cp=%s, pos=%s, elements=%d)" % [
+		faction_name, template_name, cp_id, target_pos, elements.size()
+	])
+
 	# シグナル
 	template_changed.emit(old_type, template_type)
+
+
+func _get_template_name(tpl: GameEnums.TacticalTemplate) -> String:
+	match tpl:
+		GameEnums.TacticalTemplate.TPL_NONE: return "NONE"
+		GameEnums.TacticalTemplate.TPL_MOVE: return "MOVE"
+		GameEnums.TacticalTemplate.TPL_ATTACK_CP: return "ATTACK_CP"
+		GameEnums.TacticalTemplate.TPL_DEFEND_CP: return "DEFEND_CP"
+		GameEnums.TacticalTemplate.TPL_RECON: return "RECON"
+		GameEnums.TacticalTemplate.TPL_ATTACK_AREA: return "ATTACK_AREA"
+		GameEnums.TacticalTemplate.TPL_BREAK_CONTACT: return "BREAK_CONTACT"
+		GameEnums.TacticalTemplate.TPL_RESUPPLY: return "RESUPPLY"
+		_: return "UNKNOWN"
 
 
 func _stop_current_template() -> void:

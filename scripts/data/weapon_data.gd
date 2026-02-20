@@ -313,3 +313,367 @@ static func create_rpg() -> WeaponType:
 	}
 
 	return weapon
+
+
+# =============================================================================
+# ConcreteWeaponSet（仕様書定義の6武器セット）
+# =============================================================================
+
+## CW_RIFLE_STD: 小銃（M4/AK相当）
+## 仕様書: docs/concrete_weapons_v0.1.md
+static func create_cw_rifle_std() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_RIFLE_STD"
+	w.display_name = "Standard Rifle"
+	w.mechanism = Mechanism.SMALL_ARMS
+	w.fire_model = FireModel.CONTINUOUS
+	w.min_range_m = 0.0
+	w.max_range_m = 300.0
+	w.range_band_thresholds_m = [100.0, 200.0]
+	w.threat_class = ThreatClass.SMALL_ARMS
+	w.ammo_endurance_min = 30.0
+
+	# L/S テーブル（Near/Mid/Far）
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 60,
+			TargetClass.LIGHT: 10,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 15,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 45,
+			TargetClass.LIGHT: 5,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 10,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 25,
+			TargetClass.LIGHT: 0,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 5,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 70,
+		RangeBand.MID: 55,
+		RangeBand.FAR: 35,
+	}
+
+	return w
+
+
+## CW_MG_STD: 機関銃（M240/PKM相当）
+static func create_cw_mg_std() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_MG_STD"
+	w.display_name = "Standard MG"
+	w.mechanism = Mechanism.SMALL_ARMS
+	w.fire_model = FireModel.CONTINUOUS
+	w.min_range_m = 0.0
+	w.max_range_m = 800.0
+	w.range_band_thresholds_m = [200.0, 500.0]
+	w.threat_class = ThreatClass.SMALL_ARMS
+	w.ammo_endurance_min = 20.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 75,
+			TargetClass.LIGHT: 20,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 20,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 60,
+			TargetClass.LIGHT: 15,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 15,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 40,
+			TargetClass.LIGHT: 10,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 10,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 85,
+		RangeBand.MID: 70,
+		RangeBand.FAR: 50,
+	}
+
+	return w
+
+
+## CW_RPG_HEAT: 対戦車ロケット（RPG-7/AT4相当）
+## 仕様書: docs/concrete_weapons_v0.1.md
+static func create_cw_rpg_heat() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_RPG_HEAT"
+	w.display_name = "AT Rocket"
+	w.mechanism = Mechanism.SHAPED_CHARGE
+	w.fire_model = FireModel.DISCRETE
+	w.min_range_m = 20.0
+	w.max_range_m = 200.0
+	w.range_band_thresholds_m = [50.0, 150.0]
+	w.threat_class = ThreatClass.AT
+	w.ammo_endurance_min = 5.0
+	w.rof_rpm = 2.0
+	w.sigma_hit_m = 2.5
+	w.direct_hit_radius_m = 1.5
+	w.shock_radius_m = 10.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 70,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 80,
+			TargetClass.FORTIFIED: 75,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 50,
+			TargetClass.LIGHT: 90,
+			TargetClass.HEAVY: 75,
+			TargetClass.FORTIFIED: 65,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 30,
+			TargetClass.LIGHT: 80,
+			TargetClass.HEAVY: 65,
+			TargetClass.FORTIFIED: 55,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 60,
+		RangeBand.MID: 50,
+		RangeBand.FAR: 40,
+	}
+
+	w.pen_ce = {
+		RangeBand.NEAR: 75,
+		RangeBand.MID: 70,
+		RangeBand.FAR: 60,
+	}
+
+	return w
+
+
+## CW_TANK_KE: 戦車主砲APFSDS（120mm相当）
+## 仕様書: docs/concrete_weapons_v0.1.md
+static func create_cw_tank_ke() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_TANK_KE"
+	w.display_name = "Tank Gun APFSDS"
+	w.mechanism = Mechanism.KINETIC
+	w.fire_model = FireModel.DISCRETE
+	w.min_range_m = 50.0
+	w.max_range_m = 2000.0
+	w.range_band_thresholds_m = [500.0, 1500.0]
+	w.threat_class = ThreatClass.AT
+	w.ammo_endurance_min = 10.0
+	w.rof_rpm = 6.0
+	w.sigma_hit_m = 1.5
+	w.direct_hit_radius_m = 2.0
+	w.shock_radius_m = 5.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 60,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 95,
+			TargetClass.FORTIFIED: 85,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 50,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 90,
+			TargetClass.FORTIFIED: 80,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 40,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 80,
+			TargetClass.FORTIFIED: 70,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 50,
+		RangeBand.MID: 45,
+		RangeBand.FAR: 40,
+	}
+
+	w.pen_ke = {
+		RangeBand.NEAR: 100,
+		RangeBand.MID: 95,
+		RangeBand.FAR: 85,
+	}
+
+	return w
+
+
+## CW_TANK_HEATMP: 戦車主砲HEAT-MP + 同軸MG
+## 仕様書: docs/concrete_weapons_v0.1.md
+static func create_cw_tank_heatmp() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_TANK_HEATMP"
+	w.display_name = "Tank Gun HEAT-MP"
+	w.mechanism = Mechanism.SHAPED_CHARGE
+	w.fire_model = FireModel.CONTINUOUS  # 同軸MGを含む連続火力
+	w.min_range_m = 0.0
+	w.max_range_m = 1500.0
+	w.range_band_thresholds_m = [300.0, 1000.0]
+	w.threat_class = ThreatClass.AT
+	w.ammo_endurance_min = 15.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 85,
+			TargetClass.LIGHT: 90,
+			TargetClass.HEAVY: 70,
+			TargetClass.FORTIFIED: 80,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 70,
+			TargetClass.LIGHT: 85,
+			TargetClass.HEAVY: 60,
+			TargetClass.FORTIFIED: 70,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 50,
+			TargetClass.LIGHT: 75,
+			TargetClass.HEAVY: 50,
+			TargetClass.FORTIFIED: 60,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 80,
+		RangeBand.MID: 65,
+		RangeBand.FAR: 50,
+	}
+
+	w.pen_ce = {
+		RangeBand.NEAR: 85,
+		RangeBand.MID: 80,
+		RangeBand.FAR: 70,
+	}
+
+	return w
+
+
+## CW_MORTAR_HE: 迫撃砲HE弾（81mm相当）
+## 仕様書: docs/concrete_weapons_v0.1.md
+static func create_cw_mortar_he() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_MORTAR_HE"
+	w.display_name = "Mortar HE"
+	w.mechanism = Mechanism.BLAST_FRAG
+	w.fire_model = FireModel.INDIRECT
+	w.min_range_m = 100.0
+	w.max_range_m = 2000.0
+	w.range_band_thresholds_m = [500.0, 1500.0]
+	w.threat_class = ThreatClass.HE_FRAG
+	w.ammo_endurance_min = 10.0
+	w.rof_rpm = 15.0
+	w.sigma_hit_m = 30.0
+	w.blast_radius_m = 40.0
+	w.setup_time_sec = 30.0
+	w.displace_time_sec = 30.0
+	w.requires_observer = true
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 80,
+			TargetClass.LIGHT: 40,
+			TargetClass.HEAVY: 10,
+			TargetClass.FORTIFIED: 30,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 75,
+			TargetClass.LIGHT: 35,
+			TargetClass.HEAVY: 10,
+			TargetClass.FORTIFIED: 25,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 70,
+			TargetClass.LIGHT: 30,
+			TargetClass.HEAVY: 5,
+			TargetClass.FORTIFIED: 20,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 95,
+		RangeBand.MID: 90,
+		RangeBand.FAR: 85,
+	}
+
+	return w
+
+
+## CW_MORTAR_SMOKE: 迫撃砲発煙弾
+## 仕様書: docs/concrete_weapons_v0.1.md
+static func create_cw_mortar_smoke() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_MORTAR_SMOKE"
+	w.display_name = "Mortar Smoke"
+	w.mechanism = Mechanism.BLAST_FRAG  # 特殊: 煙幕用
+	w.fire_model = FireModel.INDIRECT
+	w.min_range_m = 100.0
+	w.max_range_m = 2000.0
+	w.range_band_thresholds_m = [500.0, 1500.0]
+	w.threat_class = ThreatClass.HE_FRAG
+	w.ammo_endurance_min = 5.0
+	w.rof_rpm = 10.0
+	w.sigma_hit_m = 25.0
+	w.blast_radius_m = 50.0  # 煙幕範囲
+	w.setup_time_sec = 30.0
+	w.displace_time_sec = 30.0
+	w.requires_observer = false
+
+	# 煙幕は殺傷力なし
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 0,
+			TargetClass.LIGHT: 0,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 0,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 0,
+			TargetClass.LIGHT: 0,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 0,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 0,
+			TargetClass.LIGHT: 0,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 0,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 20,
+		RangeBand.MID: 15,
+		RangeBand.FAR: 10,
+	}
+
+	return w
+
+
+## 全ConcreteWeaponSetを取得
+static func get_all_concrete_weapons() -> Dictionary:
+	return {
+		"CW_RIFLE_STD": create_cw_rifle_std(),
+		"CW_MG_STD": create_cw_mg_std(),
+		"CW_RPG_HEAT": create_cw_rpg_heat(),
+		"CW_TANK_KE": create_cw_tank_ke(),
+		"CW_TANK_HEATMP": create_cw_tank_heatmp(),
+		"CW_MORTAR_HE": create_cw_mortar_he(),
+		"CW_MORTAR_SMOKE": create_cw_mortar_smoke(),
+	}

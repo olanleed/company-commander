@@ -444,11 +444,17 @@ func _get_indirect_vulnerability(
 ## 要素にダメージを適用
 ## d_supp: 抑圧増加量（0-1範囲、例: 0.05 = 5%増加）
 ## d_dmg: ダメージ量（Strength減少量、小数点以下は蓄積）
+## current_tick: 現在のtick（破壊時刻記録用）
 func apply_damage(
 	element: ElementData.ElementInstance,
 	d_supp: float,
-	d_dmg: float
+	d_dmg: float,
+	current_tick: int = 0
 ) -> void:
+	# 既に破壊済みなら何もしない
+	if element.is_destroyed:
+		return
+
 	# 抑圧増加（d_suppは0-1範囲なのでそのまま加算）
 	element.suppression = clampf(element.suppression + d_supp, 0.0, 1.0)
 
@@ -464,7 +470,7 @@ func apply_damage(
 
 	# 撃破判定
 	if element.current_strength <= 0:
-		element.state = GameEnums.UnitState.DESTROYED
+		_mark_destroyed(element, current_tick, false)
 
 
 ## 抑圧回復を適用
@@ -870,3 +876,116 @@ func calculate_soft_damage(category: GameEnums.DamageCategory) -> float:
 			)
 		_:
 			return 1.0
+
+
+# =============================================================================
+# 破壊処理
+# =============================================================================
+
+## 要素を破壊状態にマーク
+func _mark_destroyed(
+	element: ElementData.ElementInstance,
+	current_tick: int,
+	is_catastrophic: bool
+) -> void:
+	element.state = GameEnums.UnitState.DESTROYED
+	element.is_destroyed = true
+	element.destroy_tick = current_tick
+	element.catastrophic_kill = is_catastrophic
+	element.current_strength = 0
+	element.is_moving = false
+	element.current_path.clear()
+
+	print("[Combat] %s DESTROYED%s at tick %d" % [
+		element.id,
+		" (CATASTROPHIC)" if is_catastrophic else "",
+		current_tick
+	])
+
+
+## 車両にダメージを適用（AT/重火器用）
+## 被害カテゴリに基づいてサブシステムダメージまたはcatastrophic killを判定
+func apply_vehicle_damage(
+	element: ElementData.ElementInstance,
+	threat_class: WeaponData.ThreatClass,
+	exposure: float,
+	current_tick: int
+) -> void:
+	# 既に破壊済みなら何もしない
+	if element.is_destroyed:
+		return
+
+	# 車両でなければ通常ダメージ処理
+	if not element.element_type or element.element_type.armor_class == 0:
+		return
+
+	# 被害カテゴリをロール
+	var category := roll_damage_category(exposure)
+
+	match category:
+		GameEnums.DamageCategory.CRITICAL:
+			# CRITICAL: catastrophic or mission kill
+			var catastrophic_roll := randf()
+			if catastrophic_roll < GameConstants.VEHICLE_CRITICAL_CATASTROPHIC_CHANCE:
+				# Catastrophic Kill - 即時破壊
+				_mark_destroyed(element, current_tick, true)
+			else:
+				# Mission Kill - mobility/firepower破壊
+				element.mobility_hp = 0
+				element.firepower_hp = 0
+				print("[Combat] %s MISSION KILL at tick %d" % [element.id, current_tick])
+
+		GameEnums.DamageCategory.MAJOR:
+			# MAJOR: 大ダメージをサブシステムに分配
+			var damage := randi_range(
+				GameConstants.VEHICLE_DAMAGE_MAJOR_MIN,
+				GameConstants.VEHICLE_DAMAGE_MAJOR_MAX
+			)
+			_distribute_subsystem_damage(element, damage, threat_class)
+
+		GameEnums.DamageCategory.MINOR:
+			# MINOR: 小ダメージをサブシステムに分配
+			var damage := randi_range(
+				GameConstants.VEHICLE_DAMAGE_MINOR_MIN,
+				GameConstants.VEHICLE_DAMAGE_MINOR_MAX
+			)
+			_distribute_subsystem_damage(element, damage, threat_class)
+
+	# 全サブシステムが0になったらmission kill → destroyed
+	if element.mobility_hp <= 0 and element.firepower_hp <= 0 and element.sensors_hp <= 0:
+		_mark_destroyed(element, current_tick, false)
+
+
+## サブシステムにダメージを分配
+func _distribute_subsystem_damage(
+	element: ElementData.ElementInstance,
+	damage: int,
+	threat_class: WeaponData.ThreatClass
+) -> void:
+	# 脅威クラスによる分配比率を取得
+	var dist: Array[float]
+	match threat_class:
+		WeaponData.ThreatClass.SMALL_ARMS:
+			dist = GameConstants.SUBSYS_DIST_SMALLARMS.duplicate()
+		WeaponData.ThreatClass.AUTOCANNON:
+			dist = GameConstants.SUBSYS_DIST_AUTOCANNON.duplicate()
+		WeaponData.ThreatClass.HE_FRAG:
+			dist = GameConstants.SUBSYS_DIST_HEFRAG.duplicate()
+		WeaponData.ThreatClass.AT:
+			dist = GameConstants.SUBSYS_DIST_AT.duplicate()
+		_:
+			dist = [0.33, 0.33, 0.34]
+
+	# 分配 [sensors, mobility, firepower]
+	var sensors_dmg := int(float(damage) * dist[0])
+	var mobility_dmg := int(float(damage) * dist[1])
+	var firepower_dmg := int(float(damage) * dist[2])
+
+	element.sensors_hp = maxi(0, element.sensors_hp - sensors_dmg)
+	element.mobility_hp = maxi(0, element.mobility_hp - mobility_dmg)
+	element.firepower_hp = maxi(0, element.firepower_hp - firepower_dmg)
+
+	print("[Combat] %s subsystem damage: mob=%d fire=%d sens=%d (now %d/%d/%d)" % [
+		element.id, mobility_dmg, firepower_dmg, sensors_dmg,
+		element.mobility_hp, element.firepower_hp, element.sensors_hp
+	])

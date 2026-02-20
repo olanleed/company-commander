@@ -217,59 +217,46 @@ func _connect_signals() -> void:
 # =============================================================================
 
 func _spawn_test_units() -> void:
-	# 歩兵タイプ
-	var inf_type := ElementData.ElementType.new()
-	inf_type.id = "inf_rifle"
-	inf_type.display_name = "Rifle Squad"
-	inf_type.category = ElementData.Category.INF
-	inf_type.symbol_type = ElementData.SymbolType.INF_RIFLE
-	inf_type.mobility_class = GameEnums.MobilityType.FOOT
-	inf_type.road_speed = 5.0
-	inf_type.cross_speed = 3.0
-	inf_type.max_strength = 100  # 仕様: Strength 0-100 スケール
-	inf_type.spot_range_base = 300.0
-
-	# 戦車タイプ
-	var tank_type := ElementData.ElementType.new()
-	tank_type.id = "armor_tank"
-	tank_type.display_name = "Tank Platoon"
-	tank_type.category = ElementData.Category.VEH
-	tank_type.symbol_type = ElementData.SymbolType.ARMOR_TANK
-	tank_type.mobility_class = GameEnums.MobilityType.TRACKED
-	tank_type.road_speed = 12.0
-	tank_type.cross_speed = 8.0
-	tank_type.max_strength = 100  # 仕様: Strength 0-100 スケール
-	tank_type.spot_range_base = 500.0
-	tank_type.armor_class = 3
-
-	# IFVタイプ
-	var ifv_type := ElementData.ElementType.new()
-	ifv_type.id = "armor_ifv"
-	ifv_type.display_name = "IFV Section"
-	ifv_type.category = ElementData.Category.VEH
-	ifv_type.symbol_type = ElementData.SymbolType.ARMOR_IFV
-	ifv_type.mobility_class = GameEnums.MobilityType.TRACKED
-	ifv_type.road_speed = 15.0
-	ifv_type.cross_speed = 10.0
-	ifv_type.max_strength = 100  # 仕様: Strength 0-100 スケール
-	ifv_type.armor_class = 2
+	# ElementFactoryを使用してユニットを生成
+	ElementFactory.reset_id_counters()
 
 	# BLUE陣営 - 中央CPの近くに配置（戦闘テスト用：距離約400mで視界内）
 	var blue_pos := Vector2(800, 1000)  # 中央CPの西側
-	world_model.create_test_element(inf_type, GameEnums.Faction.BLUE, blue_pos)
-	world_model.create_test_element(inf_type, GameEnums.Faction.BLUE, blue_pos + Vector2(0, 50))
-	world_model.create_test_element(tank_type, GameEnums.Faction.BLUE, blue_pos + Vector2(-30, 100))
+
+	# ライフル分隊 x3
+	var blue_inf1 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, blue_pos)
+	world_model.add_element(blue_inf1)
+
+	var blue_inf2 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, blue_pos + Vector2(0, 50))
+	world_model.add_element(blue_inf2)
+
+	var blue_inf3 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, blue_pos + Vector2(-30, 100))
+	world_model.add_element(blue_inf3)
 
 	# RED陣営 - 中央CPの近くに配置（戦闘テスト用：距離約400mで視界内）
 	var red_pos := Vector2(1200, 1000)  # 中央CPの東側
-	world_model.create_test_element(inf_type, GameEnums.Faction.RED, red_pos)
-	world_model.create_test_element(ifv_type, GameEnums.Faction.RED, red_pos + Vector2(0, 50))
-	world_model.create_test_element(tank_type, GameEnums.Faction.RED, red_pos + Vector2(30, 100))
+
+	# ライフル分隊 x3
+	var red_inf1 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.RED, red_pos)
+	world_model.add_element(red_inf1)
+
+	var red_inf2 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.RED, red_pos + Vector2(0, 50))
+	world_model.add_element(red_inf2)
+
+	var red_inf3 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.RED, red_pos + Vector2(30, 100))
+	world_model.add_element(red_inf3)
 
 	print("テストユニット生成完了: ", world_model.elements.size(), " elements")
-
-	# 武器を設定
-	_assign_weapons_to_elements()
+	for element in world_model.elements:
+		var weapons_str := ""
+		for w in element.weapons:
+			weapons_str += w.id + " "
+		print("  %s (%s): Str=%d, Weapons=[%s]" % [
+			element.id,
+			element.element_type.display_name if element.element_type else "?",
+			element.current_strength,
+			weapons_str.strip_edges()
+		])
 
 	# 中隊AIをセットアップ
 	_setup_company_ais()
@@ -294,6 +281,36 @@ func _setup_company_ais() -> void:
 		print("中隊AI作成: ", "BLUE" if faction_value == GameEnums.Faction.BLUE else "RED",
 			" (", element_ids.size(), " elements)")
 
+	# 敵AI（RED）に初期命令を出す
+	_issue_initial_ai_orders()
+
+
+## 敵AIに初期命令を発行
+func _issue_initial_ai_orders() -> void:
+	var red_ai = company_ais.get(GameEnums.Faction.RED)
+	if not red_ai:
+		return
+
+	# RED陣営のCPを探す（防御対象）
+	# または中立/BLUE CPを探す（攻撃対象）
+	var red_cp: MapData.CapturePoint = null
+	var attack_target_cp: MapData.CapturePoint = null
+
+	for cp in map_data.capture_points:
+		if cp.initial_owner == GameEnums.Faction.RED:
+			red_cp = cp
+		elif cp.initial_owner == GameEnums.Faction.NONE or cp.initial_owner == GameEnums.Faction.BLUE:
+			if not attack_target_cp:
+				attack_target_cp = cp
+
+	# REDの初期行動：中立CPを攻撃、なければ自CPを防御
+	if attack_target_cp:
+		red_ai.order_attack_cp(attack_target_cp.id)
+		print("[CompanyAI] RED -> ATTACK_CP %s (初期命令)" % attack_target_cp.id)
+	elif red_cp:
+		red_ai.order_defend_cp(red_cp.id)
+		print("[CompanyAI] RED -> DEFEND_CP %s (初期命令)" % red_cp.id)
+
 # =============================================================================
 # Element表示
 # =============================================================================
@@ -301,6 +318,9 @@ func _setup_company_ais() -> void:
 func _on_element_added(element: ElementData.ElementInstance) -> void:
 	var view := ElementView.new()
 	view.setup(element, symbol_manager, player_faction)
+	# 初期状態では全ユニットを不透明で表示（FoWは後で適用される）
+	view.modulate = Color(1, 1, 1, 1)
+	view.visible = true
 	units_layer.add_child(view)
 	_element_views[element.id] = view
 
@@ -314,22 +334,53 @@ func _on_element_removed(element: ElementData.ElementInstance) -> void:
 
 func _update_element_views() -> void:
 	var alpha := sim_runner.alpha if sim_runner else 0.0
+	var current_tick: int = sim_runner.tick_index if sim_runner else 0
+
+	var elements_to_remove: Array[String] = []
 
 	for element_id in _element_views:
 		var view: ElementView = _element_views[element_id]
 		var element := view.element
 
-		# 敵ユニットはFoW状態を更新
-		if element and element.faction != player_faction:
+		if not element:
+			continue
+
+		# 破壊済みユニットのフェードアウト処理
+		if element.is_destroyed:
+			# フェード開始
+			if not view.is_fading():
+				view.start_fade_out(element.destroy_tick)
+
+			# フェード更新（完全に消えたら削除リストに追加）
+			if view.update_fade(current_tick):
+				elements_to_remove.append(element_id)
+			view.queue_redraw()
+			continue
+
+		# FoW状態を更新
+		if element.faction != player_faction:
+			# 敵ユニット: Contact状態に基づく
 			var contact := vision_system.get_contact(player_faction, element_id)
 			if contact:
 				view.update_contact_state(contact.state, contact.pos_est_m, contact.pos_error_m)
-			else:
-				view.update_contact_state(GameEnums.ContactState.UNKNOWN)
+			# else: Contactがない場合は現在の表示状態を維持（初期はCONFIRMED）
+		else:
+			# 味方ユニット: 常にCONFIRMED
+			view.update_contact_state(GameEnums.ContactState.CONFIRMED)
 
 		# 位置更新（FoW考慮）
 		view.update_position_with_fow(alpha)
 		view.queue_redraw()
+
+	# 完全消滅したElementを削除
+	for element_id in elements_to_remove:
+		var element := world_model.get_element_by_id(element_id)
+		if element:
+			# 選択中なら選択解除
+			if element in _selected_elements:
+				_selected_elements.erase(element)
+				_update_selection_ui()
+			world_model.remove_element(element)
 
 # =============================================================================
 # 入力処理
@@ -337,6 +388,38 @@ func _update_element_views() -> void:
 
 func _handle_input() -> void:
 	_handle_camera_input()
+	_handle_debug_input()
+
+
+## デバッグ入力処理
+func _handle_debug_input() -> void:
+	# K: 選択中ユニットを即座に破壊（通常破壊）
+	if Input.is_action_just_pressed("ui_cancel"):  # Escキー
+		return
+
+	# Delete または K: 選択中ユニットを破壊
+	if Input.is_key_pressed(KEY_K):
+		var tick: int = sim_runner.tick_index if sim_runner else 0
+		for element in _selected_elements:
+			if not element.is_destroyed:
+				combat_system._mark_destroyed(element, tick, false)
+				print("[Debug] %s destroyed (normal)" % element.id)
+
+	# Shift+K: 選択中ユニットをcatastrophic kill
+	if Input.is_key_pressed(KEY_K) and Input.is_key_pressed(KEY_SHIFT):
+		var tick: int = sim_runner.tick_index if sim_runner else 0
+		for element in _selected_elements:
+			if not element.is_destroyed:
+				combat_system._mark_destroyed(element, tick, true)
+				print("[Debug] %s destroyed (CATASTROPHIC)" % element.id)
+
+	# D: 選択中ユニットにダメージ（strength -10）
+	if Input.is_key_pressed(KEY_D) and not Input.is_key_pressed(KEY_SHIFT):
+		var tick: int = sim_runner.tick_index if sim_runner else 0
+		for element in _selected_elements:
+			if not element.is_destroyed:
+				combat_system.apply_damage(element, 0.1, 10.0, tick)
+				print("[Debug] %s damaged: strength=%d" % [element.id, element.current_strength])
 
 
 func _handle_camera_input() -> void:
@@ -472,7 +555,7 @@ func _update_combat(tick: int, dt: float) -> void:
 
 		if result.is_valid:
 			# ダメージ適用
-			combat_system.apply_damage(target, result.d_supp, result.d_dmg)
+			combat_system.apply_damage(target, result.d_supp, result.d_dmg, tick)
 			elements_under_fire[target.id] = true
 			shooter.last_fire_tick = tick
 			shooter.current_target_id = target.id
@@ -706,10 +789,16 @@ func _on_input_left_click(world_pos: Vector2, _screen_pos: Vector2) -> void:
 
 func _on_input_right_click(world_pos: Vector2, _screen_pos: Vector2) -> void:
 	# スマートコマンド: 右クリック先に応じて自動判定
+	# 中隊AI経由で命令を発行
 	if _selected_elements.size() == 0:
 		return
 
+	var company_ai = company_ais.get(player_faction)
+	if not company_ai:
+		return
+
 	# 敵ユニットをクリックした場合は攻撃（目標ID指定）
+	# TODO: 中隊AIにElement単位の攻撃命令を追加
 	var target_element := _get_element_at_position(world_pos)
 	if target_element and target_element.faction != player_faction:
 		_execute_attack_command(_selected_elements, target_element)
@@ -718,14 +807,19 @@ func _on_input_right_click(world_pos: Vector2, _screen_pos: Vector2) -> void:
 	# 拠点をクリックした場合
 	var cp := _get_cp_at_position(world_pos)
 	if cp:
+		var use_road: bool = input_controller.is_alt_held() if input_controller else false
 		if cp.initial_owner == player_faction or cp.initial_owner == GameEnums.Faction.NONE:
-			_execute_command_for_selected(GameEnums.OrderType.DEFEND, world_pos)
+			company_ai.order_defend_cp(cp.id)
+			print("[CompanyAI] BLUE -> DEFEND_CP %s" % cp.id)
 		else:
-			_execute_command_for_selected(GameEnums.OrderType.ATTACK, world_pos)
+			company_ai.order_attack_cp(cp.id)
+			print("[CompanyAI] BLUE -> ATTACK_CP %s" % cp.id)
 		return
 
-	# それ以外は移動
-	_execute_command_for_selected(GameEnums.OrderType.MOVE, world_pos)
+	# それ以外は移動（中隊AI経由）
+	var use_road: bool = input_controller.is_alt_held() if input_controller else false
+	company_ai.order_move(world_pos, use_road)
+	print("[CompanyAI] BLUE -> MOVE to %s" % world_pos)
 
 
 func _on_box_selection_ended(start_pos: Vector2, end_pos: Vector2) -> void:
@@ -897,21 +991,6 @@ func _get_combat_state_name(state: GameEnums.CombatState) -> String:
 # =============================================================================
 
 ## 武器を要素に割り当て
-func _assign_weapons_to_elements() -> void:
-	for element in world_model.elements:
-		if not element.element_type:
-			continue
-
-		# カテゴリに応じて武器を割り当て
-		match element.element_type.category:
-			ElementData.Category.INF:
-				element.primary_weapon = WeaponData.create_rifle()
-			ElementData.Category.VEH:
-				element.primary_weapon = WeaponData.create_machine_gun()
-			_:
-				element.primary_weapon = WeaponData.create_rifle()
-
-
 ## 射撃対象を選択
 func _select_target(shooter: ElementData.ElementInstance, _tick: int) -> ElementData.ElementInstance:
 	if not vision_system:
