@@ -406,6 +406,9 @@ func _on_tick_advanced(tick: int) -> void:
 	# 全Elementの状態を保存
 	world_model.save_prev_states()
 
+	# ATTACK命令中のユニットの移動制御
+	_update_attack_movement()
+
 	# 移動更新
 	for element in world_model.elements:
 		movement_system.update_element(element, GameConstants.SIM_DT)
@@ -516,6 +519,46 @@ func _update_combat(tick: int, dt: float) -> void:
 		)
 
 
+## ATTACK命令中のユニットの移動を制御
+## 強制目標が射程内に入ったら停止、射程外なら追跡
+func _update_attack_movement() -> void:
+	for element in world_model.elements:
+		# ATTACK命令で強制目標がある場合のみ
+		if element.current_order_type != GameEnums.OrderType.ATTACK:
+			continue
+		if element.forced_target_id == "":
+			continue
+
+		var target := world_model.get_element_by_id(element.forced_target_id)
+		if not target or target.state == GameEnums.UnitState.DESTROYED:
+			# 目標が無効になったら強制目標をクリア
+			element.forced_target_id = ""
+			element.order_target_id = ""
+			continue
+
+		var distance := element.position.distance_to(target.position)
+		var in_range := false
+		if element.primary_weapon:
+			in_range = element.primary_weapon.is_in_range(distance)
+
+		if in_range:
+			# 射程内：移動停止
+			if element.is_moving:
+				element.current_path = PackedVector2Array()
+				element.is_moving = false
+				element.velocity = Vector2.ZERO
+		else:
+			# 射程外：目標に向かって移動（まだ移動していない場合）
+			if not element.is_moving:
+				movement_system.issue_move_order(element, target.position, false)
+			else:
+				# 既に移動中なら、目標位置を更新（追跡）
+				# 現在の目標と差が大きい場合のみ再計算
+				var current_goal := element.order_target_position
+				if current_goal.distance_to(target.position) > 50.0:
+					movement_system.issue_move_order(element, target.position, false)
+
+
 func _update_company_ais(tick: int) -> void:
 	for faction in company_ais:
 		var ai = company_ais[faction]
@@ -624,6 +667,12 @@ func _on_hud_command_selected(command_type: GameEnums.OrderType, _world_pos: Vec
 
 func _on_pie_command_selected(command_type: GameEnums.OrderType, world_pos: Vector2) -> void:
 	# Pie Menuからのコマンド選択
+	# ATTACKコマンドの場合、その位置に敵がいれば目標指定
+	if command_type == GameEnums.OrderType.ATTACK:
+		var target_element := _get_element_at_position(world_pos)
+		if target_element and target_element.faction != player_faction:
+			_execute_attack_command(_selected_elements, target_element)
+			return
 	_execute_command_for_selected(command_type, world_pos)
 
 
@@ -660,10 +709,10 @@ func _on_input_right_click(world_pos: Vector2, _screen_pos: Vector2) -> void:
 	if _selected_elements.size() == 0:
 		return
 
-	# 敵ユニットをクリックした場合は攻撃
+	# 敵ユニットをクリックした場合は攻撃（目標ID指定）
 	var target_element := _get_element_at_position(world_pos)
 	if target_element and target_element.faction != player_faction:
-		_execute_command_for_selected(GameEnums.OrderType.ATTACK, world_pos)
+		_execute_attack_command(_selected_elements, target_element)
 		return
 
 	# 拠点をクリックした場合
@@ -743,16 +792,56 @@ func _execute_command_for_selected(command_type: GameEnums.OrderType, target_pos
 
 		match command_type:
 			GameEnums.OrderType.MOVE:
+				# 移動命令：強制目標をクリア
+				element.forced_target_id = ""
+				element.current_order_type = GameEnums.OrderType.MOVE
 				movement_system.issue_move_order(element, target_pos, use_road)
 			GameEnums.OrderType.ATTACK:
-				# TODO: 攻撃命令実装
+				# 攻撃命令（位置指定）：その位置へ移動しつつ交戦
+				element.forced_target_id = ""  # 位置指定なので特定目標なし
+				element.current_order_type = GameEnums.OrderType.ATTACK
 				movement_system.issue_move_order(element, target_pos, use_road)
 			GameEnums.OrderType.DEFEND:
-				# TODO: 防御命令実装
+				# 防御命令：その位置で防御
+				element.forced_target_id = ""
+				element.current_order_type = GameEnums.OrderType.DEFEND
 				movement_system.issue_move_order(element, target_pos, use_road)
 			_:
 				# その他のコマンドは移動として処理（暫定）
+				element.current_order_type = command_type
 				movement_system.issue_move_order(element, target_pos, use_road)
+
+
+## 特定の敵ユニットへの攻撃命令を発行
+func _execute_attack_command(attackers: Array[ElementData.ElementInstance], target: ElementData.ElementInstance) -> void:
+	if not target:
+		return
+
+	for element in attackers:
+		if element.faction != player_faction:
+			continue
+
+		# 強制交戦目標を設定
+		element.forced_target_id = target.id
+		element.order_target_id = target.id
+		element.current_order_type = GameEnums.OrderType.ATTACK
+
+		# 射程内かチェック
+		var distance := element.position.distance_to(target.position)
+		var in_range := false
+		if element.primary_weapon:
+			in_range = element.primary_weapon.is_in_range(distance)
+
+		if in_range:
+			# 射程内なら移動停止
+			element.current_path = PackedVector2Array()
+			element.is_moving = false
+		else:
+			# 射程外なら目標に向かって移動（射程内に入るまで）
+			var use_road: bool = input_controller.is_alt_held() if input_controller else false
+			movement_system.issue_move_order(element, target.position, use_road)
+
+		print("[Order] %s -> ATTACK %s (in_range=%s)" % [element.id, target.id, in_range])
 
 
 func _get_cp_at_position(pos: Vector2) -> MapData.CapturePoint:
@@ -827,6 +916,25 @@ func _assign_weapons_to_elements() -> void:
 func _select_target(shooter: ElementData.ElementInstance, _tick: int) -> ElementData.ElementInstance:
 	if not vision_system:
 		return null
+
+	# 強制交戦目標が設定されている場合は優先
+	if shooter.forced_target_id != "":
+		var forced_target := world_model.get_element_by_id(shooter.forced_target_id)
+		if forced_target and forced_target.state != GameEnums.UnitState.DESTROYED:
+			# 視界内にいるか確認
+			var contact := vision_system.get_contact(shooter.faction, shooter.forced_target_id)
+			if contact and contact.state == GameEnums.ContactState.CONFIRMED:
+				# 射程内かチェック
+				var distance := shooter.position.distance_to(forced_target.position)
+				if shooter.primary_weapon and shooter.primary_weapon.is_in_range(distance):
+					return forced_target
+			# 射程外または視界外でも、目標が存在する限り他の目標には切り替えない
+			# （目標に近づくため移動を続ける）
+			return null
+		else:
+			# 目標が破壊されたら強制目標をクリア
+			shooter.forced_target_id = ""
+			shooter.order_target_id = ""
 
 	var contacts := vision_system.get_contacts_for_faction(shooter.faction)
 	if contacts.size() == 0:
