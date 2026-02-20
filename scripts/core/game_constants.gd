@@ -57,6 +57,22 @@ const NAV_EDGE_CONNECTION_MARGIN: float = 2.0
 const PATH_RECALC_HZ: float = 1.0
 
 # =============================================================================
+# ユニット衝突回避
+# =============================================================================
+
+## 歩兵の衝突半径 (メートル)
+const UNIT_COLLISION_RADIUS_INFANTRY: float = 15.0
+
+## 車両の衝突半径 (メートル)
+const UNIT_COLLISION_RADIUS_VEHICLE: float = 20.0
+
+## 衝突回避力の強さ
+const COLLISION_AVOIDANCE_FORCE: float = 80.0
+
+## 衝突検出範囲の倍率（衝突半径の合計 × この倍率）
+const COLLISION_DETECTION_MULT: float = 1.5
+
+# =============================================================================
 # 拠点定数
 # 仕様書: docs/capture_v0.1.md
 # =============================================================================
@@ -480,3 +496,18 @@ const AREA_ATTACK_HIT_MULT_V01R: float = 0.25
 const DESTROY_FADE_DURATION_SEC: float = 3.0
 ## フェードアウト時間（tick, 10Hz）
 const DESTROY_FADE_DURATION_TICKS: int = 30
+
+# =============================================================================
+# v0.1R 貫徹判定
+# 仕様書: docs/damage_model_v0.1.md
+# =============================================================================
+
+## 貫徹確率計算: p_pen = sigmoid((P - A) / PENETRATION_SIGMOID_SCALE)
+const PENETRATION_SIGMOID_SCALE: float = 8.0
+
+## 車両への小火器抑圧上限（仕様書: max 20%）
+const VEHICLE_SMALLARMS_SUPP_CAP: float = 0.20
+
+## ゾーン判定角度閾値（仕様書: ±60°=FRONT, ±150°〜=REAR）
+const ZONE_FRONT_ANGLE_RAD: float = 1.047  # PI/3 = 60°
+const ZONE_REAR_ANGLE_RAD: float = 2.618   # 5*PI/6 = 150°

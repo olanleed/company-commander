@@ -19,12 +19,21 @@ var _order_label: Label
 var _state_label: Label
 var _position_label: Label
 
+# AI思考情報
+var _ai_section: VBoxContainer
+var _ai_template_label: Label
+var _ai_phase_label: Label
+var _ai_combat_state_label: Label
+var _ai_role_label: Label
+var _ai_weapon_label: Label
+
 # =============================================================================
 # 状態
 # =============================================================================
 
 var _world_model: WorldModel
 var _selected_elements: Array[ElementData.ElementInstance] = []
+var _company_ai = null  # CompanyControllerAI
 
 # =============================================================================
 # 定数
@@ -140,6 +149,51 @@ func _setup_layout() -> void:
 	pos_section.add_child(_position_label)
 	_vbox.add_child(pos_section)
 
+	# セパレータ
+	var sep3 := HSeparator.new()
+	_vbox.add_child(sep3)
+
+	# AI思考情報セクション
+	_ai_section = VBoxContainer.new()
+	_ai_section.add_theme_constant_override("separation", 4)
+
+	var ai_header := Label.new()
+	ai_header.text = "AI THOUGHT"
+	ai_header.add_theme_font_size_override("font_size", 12)
+	ai_header.add_theme_color_override("font_color", Color(0.5, 0.8, 1.0))
+	ai_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_ai_section.add_child(ai_header)
+
+	# テンプレート
+	_ai_template_label = _create_ai_info_label("Template")
+	_ai_section.add_child(_ai_template_label)
+
+	# フェーズ
+	_ai_phase_label = _create_ai_info_label("Phase")
+	_ai_section.add_child(_ai_phase_label)
+
+	# 戦闘状態
+	_ai_combat_state_label = _create_ai_info_label("Combat State")
+	_ai_section.add_child(_ai_combat_state_label)
+
+	# 役割
+	_ai_role_label = _create_ai_info_label("Role")
+	_ai_section.add_child(_ai_role_label)
+
+	# 選択武器
+	_ai_weapon_label = _create_ai_info_label("Weapon")
+	_ai_section.add_child(_ai_weapon_label)
+
+	_vbox.add_child(_ai_section)
+
+
+func _create_ai_info_label(prefix: String) -> Label:
+	var label := Label.new()
+	label.text = prefix + ": ---"
+	label.add_theme_font_size_override("font_size", 11)
+	label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+	return label
+
 
 func _create_stat_section(header_text: String, bar_color: Color) -> VBoxContainer:
 	var section := VBoxContainer.new()
@@ -194,8 +248,9 @@ func set_elements(elements: Array[ElementData.ElementInstance]) -> void:
 	_update_display()
 
 
-func update_display(elements: Array[ElementData.ElementInstance], _company_ai = null) -> void:
+func update_display(elements: Array[ElementData.ElementInstance], company_ai = null) -> void:
 	_selected_elements = elements
+	_company_ai = company_ai
 	_update_display()
 
 
@@ -219,6 +274,7 @@ func _show_empty() -> void:
 	_order_label.text = "NONE"
 	_state_label.text = "---"
 	_position_label.text = "---"
+	_clear_ai_info()
 
 
 func _show_single(element: ElementData.ElementInstance) -> void:
@@ -244,6 +300,9 @@ func _show_single(element: ElementData.ElementInstance) -> void:
 
 	# Position
 	_position_label.text = "(%d, %d)" % [int(element.position.x), int(element.position.y)]
+
+	# AI情報を更新
+	_update_ai_info(element)
 
 
 func _show_multiple() -> void:
@@ -272,6 +331,17 @@ func _show_multiple() -> void:
 	_order_label.text = "MULTIPLE"
 	_state_label.text = "---"
 	_position_label.text = "---"
+
+	# 複数選択時はAI全体情報のみ表示
+	if _company_ai:
+		var ai_info: Dictionary = _company_ai.get_ai_thought_info()
+		_ai_template_label.text = "Template: %s" % ai_info.get("template", "NONE")
+		_ai_phase_label.text = "Phase: %s" % ai_info.get("phase_name", "NONE")
+		_ai_combat_state_label.text = "Combat: %s" % ai_info.get("combat_state", "QUIET")
+		_ai_role_label.text = "Role: (multiple)"
+		_ai_weapon_label.text = "Weapon: ---"
+	else:
+		_clear_ai_info()
 
 
 func _get_order_name(order_type: GameEnums.OrderType) -> String:
@@ -306,3 +376,53 @@ func _get_state_name(state: GameEnums.UnitState) -> String:
 			return "DESTROYED"
 		_:
 			return "UNKNOWN"
+
+
+func _update_ai_info(element: ElementData.ElementInstance) -> void:
+	if not _company_ai:
+		_ai_template_label.text = "Template: N/A"
+		_ai_phase_label.text = "Phase: N/A"
+		_ai_combat_state_label.text = "Combat: N/A"
+		_ai_role_label.text = "Role: N/A"
+		_ai_weapon_label.text = "Weapon: N/A"
+		return
+
+	# 中隊AI全体の情報
+	var ai_info: Dictionary = _company_ai.get_ai_thought_info()
+
+	_ai_template_label.text = "Template: %s" % ai_info.get("template", "NONE")
+	_ai_phase_label.text = "Phase: %s" % ai_info.get("phase_name", "NONE")
+
+	# 戦闘状態は色分け
+	var combat_state: String = ai_info.get("combat_state", "QUIET")
+	_ai_combat_state_label.text = "Combat: %s" % combat_state
+	_ai_combat_state_label.remove_theme_color_override("font_color")
+	match combat_state:
+		"ENGAGED":
+			_ai_combat_state_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
+		"ALERT":
+			_ai_combat_state_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2))
+		"RECOVERING":
+			_ai_combat_state_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.4))
+		_:
+			_ai_combat_state_label.add_theme_color_override("font_color", Color(0.5, 0.8, 0.5))
+
+	# ユニット個別の情報
+	var element_info: Dictionary = _company_ai.get_element_ai_info(element.id)
+	_ai_role_label.text = "Role: %s" % element_info.get("role", "---")
+
+	# 選択中の武器（current_weaponを使用）
+	if element.current_target_id != "" and element.current_weapon:
+		_ai_weapon_label.text = "Weapon: %s" % element.current_weapon.display_name
+	elif element.current_target_id != "":
+		_ai_weapon_label.text = "Weapon: ---"
+	else:
+		_ai_weapon_label.text = "Weapon: (no target)"
+
+
+func _clear_ai_info() -> void:
+	_ai_template_label.text = "Template: ---"
+	_ai_phase_label.text = "Phase: ---"
+	_ai_combat_state_label.text = "Combat: ---"
+	_ai_role_label.text = "Role: ---"
+	_ai_weapon_label.text = "Weapon: ---"

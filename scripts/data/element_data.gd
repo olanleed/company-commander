@@ -68,6 +68,12 @@ class ElementType:
 	## Protection
 	var armor_class: int = 0  # 0=ソフト, 1=軽装甲, 2=中装甲, 3=重装甲
 
+	## v0.1R: ゾーン別装甲（0-100レーティング）
+	## 仕様書: docs/damage_model_v0.1.md
+	## ArmorZone.FRONT/SIDE/REAR/TOP → rating
+	var armor_ke: Dictionary = {}  # KINETICに対する装甲
+	var armor_ce: Dictionary = {}  # SHAPED_CHARGEに対する装甲
+
 # =============================================================================
 # ElementInstance (可変状態)
 # =============================================================================
@@ -113,6 +119,7 @@ class ElementInstance:
 	## 戦闘
 	var primary_weapon: WeaponData.WeaponType = null  ## 主武装（後方互換）
 	var weapons: Array[WeaponData.WeaponType] = []    ## 全武装リスト
+	var current_weapon: WeaponData.WeaponType = null  ## 現在使用中の武器
 	var current_target_id: String = ""  ## 現在の射撃目標
 	var forced_target_id: String = ""  ## プレイヤー指定の強制交戦目標
 	var last_fire_tick: int = -1  ## 最後に射撃したtick
@@ -131,6 +138,10 @@ class ElementInstance:
 
 	## 初期化
 	func _init(p_type: ElementType = null) -> void:
+		# 重要: 型付き配列はインスタンスごとに新しく初期化する必要がある
+		weapons = []
+		current_path = PackedVector2Array()
+
 		if p_type:
 			element_type = p_type
 			current_strength = p_type.max_strength
@@ -313,6 +324,20 @@ class ElementArchetypes:
 		t.max_strength = 100
 		t.spot_range_base = 800.0
 		t.spot_range_moving = 600.0
+		# v0.1R: ゾーン別装甲（MBT相当）
+		# 正面は強固、側面は中程度、後方は弱い
+		t.armor_ke = {
+			WeaponData.ArmorZone.FRONT: 95,
+			WeaponData.ArmorZone.SIDE: 55,
+			WeaponData.ArmorZone.REAR: 25,
+			WeaponData.ArmorZone.TOP: 15,
+		}
+		t.armor_ce = {
+			WeaponData.ArmorZone.FRONT: 90,
+			WeaponData.ArmorZone.SIDE: 50,
+			WeaponData.ArmorZone.REAR: 20,
+			WeaponData.ArmorZone.TOP: 10,
+		}
 		return t
 
 	## RECON_VEH: 偵察車両（軽装甲）
@@ -330,6 +355,20 @@ class ElementArchetypes:
 		t.max_strength = 100
 		t.spot_range_base = 1000.0
 		t.spot_range_moving = 800.0
+		# v0.1R: ゾーン別装甲（軽装甲車両相当）
+		# 小銃弾には耐えるが、AT火器には脆弱
+		t.armor_ke = {
+			WeaponData.ArmorZone.FRONT: 30,
+			WeaponData.ArmorZone.SIDE: 20,
+			WeaponData.ArmorZone.REAR: 10,
+			WeaponData.ArmorZone.TOP: 5,
+		}
+		t.armor_ce = {
+			WeaponData.ArmorZone.FRONT: 25,
+			WeaponData.ArmorZone.SIDE: 15,
+			WeaponData.ArmorZone.REAR: 8,
+			WeaponData.ArmorZone.TOP: 5,
+		}
 		return t
 
 	## RECON_TEAM: 偵察チーム（4人）

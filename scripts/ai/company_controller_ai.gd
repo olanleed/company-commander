@@ -527,3 +527,102 @@ func get_risk_at_position(pos: Vector2, category: ElementData.Category = Element
 ## イベントバスを取得
 func get_event_bus() -> CombatEventBus:
 	return _event_bus
+
+
+# =============================================================================
+# AI思考情報（HUD表示用）
+# =============================================================================
+
+## AI思考情報を取得
+func get_ai_thought_info() -> Dictionary:
+	var info := {
+		"template": _get_template_name(current_template_type),
+		"combat_state": _get_combat_state_name(combat_state),
+		"phase": get_current_phase(),
+		"phase_name": _get_phase_name(),
+		"elements_count": element_ids.size(),
+		"has_threat": _has_active_threats(),
+		"target_pos": current_template.target_position if current_template else Vector2.ZERO,
+		"target_cp": current_template.target_cp_id if current_template else "",
+	}
+	return info
+
+
+## 特定ユニットのAI情報を取得
+func get_element_ai_info(element_id: String) -> Dictionary:
+	var info := {
+		"role": _get_role_name(get_element_role(element_id)),
+		"order_target": "",
+		"weapon_selected": "",
+	}
+
+	# テンプレートからの詳細情報
+	if current_template and element_id in current_template.element_orders:
+		var order_info: Dictionary = current_template.element_orders[element_id]
+		if order_info.has("target_pos"):
+			info["order_target"] = str(order_info["target_pos"])
+
+	return info
+
+
+## 戦闘状態名を取得
+func _get_combat_state_name(state: GameEnums.CombatState) -> String:
+	match state:
+		GameEnums.CombatState.QUIET: return "QUIET"
+		GameEnums.CombatState.ALERT: return "ALERT"
+		GameEnums.CombatState.ENGAGED: return "ENGAGED"
+		GameEnums.CombatState.RECOVERING: return "RECOVERING"
+		_: return "UNKNOWN"
+
+
+## 現在のフェーズ名を取得
+func _get_phase_name() -> String:
+	if not current_template:
+		return "NONE"
+
+	# テンプレートタイプごとのフェーズ名
+	var phase := current_template.current_phase
+
+	match current_template_type:
+		GameEnums.TacticalTemplate.TPL_MOVE:
+			match phase:
+				0: return "MOVE"
+				_: return "COMPLETE"
+		GameEnums.TacticalTemplate.TPL_ATTACK_CP:
+			match phase:
+				0: return "APPROACH"
+				1: return "ASSAULT"
+				2: return "CONSOLIDATE"
+				_: return "COMPLETE"
+		GameEnums.TacticalTemplate.TPL_DEFEND_CP:
+			match phase:
+				0: return "DEPLOY"
+				1: return "HOLD"
+				2: return "REPOSITION"
+				_: return "COMPLETE"
+		GameEnums.TacticalTemplate.TPL_RECON:
+			match phase:
+				0: return "ADVANCE"
+				1: return "OBSERVE"
+				_: return "COMPLETE"
+		GameEnums.TacticalTemplate.TPL_BREAK_CONTACT:
+			match phase:
+				0: return "DISENGAGE"
+				1: return "WITHDRAW"
+				_: return "COMPLETE"
+		_:
+			return "PHASE_%d" % phase
+
+
+## 役割名を取得
+func _get_role_name(role: GameEnums.ElementRole) -> String:
+	match role:
+		GameEnums.ElementRole.ROLE_NONE: return "NONE"
+		GameEnums.ElementRole.ASSAULT: return "ASSAULT"
+		GameEnums.ElementRole.SUPPORT: return "SUPPORT"
+		GameEnums.ElementRole.SECURITY: return "SECURITY"
+		GameEnums.ElementRole.SCOUT: return "SCOUT"
+		GameEnums.ElementRole.OVERWATCH: return "OVERWATCH"
+		GameEnums.ElementRole.MANEUVER: return "MANEUVER"
+		GameEnums.ElementRole.FIRE_SUPPORT: return "FIRE_SUPPORT"
+		_: return "UNKNOWN"

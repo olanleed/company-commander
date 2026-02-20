@@ -146,7 +146,7 @@ func _load_test_map_async() -> void:
 		_setup_capture_point_views()
 
 		# MovementSystem をセットアップ (nav_managerへの参照を先に設定)
-		movement_system.setup(nav_manager, map_data)
+		movement_system.setup(nav_manager, map_data, world_model)
 
 		# VisionSystem をセットアップ
 		vision_system.setup(world_model, map_data)
@@ -220,8 +220,9 @@ func _spawn_test_units() -> void:
 	# ElementFactoryを使用してユニットを生成
 	ElementFactory.reset_id_counters()
 
-	# BLUE陣営 - 中央CPの近くに配置（戦闘テスト用：距離約400mで視界内）
-	var blue_pos := Vector2(800, 1000)  # 中央CPの西側
+	# BLUE陣営 - 歩兵3ユニット
+	# 装甲テスト用: 歩兵 vs 戦車（距離200m、小銃射程内）
+	var blue_pos := Vector2(900, 1000)
 
 	# ライフル分隊 x3
 	var blue_inf1 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, blue_pos)
@@ -230,32 +231,41 @@ func _spawn_test_units() -> void:
 	var blue_inf2 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, blue_pos + Vector2(0, 50))
 	world_model.add_element(blue_inf2)
 
-	var blue_inf3 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, blue_pos + Vector2(-30, 100))
+	var blue_inf3 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, blue_pos + Vector2(0, -50))
 	world_model.add_element(blue_inf3)
 
-	# RED陣営 - 中央CPの近くに配置（戦闘テスト用：距離約400mで視界内）
-	var red_pos := Vector2(1200, 1000)  # 中央CPの東側
+	# RED陣営 - 歩兵1ユニット（歩兵から200m離れた位置）
+	# 歩兵 vs 歩兵 テスト
+	var red_pos := Vector2(1100, 1000)  # 距離約200m
 
-	# ライフル分隊 x3
-	var red_inf1 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.RED, red_pos)
-	world_model.add_element(red_inf1)
+	# ライフル分隊 x1
+	var red_inf := ElementFactory.create_element("INF_LINE", GameEnums.Faction.RED, red_pos)
+	world_model.add_element(red_inf)
 
-	var red_inf2 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.RED, red_pos + Vector2(0, 50))
-	world_model.add_element(red_inf2)
-
-	var red_inf3 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.RED, red_pos + Vector2(30, 100))
-	world_model.add_element(red_inf3)
+	# スポーン後に衝突を解消
+	for element in world_model.elements:
+		movement_system.resolve_hard_collisions(element)
 
 	print("テストユニット生成完了: ", world_model.elements.size(), " elements")
+	print("=== 歩兵戦テスト構成 ===")
+	print("  BLUE: 歩兵3ユニット")
+	print("  RED:  歩兵1ユニット")
+	print("  期待: 小銃による通常の歩兵戦闘")
+	print("========================")
 	for element in world_model.elements:
 		var weapons_str := ""
 		for w in element.weapons:
 			weapons_str += w.id + " "
-		print("  %s (%s): Str=%d, Weapons=[%s]" % [
+		var armor_str := ""
+		if element.element_type and element.element_type.armor_class > 0:
+			armor_str = " (ArmorClass=%d)" % element.element_type.armor_class
+		print("  %s (%s): Str=%d, Weapons=[%s], primary=%s%s" % [
 			element.id,
 			element.element_type.display_name if element.element_type else "?",
 			element.current_strength,
-			weapons_str.strip_edges()
+			weapons_str.strip_edges(),
+			element.primary_weapon.id if element.primary_weapon else "NONE",
+			armor_str
 		])
 
 	# 中隊AIをセットアップ
@@ -393,33 +403,8 @@ func _handle_input() -> void:
 
 ## デバッグ入力処理
 func _handle_debug_input() -> void:
-	# K: 選択中ユニットを即座に破壊（通常破壊）
-	if Input.is_action_just_pressed("ui_cancel"):  # Escキー
-		return
-
-	# Delete または K: 選択中ユニットを破壊
-	if Input.is_key_pressed(KEY_K):
-		var tick: int = sim_runner.tick_index if sim_runner else 0
-		for element in _selected_elements:
-			if not element.is_destroyed:
-				combat_system._mark_destroyed(element, tick, false)
-				print("[Debug] %s destroyed (normal)" % element.id)
-
-	# Shift+K: 選択中ユニットをcatastrophic kill
-	if Input.is_key_pressed(KEY_K) and Input.is_key_pressed(KEY_SHIFT):
-		var tick: int = sim_runner.tick_index if sim_runner else 0
-		for element in _selected_elements:
-			if not element.is_destroyed:
-				combat_system._mark_destroyed(element, tick, true)
-				print("[Debug] %s destroyed (CATASTROPHIC)" % element.id)
-
-	# D: 選択中ユニットにダメージ（strength -10）
-	if Input.is_key_pressed(KEY_D) and not Input.is_key_pressed(KEY_SHIFT):
-		var tick: int = sim_runner.tick_index if sim_runner else 0
-		for element in _selected_elements:
-			if not element.is_destroyed:
-				combat_system.apply_damage(element, 0.1, 10.0, tick)
-				print("[Debug] %s damaged: strength=%d" % [element.id, element.current_strength])
+	# デバッグ入力は現在無効
+	pass
 
 
 func _handle_camera_input() -> void:
@@ -492,9 +477,14 @@ func _on_tick_advanced(tick: int) -> void:
 	# ATTACK命令中のユニットの移動制御
 	_update_attack_movement()
 
-	# 移動更新
+	# 移動更新（衝突回避含む）
 	for element in world_model.elements:
 		movement_system.update_element(element, GameConstants.SIM_DT)
+
+	# 静止ユニットの衝突回避
+	for element in world_model.elements:
+		if not element.is_moving and element.state != GameEnums.UnitState.DESTROYED:
+			movement_system.apply_separation(element, GameConstants.SIM_DT)
 
 	# 視界更新
 	vision_system.update(tick, GameConstants.SIM_DT)
@@ -549,13 +539,48 @@ func _update_combat(tick: int, dt: float) -> void:
 		# LoS取得（簡易版：距離と地形から推定）
 		var t_los := _estimate_los(shooter, target)
 
-		var result := combat_system.calculate_direct_fire_effect(
-			shooter, target, shooter.primary_weapon, distance, dt, t_los, terrain, false
-		)
+		# 最適武器を選択
+		var selected_weapon := combat_system.select_best_weapon(shooter, target, distance, false)
+		if not selected_weapon:
+			continue
 
-		if result.is_valid:
-			# ダメージ適用
-			combat_system.apply_damage(target, result.d_supp, result.d_dmg, tick)
+		# 現在使用中の武器を記録（HUD表示用）
+		shooter.current_weapon = selected_weapon
+
+		# 装甲目標かどうかで計算方法を分岐
+		var d_supp: float = 0.0
+		var d_dmg: float = 0.0
+		var is_valid: bool = false
+
+		if target.is_vehicle():
+			# 装甲目標: ゾーン別装甲・貫徹判定を使用
+			var result_armor := combat_system.calculate_direct_fire_vs_armor(
+				shooter, target, selected_weapon, distance, dt, t_los, terrain, false
+			)
+			is_valid = result_armor.is_valid
+			d_supp = result_armor.d_supp
+			# 離散ヒットモデル: p_hitでダメージ発生を判定
+			if result_armor.p_hit > 0 and randf() < result_armor.p_hit:
+				# ヒット時は車両ダメージ処理
+				combat_system.apply_vehicle_damage(
+					target,
+					selected_weapon.threat_class,
+					result_armor.exposure,
+					tick
+				)
+		else:
+			# 非装甲目標: 従来の計算
+			var result := combat_system.calculate_direct_fire_effect(
+				shooter, target, selected_weapon, distance, dt, t_los, terrain, false
+			)
+			is_valid = result.is_valid
+			d_supp = result.d_supp
+			d_dmg = result.d_dmg
+
+		if is_valid:
+			# 抑圧とダメージを適用（threat_classを渡して車両の抑圧上限を適用）
+			var threat_class := selected_weapon.threat_class if selected_weapon else WeaponData.ThreatClass.SMALL_ARMS
+			combat_system.apply_damage(target, d_supp, d_dmg, tick, threat_class)
 			elements_under_fire[target.id] = true
 			shooter.last_fire_tick = tick
 			shooter.current_target_id = target.id
@@ -564,8 +589,8 @@ func _update_combat(tick: int, dt: float) -> void:
 			# 戦闘可視化
 			# 有効な射撃は命中扱い（継続的なダメージ/抑圧）
 			# 抑圧のみの場合も射線は実線で表示
-			var is_hit := (result.d_dmg > 0.0 or result.d_supp > 0.0)
-			var weapon_mechanism := shooter.primary_weapon.mechanism if shooter.primary_weapon else WeaponData.Mechanism.SMALL_ARMS
+			var is_hit := (d_dmg > 0.0 or d_supp > 0.0)
+			var weapon_mechanism := selected_weapon.mechanism if selected_weapon else WeaponData.Mechanism.SMALL_ARMS
 			if combat_visualizer:
 				combat_visualizer.add_fire_event(
 					shooter.id,
@@ -573,15 +598,17 @@ func _update_combat(tick: int, dt: float) -> void:
 					shooter.position,
 					target.position,
 					shooter.faction,
-					result.d_dmg,
-					result.d_supp,
+					d_dmg,
+					d_supp,
 					is_hit,
 					weapon_mechanism
 				)
 
 			# デバッグ出力（初回のみ）
 			if tick % 50 == 0:
-				print("[Combat] %s -> %s: supp=%.2f dmg=%.2f" % [shooter.id, target.id, result.d_supp, result.d_dmg])
+				var armor_str := " (ARMORED)" if target.is_vehicle() else ""
+				var weapon_name := selected_weapon.id if selected_weapon else "NONE"
+				print("[Combat] %s -> %s%s [%s]: supp=%.2f dmg=%.2f" % [shooter.id, target.id, armor_str, weapon_name, d_supp, d_dmg])
 
 	# 射撃していないユニットの current_target_id をクリア
 	for element in world_model.elements:

@@ -60,6 +60,16 @@ enum ThreatClass {
 }
 
 # =============================================================================
+# 武器の優先ターゲットタイプ
+# =============================================================================
+
+enum PreferredTarget {
+	SOFT,     ## 歩兵・ソフトターゲット優先
+	ARMOR,    ## 装甲目標優先
+	ANY,      ## 汎用（どちらにも有効）
+}
+
+# =============================================================================
 # 装甲ゾーン
 # =============================================================================
 
@@ -99,6 +109,9 @@ class WeaponType:
 
 	## 脅威クラス
 	var threat_class: ThreatClass = ThreatClass.SMALL_ARMS
+
+	## 優先ターゲット（武器選択に使用）
+	var preferred_target: PreferredTarget = PreferredTarget.SOFT
 
 	## 弾薬持続時間（分）：連続交戦で尽きるまで
 	var ammo_endurance_min: float = 30.0
@@ -331,6 +344,7 @@ static func create_cw_rifle_std() -> WeaponType:
 	w.max_range_m = 300.0
 	w.range_band_thresholds_m = [100.0, 200.0]
 	w.threat_class = ThreatClass.SMALL_ARMS
+	w.preferred_target = PreferredTarget.SOFT
 	w.ammo_endurance_min = 30.0
 
 	# L/S テーブル（Near/Mid/Far）
@@ -375,6 +389,7 @@ static func create_cw_mg_std() -> WeaponType:
 	w.max_range_m = 800.0
 	w.range_band_thresholds_m = [200.0, 500.0]
 	w.threat_class = ThreatClass.SMALL_ARMS
+	w.preferred_target = PreferredTarget.SOFT
 	w.ammo_endurance_min = 20.0
 
 	w.lethality = {
@@ -419,6 +434,7 @@ static func create_cw_rpg_heat() -> WeaponType:
 	w.max_range_m = 200.0
 	w.range_band_thresholds_m = [50.0, 150.0]
 	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
 	w.ammo_endurance_min = 5.0
 	w.rof_rpm = 2.0
 	w.sigma_hit_m = 2.5
@@ -473,6 +489,7 @@ static func create_cw_tank_ke() -> WeaponType:
 	w.max_range_m = 2000.0
 	w.range_band_thresholds_m = [500.0, 1500.0]
 	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
 	w.ammo_endurance_min = 10.0
 	w.rof_rpm = 6.0
 	w.sigma_hit_m = 1.5
@@ -527,6 +544,7 @@ static func create_cw_tank_heatmp() -> WeaponType:
 	w.max_range_m = 1500.0
 	w.range_band_thresholds_m = [300.0, 1000.0]
 	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ANY  # HEATは対装甲、同軸MGは対歩兵
 	w.ammo_endurance_min = 15.0
 
 	w.lethality = {
@@ -577,6 +595,7 @@ static func create_cw_mortar_he() -> WeaponType:
 	w.max_range_m = 2000.0
 	w.range_band_thresholds_m = [500.0, 1500.0]
 	w.threat_class = ThreatClass.HE_FRAG
+	w.preferred_target = PreferredTarget.SOFT  # 対歩兵・陣地
 	w.ammo_endurance_min = 10.0
 	w.rof_rpm = 15.0
 	w.sigma_hit_m = 30.0
@@ -666,12 +685,115 @@ static func create_cw_mortar_smoke() -> WeaponType:
 	return w
 
 
+## CW_COAX_MG: 戦車同軸機関銃（7.62mm相当）
+## 対歩兵用の継続火力
+static func create_cw_coax_mg() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_COAX_MG"
+	w.display_name = "Coaxial MG"
+	w.mechanism = Mechanism.SMALL_ARMS
+	w.fire_model = FireModel.CONTINUOUS
+	w.min_range_m = 0.0
+	w.max_range_m = 800.0
+	w.range_band_thresholds_m = [200.0, 500.0]
+	w.threat_class = ThreatClass.SMALL_ARMS
+	w.preferred_target = PreferredTarget.SOFT
+	w.ammo_endurance_min = 30.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 70,
+			TargetClass.LIGHT: 15,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 15,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 55,
+			TargetClass.LIGHT: 10,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 10,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 35,
+			TargetClass.LIGHT: 5,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 5,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 80,
+		RangeBand.MID: 65,
+		RangeBand.FAR: 45,
+	}
+
+	return w
+
+
+## CW_LAW: 軽対戦車火器（M72 LAW/RPG-26相当）
+## 歩兵分隊の対装甲自衛用
+static func create_cw_law() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_LAW"
+	w.display_name = "Light AT Weapon"
+	w.mechanism = Mechanism.SHAPED_CHARGE
+	w.fire_model = FireModel.DISCRETE
+	w.min_range_m = 10.0
+	w.max_range_m = 250.0  # M72 LAW相当の有効射程
+	w.range_band_thresholds_m = [80.0, 150.0]
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.ammo_endurance_min = 3.0  # 使い捨て火器なので少ない
+	w.rof_rpm = 1.0  # 装填不要だが1本/分程度
+	w.sigma_hit_m = 3.0
+	w.direct_hit_radius_m = 1.0
+	w.shock_radius_m = 8.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 60,
+			TargetClass.LIGHT: 85,
+			TargetClass.HEAVY: 50,  # MBTには弱い
+			TargetClass.FORTIFIED: 60,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 45,
+			TargetClass.LIGHT: 75,
+			TargetClass.HEAVY: 40,
+			TargetClass.FORTIFIED: 50,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 30,
+			TargetClass.LIGHT: 60,
+			TargetClass.HEAVY: 30,
+			TargetClass.FORTIFIED: 40,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 50,
+		RangeBand.MID: 40,
+		RangeBand.FAR: 30,
+	}
+
+	# 貫徹力はRPGより低い（軽量火器）
+	w.pen_ce = {
+		RangeBand.NEAR: 55,
+		RangeBand.MID: 50,
+		RangeBand.FAR: 40,
+	}
+
+	return w
+
+
 ## 全ConcreteWeaponSetを取得
 static func get_all_concrete_weapons() -> Dictionary:
 	return {
 		"CW_RIFLE_STD": create_cw_rifle_std(),
 		"CW_MG_STD": create_cw_mg_std(),
 		"CW_RPG_HEAT": create_cw_rpg_heat(),
+		"CW_LAW": create_cw_law(),
+		"CW_COAX_MG": create_cw_coax_mg(),
 		"CW_TANK_KE": create_cw_tank_ke(),
 		"CW_TANK_HEATMP": create_cw_tank_heatmp(),
 		"CW_MORTAR_HE": create_cw_mortar_he(),

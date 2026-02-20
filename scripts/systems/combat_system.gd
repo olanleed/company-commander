@@ -445,18 +445,28 @@ func _get_indirect_vulnerability(
 ## d_supp: 抑圧増加量（0-1範囲、例: 0.05 = 5%増加）
 ## d_dmg: ダメージ量（Strength減少量、小数点以下は蓄積）
 ## current_tick: 現在のtick（破壊時刻記録用）
+## threat_class: 脅威クラス（車両への小火器抑圧上限判定用、オプション）
 func apply_damage(
 	element: ElementData.ElementInstance,
 	d_supp: float,
 	d_dmg: float,
-	current_tick: int = 0
+	current_tick: int = 0,
+	threat_class: WeaponData.ThreatClass = WeaponData.ThreatClass.SMALL_ARMS
 ) -> void:
 	# 既に破壊済みなら何もしない
 	if element.is_destroyed:
 		return
 
+	# v0.1R: 車両への小火器抑圧上限（仕様書: max 20%）
+	var effective_supp := d_supp
+	if element.is_vehicle() and threat_class == WeaponData.ThreatClass.SMALL_ARMS:
+		var current := element.suppression
+		var new_supp := current + d_supp
+		# 上限を超えないようにクランプ
+		effective_supp = maxf(0.0, minf(d_supp, GameConstants.VEHICLE_SMALLARMS_SUPP_CAP - current))
+
 	# 抑圧増加（d_suppは0-1範囲なのでそのまま加算）
-	element.suppression = clampf(element.suppression + d_supp, 0.0, 1.0)
+	element.suppression = clampf(element.suppression + effective_supp, 0.0, 1.0)
 
 	# Strength減少（小数点以下は蓄積し、1.0超過分を適用）
 	element.accumulated_damage += d_dmg
@@ -697,6 +707,67 @@ func calculate_direct_fire_effect_v01r(
 	return result
 
 
+## v0.1R: 装甲目標への直射効果を計算（ゾーン別装甲・貫徹判定含む）
+## 仕様書: docs/damage_model_v0.1.md
+func calculate_direct_fire_vs_armor(
+	shooter: ElementData.ElementInstance,
+	target: ElementData.ElementInstance,
+	weapon: WeaponData.WeaponType,
+	distance_m: float,
+	dt: float,
+	t_los: float = 1.0,
+	target_terrain: GameEnums.TerrainType = GameEnums.TerrainType.OPEN,
+	is_entrenched: bool = false
+) -> DirectFireResultV01R:
+	var result := DirectFireResultV01R.new()
+
+	# 射程チェック
+	if not weapon.is_in_range(distance_m):
+		return result
+
+	# LoSチェック
+	if t_los < GameConstants.LOS_BLOCK_THRESHOLD:
+		return result
+
+	result.is_valid = true
+
+	# アスペクト（命中部位）を計算
+	var aspect := calculate_aspect_v01r(
+		shooter.position, target.position, target.facing
+	)
+
+	# 貫徹確率を取得
+	var p_pen := get_penetration_probability(shooter, target, weapon, distance_m, aspect)
+
+	# 抑圧レーティング
+	var supp_power := weapon.get_suppression_power(distance_m)
+
+	# 各種係数
+	var m_shooter := calculate_shooter_coefficient(shooter)
+	var m_strength := get_strength_fire_coefficient(shooter)
+	var m_visibility := _calculate_visibility_coefficient(t_los)
+	var m_evasion := get_target_evasion_coefficient(target)
+	var m_cover := get_cover_coefficient_df(target_terrain)
+	var m_entrench := GameConstants.ENTRENCH_DF_MULT if is_entrenched else 1.0
+	var m_vuln_supp := get_vulnerability_supp(target, weapon.threat_class)
+	var m_aspect := get_aspect_multiplier(target, aspect)
+
+	# 抑圧増加（連続）- 貫徹に関係なく発生
+	result.d_supp = GameConstants.K_DF_SUPP * (float(supp_power) / 100.0) * m_shooter * m_strength * m_visibility * m_evasion * m_cover * m_entrench * m_vuln_supp * dt
+
+	# 期待危険度 E（貫徹確率 × アスペクト倍率を含む）
+	var base_exposure := calculate_exposure_df(
+		shooter, target, weapon, distance_m, t_los, target_terrain, is_entrenched
+	)
+	result.exposure = base_exposure * p_pen * m_aspect
+
+	# ヒット確率（1秒あたり）→ dt秒あたりに調整
+	var p_hit_1s := calculate_hit_probability(result.exposure)
+	result.p_hit = 1.0 - pow(1.0 - p_hit_1s, dt)
+
+	return result
+
+
 # =============================================================================
 # v0.1R: 車両サブシステム状態
 # =============================================================================
@@ -785,6 +856,86 @@ func calculate_aspect(
 		return WeaponData.ArmorZone.SIDE
 	else:
 		return WeaponData.ArmorZone.REAR
+
+
+## v0.1R: 仕様書準拠のゾーン判定（±60°=FRONT, ±150°〜=REAR）
+func calculate_aspect_v01r(
+	shooter_pos: Vector2,
+	target_pos: Vector2,
+	target_facing: float
+) -> WeaponData.ArmorZone:
+	# 射手→目標ベクトル
+	var to_target := (target_pos - shooter_pos).normalized()
+
+	# 目標の facing方向（ラジアン）を単位ベクトルに
+	var facing_dir := Vector2.from_angle(target_facing)
+
+	# 目標から見た射手の方向
+	var to_shooter := -to_target
+
+	# facing_dir と to_shooter の角度差を計算
+	var angle_diff: float = absf(facing_dir.angle_to(to_shooter))
+
+	# 仕様書: |θ| ≤ 60° = FRONT, |θ| ≥ 150° = REAR, else = SIDE
+	if angle_diff <= GameConstants.ZONE_FRONT_ANGLE_RAD:
+		return WeaponData.ArmorZone.FRONT
+	elif angle_diff >= GameConstants.ZONE_REAR_ANGLE_RAD:
+		return WeaponData.ArmorZone.REAR
+	else:
+		return WeaponData.ArmorZone.SIDE
+
+
+## v0.1R: 貫徹確率を計算
+## p_pen = sigmoid((P - A) / 8)
+func calculate_penetration_probability(
+	penetration: int,
+	armor: int
+) -> float:
+	var diff := float(penetration - armor)
+	var x := diff / GameConstants.PENETRATION_SIGMOID_SCALE
+	return 1.0 / (1.0 + exp(-x))
+
+
+## v0.1R: 装甲目標に対する貫徹確率を取得
+## 武器のpen_ke/pen_ceと目標のarmor_ke/armor_ceを比較
+func get_penetration_probability(
+	shooter: ElementData.ElementInstance,
+	target: ElementData.ElementInstance,
+	weapon: WeaponData.WeaponType,
+	distance_m: float,
+	aspect: WeaponData.ArmorZone
+) -> float:
+	# 非装甲は貫徹判定なし（常に貫通）
+	if not target.element_type or target.element_type.armor_class == 0:
+		return 1.0
+
+	# 武器メカニズムに応じた貫徹力と装甲を取得
+	var penetration: int = 0
+	var armor: int = 0
+
+	match weapon.mechanism:
+		WeaponData.Mechanism.KINETIC:
+			penetration = weapon.get_pen_ke(distance_m)
+			if aspect in target.element_type.armor_ke:
+				armor = target.element_type.armor_ke[aspect]
+		WeaponData.Mechanism.SHAPED_CHARGE:
+			penetration = weapon.get_pen_ce(distance_m)
+			if aspect in target.element_type.armor_ce:
+				armor = target.element_type.armor_ce[aspect]
+		WeaponData.Mechanism.SMALL_ARMS:
+			# 小火器は装甲に対して貫通不可
+			if target.element_type.armor_class >= 1:
+				return 0.0
+			return 1.0
+		WeaponData.Mechanism.BLAST_FRAG:
+			# HE/爆風は貫徹判定なし、脆弱性で対応
+			return 1.0
+
+	# 貫徹力が0なら貫通不可
+	if penetration <= 0:
+		return 0.0
+
+	return calculate_penetration_probability(penetration, armor)
 
 
 ## v0.1R: アスペクト倍率を取得
@@ -988,4 +1139,167 @@ func _distribute_subsystem_damage(
 	print("[Combat] %s subsystem damage: mob=%d fire=%d sens=%d (now %d/%d/%d)" % [
 		element.id, mobility_dmg, firepower_dmg, sensors_dmg,
 		element.mobility_hp, element.firepower_hp, element.sensors_hp
+	])
+
+
+# =============================================================================
+# 武器選択システム
+# =============================================================================
+
+## ターゲットのクラスを取得
+func get_target_class(target: ElementData.ElementInstance) -> WeaponData.TargetClass:
+	if not target.element_type:
+		return WeaponData.TargetClass.SOFT
+
+	var armor_class := target.element_type.armor_class
+	if armor_class >= 3:
+		return WeaponData.TargetClass.HEAVY
+	elif armor_class >= 1:
+		return WeaponData.TargetClass.LIGHT
+	else:
+		return WeaponData.TargetClass.SOFT
+
+
+## 射手の全武器から目標に対して最適な武器を選択
+## 戻り値: 最適な武器、または利用可能な武器がなければnull
+func select_best_weapon(
+	shooter: ElementData.ElementInstance,
+	target: ElementData.ElementInstance,
+	distance_m: float,
+	debug_log: bool = false
+) -> WeaponData.WeaponType:
+	if shooter.weapons.size() == 0:
+		return shooter.primary_weapon  # フォールバック
+
+	var target_class := get_target_class(target)
+	var is_armored := target.is_vehicle()
+
+	var best_weapon: WeaponData.WeaponType = null
+	var best_score: float = -INF  # 負のスコアも考慮
+
+	if debug_log:
+		print("[WeaponSelect] %s vs %s (dist=%.1fm, armored=%s)" % [
+			shooter.id, target.id, distance_m, is_armored
+		])
+
+	for weapon in shooter.weapons:
+		# 射程外はスキップ
+		if not weapon.is_in_range(distance_m):
+			if debug_log:
+				print("  [SKIP] %s: out of range (max=%.0fm)" % [weapon.id, weapon.max_range_m])
+			continue
+
+		var score := _calculate_weapon_score(weapon, target, target_class, distance_m, is_armored)
+
+		if debug_log:
+			print("  [EVAL] %s: score=%.1f (pref=%d, threat=%d)" % [
+				weapon.id, score, weapon.preferred_target, weapon.threat_class
+			])
+
+		# 負のスコアはスキップ（完全に不適切な武器）
+		if score < 0:
+			if debug_log:
+				print("  [SKIP] %s: negative score (ineffective)" % weapon.id)
+			continue
+
+		if score > best_score:
+			best_score = score
+			best_weapon = weapon
+
+	# 有効な武器がない場合
+	if best_weapon == null:
+		# 装甲目標に対してはSMALL_ARMSをフォールバックとして使わない
+		if is_armored:
+			if debug_log:
+				print("  [NO WEAPON] no effective weapon for armored target")
+			return null
+		# 非装甲目標にはprimary_weaponをフォールバック
+		if debug_log:
+			print("  [FALLBACK] using primary_weapon: %s" % (shooter.primary_weapon.id if shooter.primary_weapon else "NONE"))
+		best_weapon = shooter.primary_weapon
+
+	if debug_log and best_weapon:
+		print("  [SELECTED] %s (score=%.1f)" % [best_weapon.id, best_score])
+
+	return best_weapon
+
+
+## 武器のスコアを計算（目標に対する有効性）
+func _calculate_weapon_score(
+	weapon: WeaponData.WeaponType,
+	target: ElementData.ElementInstance,
+	target_class: WeaponData.TargetClass,
+	distance_m: float,
+	is_armored: bool
+) -> float:
+	var score: float = 0.0
+
+	# 基本殺傷力
+	var lethality := weapon.get_lethality(distance_m, target_class)
+	score += float(lethality)
+
+	# 装甲目標に対する特別判定
+	if is_armored:
+		# 小火器は装甲目標に効果なし → 使用不可
+		if weapon.mechanism == WeaponData.Mechanism.SMALL_ARMS:
+			if target.element_type and target.element_type.armor_class >= 1:
+				return -1000.0  # 絶対使わない
+
+		# 対装甲武器なら大きなボーナス
+		if weapon.preferred_target == WeaponData.PreferredTarget.ARMOR:
+			score += 100.0  # 強いボーナス
+
+		# 貫徹力を考慮
+		var pen := 0
+		if weapon.mechanism == WeaponData.Mechanism.KINETIC:
+			pen = weapon.get_pen_ke(distance_m)
+		elif weapon.mechanism == WeaponData.Mechanism.SHAPED_CHARGE:
+			pen = weapon.get_pen_ce(distance_m)
+
+		if pen > 0:
+			score += float(pen) * 0.5
+	else:
+		# ソフトターゲット（歩兵など）への判定
+		# 対装甲専用武器は歩兵には使わない（弾薬節約＆オーバーキル）
+		if weapon.preferred_target == WeaponData.PreferredTarget.ARMOR:
+			# AT専用武器は対歩兵に大きなペナルティ
+			score -= 200.0
+		elif weapon.preferred_target == WeaponData.PreferredTarget.SOFT:
+			# 対歩兵優先武器にはボーナス
+			score += 100.0
+		elif weapon.preferred_target == WeaponData.PreferredTarget.ANY:
+			# 汎用武器は対歩兵では避ける（主砲弾薬は貴重）
+			# 特にATカテゴリの汎用武器は主砲なので使わない
+			if weapon.threat_class == WeaponData.ThreatClass.AT:
+				score -= 50.0
+
+	# 抑圧力も考慮（対歩兵では重要）
+	if not is_armored:
+		var supp := weapon.get_suppression_power(distance_m)
+		score += float(supp) * 0.3
+
+	return score
+
+
+## ユニットの武器切り替えログを出力（デバッグ用）
+func log_weapon_switch(
+	shooter: ElementData.ElementInstance,
+	old_weapon: WeaponData.WeaponType,
+	new_weapon: WeaponData.WeaponType,
+	target: ElementData.ElementInstance
+) -> void:
+	if old_weapon == null or new_weapon == null:
+		return
+	if old_weapon.id == new_weapon.id:
+		return
+
+	var target_type := "SOFT"
+	if target.is_vehicle():
+		if target.element_type and target.element_type.armor_class >= 3:
+			target_type = "HEAVY"
+		else:
+			target_type = "LIGHT"
+
+	print("[Weapon] %s: %s -> %s (target %s is %s)" % [
+		shooter.id, old_weapon.id, new_weapon.id, target.id, target_type
 	])

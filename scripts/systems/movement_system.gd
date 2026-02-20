@@ -25,14 +25,16 @@ const ROTATION_SPEED: float = PI
 
 var nav_manager: NavigationManager
 var map_data: MapData
+var world_model: WorldModel
 
 # =============================================================================
 # 初期化
 # =============================================================================
 
-func setup(p_nav_manager: NavigationManager, p_map_data: MapData) -> void:
+func setup(p_nav_manager: NavigationManager, p_map_data: MapData, p_world_model: WorldModel = null) -> void:
 	nav_manager = p_nav_manager
 	map_data = p_map_data
+	world_model = p_world_model
 
 # =============================================================================
 # 移動命令
@@ -130,10 +132,24 @@ func update_element(element: ElementData.ElementInstance, dt: float) -> void:
 	# 抑圧による速度低下
 	speed *= (1.0 - element.suppression * 0.5)
 
+	# 衝突回避ベクトルを計算
+	var avoidance := _calculate_collision_avoidance(element)
+
+	# 移動方向に衝突回避を加算
+	var final_direction := (direction + avoidance).normalized()
+
 	# 移動
 	var move_dist: float = min(speed * dt, distance)
-	element.velocity = direction * speed
-	element.position += direction * move_dist
+	element.velocity = final_direction * speed
+	element.position += final_direction * move_dist
+
+	# ハード衝突解消（移動後に重なりをチェック）
+	resolve_hard_collisions(element)
+
+	# マップ範囲内にクランプ
+	if map_data:
+		element.position.x = clampf(element.position.x, 0.0, map_data.size_m.x)
+		element.position.y = clampf(element.position.y, 0.0, map_data.size_m.y)
 
 
 func _stop_movement(element: ElementData.ElementInstance) -> void:
@@ -148,6 +164,112 @@ func _rotate_toward(current: float, target: float, max_delta: float) -> float:
 	if abs(diff) <= max_delta:
 		return target
 	return current + sign(diff) * max_delta
+
+
+## ユニットの衝突半径を取得
+func _get_collision_radius(element: ElementData.ElementInstance) -> float:
+	if element.is_vehicle():
+		return GameConstants.UNIT_COLLISION_RADIUS_VEHICLE
+	return GameConstants.UNIT_COLLISION_RADIUS_INFANTRY
+
+
+## 衝突回避ベクトルを計算（ソフト：移動方向に影響）
+func _calculate_collision_avoidance(element: ElementData.ElementInstance) -> Vector2:
+	if not world_model:
+		return Vector2.ZERO
+
+	var avoidance := Vector2.ZERO
+	var my_radius := _get_collision_radius(element)
+
+	# 検出範囲内の他ユニットを取得
+	var detection_range := my_radius * GameConstants.COLLISION_DETECTION_MULT * 2.0
+	var nearby := world_model.get_elements_near(element.position, detection_range)
+
+	for other in nearby:
+		if other.id == element.id:
+			continue
+		if other.state == GameEnums.UnitState.DESTROYED:
+			continue
+
+		var other_radius := _get_collision_radius(other)
+		var min_dist := (my_radius + other_radius) * GameConstants.COLLISION_DETECTION_MULT
+		var to_other := other.position - element.position
+		var dist := to_other.length()
+
+		if dist < min_dist and dist > 0.01:
+			# 離れる方向へのベクトルを計算
+			var push_dir := -to_other.normalized()
+			# 距離が近いほど強い力（2乗で急激に増加）
+			var overlap_ratio := 1.0 - dist / min_dist
+			var strength := overlap_ratio * overlap_ratio * GameConstants.COLLISION_AVOIDANCE_FORCE
+			avoidance += push_dir * strength
+
+	return avoidance
+
+
+## ハード衝突解消（重なりを即座に解消）
+func resolve_hard_collisions(element: ElementData.ElementInstance) -> void:
+	if not world_model:
+		return
+
+	var my_radius := _get_collision_radius(element)
+	var detection_range := my_radius * 3.0
+	var nearby := world_model.get_elements_near(element.position, detection_range)
+
+	for other in nearby:
+		if other.id == element.id:
+			continue
+		if other.state == GameEnums.UnitState.DESTROYED:
+			continue
+
+		var other_radius := _get_collision_radius(other)
+		var min_dist := my_radius + other_radius  # 最小許容距離（重なり禁止）
+		var to_other := other.position - element.position
+		var dist := to_other.length()
+
+		if dist < min_dist and dist > 0.001:
+			# 重なっている！即座に押し出す
+			var overlap := min_dist - dist
+			var push_dir := -to_other.normalized()
+			# 自分だけ押し出す（半分ずつにすると両方動いてしまう）
+			element.position += push_dir * (overlap * 0.6)
+		elif dist <= 0.001:
+			# 完全に重なっている場合はランダム方向に押し出す
+			var random_dir := Vector2(randf_range(-1, 1), randf_range(-1, 1)).normalized()
+			element.position += random_dir * min_dist
+
+	# マップ範囲内にクランプ
+	if map_data:
+		element.position.x = clampf(element.position.x, 0.0, map_data.size_m.x)
+		element.position.y = clampf(element.position.y, 0.0, map_data.size_m.y)
+
+
+## 静止ユニットの衝突回避（移動していないユニット用）
+func apply_separation(element: ElementData.ElementInstance, dt: float) -> void:
+	if not world_model:
+		return
+	if element.is_moving:
+		return  # 移動中は update_element で処理
+
+	# まずハード衝突を解消
+	resolve_hard_collisions(element)
+
+	# ソフト衝突回避（近づきすぎを防ぐ）
+	var avoidance := _calculate_collision_avoidance(element)
+	if avoidance.length_squared() < 0.01:
+		return
+
+	# 回避方向に移動
+	var speed := 5.0 * (1.0 - element.suppression * 0.5)
+	var displacement := avoidance.normalized() * speed * dt
+
+	element.position += displacement
+
+	# マップ範囲内にクランプ
+	if map_data:
+		element.position.x = clampf(element.position.x, 0.0, map_data.size_m.x)
+		element.position.y = clampf(element.position.y, 0.0, map_data.size_m.y)
+
 
 # =============================================================================
 # ユーティリティ
