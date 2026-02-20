@@ -437,6 +437,9 @@ func _update_combat(tick: int, dt: float) -> void:
 	# 被弾中フラグを追跡
 	var elements_under_fire: Dictionary = {}  # element_id -> bool
 
+	# 射撃中のユニットを追跡（射撃終了時にcurrent_target_idをクリアするため）
+	var shooters_firing: Dictionary = {}  # element_id -> bool
+
 	# 射撃処理
 	for shooter in world_model.elements:
 		if shooter.state == GameEnums.UnitState.DESTROYED:
@@ -470,10 +473,12 @@ func _update_combat(tick: int, dt: float) -> void:
 			elements_under_fire[target.id] = true
 			shooter.last_fire_tick = tick
 			shooter.current_target_id = target.id
+			shooters_firing[shooter.id] = true
 
 			# 戦闘可視化
-			# ダメージが発生していれば命中、抑圧のみなら外れ/抑圧射撃
-			var is_hit := result.d_dmg > 0.001
+			# 有効な射撃は命中扱い（継続的なダメージ/抑圧）
+			# 抑圧のみの場合も射線は実線で表示
+			var is_hit := (result.d_dmg > 0.0 or result.d_supp > 0.0)
 			var weapon_mechanism := shooter.primary_weapon.mechanism if shooter.primary_weapon else WeaponData.Mechanism.SMALL_ARMS
 			if combat_visualizer:
 				combat_visualizer.add_fire_event(
@@ -491,6 +496,11 @@ func _update_combat(tick: int, dt: float) -> void:
 			# デバッグ出力（初回のみ）
 			if tick % 50 == 0:
 				print("[Combat] %s -> %s: supp=%.2f dmg=%.2f" % [shooter.id, target.id, result.d_supp, result.d_dmg])
+
+	# 射撃していないユニットの current_target_id をクリア
+	for element in world_model.elements:
+		if not shooters_firing.has(element.id):
+			element.current_target_id = ""
 
 	# 抑圧回復を適用
 	for element in world_model.elements:

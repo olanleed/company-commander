@@ -11,12 +11,12 @@ extends Node2D
 # 定数
 # =============================================================================
 
-## 射線の色（陣営別）
-const FIRE_LINE_BLUE := Color(0.2, 0.5, 1.0, 0.6)
-const FIRE_LINE_RED := Color(1.0, 0.3, 0.2, 0.6)
+## 射線の色（陣営別）- 視認性向上のため透明度を上げる
+const FIRE_LINE_BLUE := Color(0.2, 0.5, 1.0, 0.8)
+const FIRE_LINE_RED := Color(1.0, 0.3, 0.2, 0.8)
 
-## 射線の幅
-const FIRE_LINE_WIDTH := 2.0
+## 射線の幅 - 視認性向上のため太くする
+const FIRE_LINE_WIDTH := 3.0
 
 ## マズルフラッシュ
 const MUZZLE_FLASH_COLOR := Color(1.0, 0.9, 0.3, 0.9)
@@ -98,6 +98,10 @@ var _fire_events: Array[FireEvent] = []
 var _muzzle_flashes: Array[MuzzleFlash] = []
 var _impact_effects: Array[ImpactEffect] = []
 
+## アクティブな射撃関係（shooter_id -> FireEvent）
+## 同じ射手が同じ目標を撃ち続けている場合は更新のみ
+var _active_engagements: Dictionary = {}
+
 var _current_time: float = 0.0
 
 ## 射線表示のオン/オフ
@@ -147,33 +151,47 @@ func add_fire_event(
 	is_hit: bool = false,
 	weapon_mechanism: WeaponData.Mechanism = WeaponData.Mechanism.SMALL_ARMS
 ) -> void:
-	var event := FireEvent.new()
-	event.shooter_id = shooter_id
-	event.target_id = target_id
+	var engagement_key := shooter_id + "->" + target_id
+
+	# 既存のエンゲージメントを更新するか、新規作成
+	var event: FireEvent
+	var is_new := not _active_engagements.has(engagement_key)
+
+	if is_new:
+		event = FireEvent.new()
+		event.shooter_id = shooter_id
+		event.target_id = target_id
+		_fire_events.append(event)
+		_active_engagements[engagement_key] = event
+	else:
+		event = _active_engagements[engagement_key]
+
+	# 位置とステータスを更新
 	event.shooter_pos = shooter_pos
 	event.target_pos = target_pos
 	event.shooter_faction = shooter_faction
 	event.time_created = _current_time
-	event.duration = 0.3  # 射線は0.3秒表示
+	# 射線は1.0秒表示（tick間隔0.1秒 × 余裕）で射撃継続中は常に表示される
+	event.duration = 1.0
 	event.damage = damage
 	event.suppression = suppression
 	event.is_hit = is_hit
 	event.weapon_mechanism = weapon_mechanism
-	_fire_events.append(event)
 
-	# マズルフラッシュを追加（武器に応じてサイズ変更）
-	var flash_size := MUZZLE_FLASH_RADIUS
-	match weapon_mechanism:
-		WeaponData.Mechanism.KINETIC:
-			flash_size = MUZZLE_FLASH_RADIUS * 2.0
-		WeaponData.Mechanism.SHAPED_CHARGE:
-			flash_size = MUZZLE_FLASH_RADIUS * 1.5
-		WeaponData.Mechanism.BLAST_FRAG:
-			flash_size = MUZZLE_FLASH_RADIUS * 2.5
-	_add_muzzle_flash(shooter_pos, flash_size)
+	# マズルフラッシュは間引く（5回に1回程度）
+	if is_new or randf() < 0.2:
+		var flash_size := MUZZLE_FLASH_RADIUS
+		match weapon_mechanism:
+			WeaponData.Mechanism.KINETIC:
+				flash_size = MUZZLE_FLASH_RADIUS * 2.0
+			WeaponData.Mechanism.SHAPED_CHARGE:
+				flash_size = MUZZLE_FLASH_RADIUS * 1.5
+			WeaponData.Mechanism.BLAST_FRAG:
+				flash_size = MUZZLE_FLASH_RADIUS * 2.5
+		_add_muzzle_flash(shooter_pos, flash_size)
 
-	# 着弾エフェクトを追加（命中時のみ派手に）
-	if is_hit:
+	# 着弾エフェクトも間引く
+	if is_hit and (is_new or randf() < 0.3):
 		_add_impact(target_pos, weapon_mechanism)
 
 
@@ -495,10 +513,19 @@ func _draw_explosion_impact(pos: Vector2, age: float, duration: float, alpha: fl
 func _cleanup_expired_effects() -> void:
 	# 期限切れの射撃イベントを削除
 	var valid_events: Array[FireEvent] = []
+	var expired_keys: Array[String] = []
+
 	for event in _fire_events:
 		if _current_time - event.time_created < event.duration:
 			valid_events.append(event)
+		else:
+			# アクティブエンゲージメントからも削除
+			var key := event.shooter_id + "->" + event.target_id
+			expired_keys.append(key)
 	_fire_events = valid_events
+
+	for key in expired_keys:
+		_active_engagements.erase(key)
 
 	# 期限切れのマズルフラッシュを削除
 	var valid_flashes: Array[MuzzleFlash] = []

@@ -114,12 +114,22 @@ class ElementInstance:
 	var current_target_id: String = ""  ## 現在の射撃目標
 	var last_fire_tick: int = -1  ## 最後に射撃したtick
 	var sop_mode: GameEnums.SOPMode = GameEnums.SOPMode.FIRE_AT_WILL  ## 射撃ルール
+	var accumulated_damage: float = 0.0  ## 蓄積ダメージ（1.0超過でstrength-1）
+
+	## v0.1R: 車両サブシステムHP（armor_class >= 1 の場合のみ使用）
+	var mobility_hp: int = 100      ## 機動力HP (0-100)
+	var firepower_hp: int = 100     ## 火力HP (0-100)
+	var sensors_hp: int = 100       ## センサーHP (0-100)
 
 	## 初期化
 	func _init(p_type: ElementType = null) -> void:
 		if p_type:
 			element_type = p_type
 			current_strength = p_type.max_strength
+			# v0.1R: 車両サブシステムHPを初期化
+			mobility_hp = 100
+			firepower_hp = 100
+			sensors_hp = 100
 
 
 	## シンボル名を取得 (SVGファイル名用)
@@ -207,3 +217,17 @@ class ElementInstance:
 	## 補間角度を取得
 	func get_interpolated_facing(alpha: float) -> float:
 		return lerp_angle(prev_facing, facing, alpha)
+
+
+	## v0.1R: 車両かどうか
+	func is_vehicle() -> bool:
+		if not element_type:
+			return false
+		return element_type.armor_class >= 1
+
+
+	## v0.1R: 表示用Strength（車両はサブシステムHP平均）
+	func get_display_strength() -> int:
+		if is_vehicle():
+			return clampi((mobility_hp + firepower_hp + sensors_hp) / 3, 0, 100)
+		return current_strength

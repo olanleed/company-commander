@@ -139,11 +139,18 @@ func _scan_faction_vs_faction(observer_faction: GameEnums.Faction, target_factio
 	var contacts: Dictionary = _contacts[observer_faction]
 
 	for target in targets:
+		# DESTROYEDな目標はスキップ
+		if target.state == GameEnums.UnitState.DESTROYED:
+			continue
+
 		var is_visible := false
 		var best_t_los: float = 0.0
 
 		# 各観測者からの視認チェック
 		for observer in observers:
+			# DESTROYEDな観測者はスキップ
+			if observer.state == GameEnums.UnitState.DESTROYED:
+				continue
 			var result := _check_visibility(observer, target)
 			if result.visible:
 				is_visible = true

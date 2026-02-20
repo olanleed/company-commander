@@ -238,13 +238,20 @@ const RISK_DECAY_DOWN_PER_SEC: float = 20.0
 # 仕様書: docs/combat_v0.1.md
 # =============================================================================
 
-## 直射の基準係数
-const K_DF_DMG: float = 0.30    ## レーティング100・条件最良時のStrength減少/秒（調整: 0.06→0.30、約1.4分で10strength減少）
-const K_DF_SUPP: float = 2.5    ## レーティング100・条件最良時のSuppression増加/秒
+## 直射の基準係数 (v0.1R)
+## バランス目標: 最良条件でSuppressed(40%)到達は4-5秒、1人減少は2-3秒
+## 計算例（ライフル300m、supp=70、leth=80、dt=0.1）:
+##   d_supp = 0.12 × 0.70 × 0.1 = 0.0084/tick → 1秒で0.084 → 約4.8秒でSuppressed
+##   d_dmg  = 0.50 × 0.80 × 0.1 = 0.040/tick → 1秒で0.40 → 約2.5秒で1人減少
+const K_DF_SUPP: float = 0.12   ## 抑圧係数（約4-5秒でSuppressed）
+const K_DF_HIT: float = 0.25    ## ヒット確率係数（v0.1R新規）
+const K_DF_DMG: float = 0.50    ## ダメージ係数（約2-3秒で1人減少）
 
-## 間接の基準係数（1発あたり）
-const K_IF_DMG: float = 5.0     ## レーティング100・爆心地のStrength減少/発
-const K_IF_SUPP: float = 25.0   ## レーティング100・爆心地のSuppression増加/発
+## 間接の基準係数（1発あたり）(v0.1R)
+## バランス目標: 1発で15-20%抑圧、直撃付近で1-2人ダメージ
+const K_IF_SUPP: float = 3.0    ## 抑圧係数（1発で約15-20%抑圧）
+const K_IF_HIT: float = 0.65    ## ヒット確率係数（v0.1R新規）
+const K_IF_DMG: float = 2.0     ## ダメージ係数（直撃で1-2人）
 const R_BLAST_M: float = 40.0   ## 爆風半径（m）
 
 ## 抑圧回復
@@ -335,3 +342,132 @@ const COMM_RECOVERY_LOST: float = 0.4
 ## 姿勢による抑圧回復倍率
 const POSTURE_RECOVERY_DEFEND: float = 1.2
 const POSTURE_RECOVERY_ATTACK: float = 0.8
+
+# =============================================================================
+# v0.1R 車両サブシステム定数
+# 仕様書: docs/combat_v0.1.md
+# =============================================================================
+
+## Mobility状態閾値
+const VEHICLE_MOBILITY_DAMAGED_THRESHOLD: int = 50
+const VEHICLE_MOBILITY_CRITICAL_THRESHOLD: int = 25
+const VEHICLE_MOBILITY_IMMOBILIZED_THRESHOLD: int = 0
+
+## Mobility速度倍率
+const VEHICLE_MOBILITY_DAMAGED_MULT: float = 0.70
+const VEHICLE_MOBILITY_CRITICAL_MULT: float = 0.35
+const VEHICLE_MOBILITY_IMMOBILIZED_MULT: float = 0.0
+
+## Firepower状態閾値
+const VEHICLE_FIREPOWER_DAMAGED_THRESHOLD: int = 50
+const VEHICLE_FIREPOWER_CRITICAL_THRESHOLD: int = 25
+const VEHICLE_FIREPOWER_DISABLED_THRESHOLD: int = 0
+
+## Firepower倍率
+const VEHICLE_FIREPOWER_DAMAGED_MULT: float = 0.80
+const VEHICLE_FIREPOWER_CRITICAL_MULT: float = 0.50
+
+## Sensors状態閾値
+const VEHICLE_SENSORS_DAMAGED_THRESHOLD: int = 50
+const VEHICLE_SENSORS_CRITICAL_THRESHOLD: int = 25
+const VEHICLE_SENSORS_DOWN_THRESHOLD: int = 0
+
+## Sensors視界倍率
+const VEHICLE_SENSORS_DAMAGED_RANGE_MULT: float = 0.80
+const VEHICLE_SENSORS_CRITICAL_RANGE_MULT: float = 0.60
+const VEHICLE_SENSORS_DOWN_RANGE_MULT: float = 0.40
+
+# =============================================================================
+# v0.1R アスペクトアングル倍率
+# =============================================================================
+
+## Heavy（戦車）のアスペクト倍率
+const ASPECT_HEAVY_FRONT: float = 0.70
+const ASPECT_HEAVY_SIDE: float = 1.00
+const ASPECT_HEAVY_REAR: float = 1.25
+const ASPECT_HEAVY_TOP: float = 1.10
+
+## Light（軽装甲）のアスペクト倍率
+const ASPECT_LIGHT_FRONT: float = 0.95
+const ASPECT_LIGHT_SIDE: float = 1.10
+const ASPECT_LIGHT_REAR: float = 1.20
+const ASPECT_LIGHT_TOP: float = 1.10
+
+# =============================================================================
+# v0.1R 脆弱性（デフォルト値）
+# vulnerability_dmg_vs / vulnerability_supp_vs
+# =============================================================================
+
+## Soft（歩兵）の脆弱性
+const VULN_SOFT_SMALLARMS_DMG: float = 1.00
+const VULN_SOFT_SMALLARMS_SUPP: float = 1.00
+const VULN_SOFT_AUTOCANNON_DMG: float = 1.00
+const VULN_SOFT_AUTOCANNON_SUPP: float = 1.00
+const VULN_SOFT_HEFRAG_DMG: float = 1.40
+const VULN_SOFT_HEFRAG_SUPP: float = 1.30
+const VULN_SOFT_AT_DMG: float = 1.00
+const VULN_SOFT_AT_SUPP: float = 1.00
+
+## Light（軽装甲）の脆弱性
+const VULN_LIGHT_SMALLARMS_DMG: float = 0.15
+const VULN_LIGHT_SMALLARMS_SUPP: float = 0.25
+const VULN_LIGHT_AUTOCANNON_DMG: float = 0.60
+const VULN_LIGHT_AUTOCANNON_SUPP: float = 0.70
+const VULN_LIGHT_HEFRAG_DMG: float = 0.40
+const VULN_LIGHT_HEFRAG_SUPP: float = 0.70
+const VULN_LIGHT_AT_DMG: float = 1.00
+const VULN_LIGHT_AT_SUPP: float = 1.00
+
+## Heavy（戦車）の脆弱性
+const VULN_HEAVY_SMALLARMS_DMG: float = 0.00
+const VULN_HEAVY_SMALLARMS_SUPP: float = 0.10
+const VULN_HEAVY_AUTOCANNON_DMG: float = 0.15
+const VULN_HEAVY_AUTOCANNON_SUPP: float = 0.35
+const VULN_HEAVY_HEFRAG_DMG: float = 0.10
+const VULN_HEAVY_HEFRAG_SUPP: float = 0.50
+const VULN_HEAVY_AT_DMG: float = 1.00
+const VULN_HEAVY_AT_SUPP: float = 1.00
+
+# =============================================================================
+# v0.1R 被害分布
+# =============================================================================
+
+## Soft被害量
+const SOFT_DAMAGE_MINOR_MIN: float = 0.8
+const SOFT_DAMAGE_MINOR_MAX: float = 2.0
+const SOFT_DAMAGE_MAJOR_MIN: float = 2.0
+const SOFT_DAMAGE_MAJOR_MAX: float = 5.0
+const SOFT_DAMAGE_CRITICAL_MIN: float = 5.0
+const SOFT_DAMAGE_CRITICAL_MAX: float = 12.0
+
+## Vehicle被害量
+const VEHICLE_DAMAGE_MINOR_MIN: int = 8
+const VEHICLE_DAMAGE_MINOR_MAX: int = 18
+const VEHICLE_DAMAGE_MAJOR_MIN: int = 18
+const VEHICLE_DAMAGE_MAJOR_MAX: int = 35
+
+## 被害カテゴリ確率（base）
+const DAMAGE_CAT_BASE_MINOR: float = 0.75
+const DAMAGE_CAT_BASE_MAJOR: float = 0.22
+const DAMAGE_CAT_BASE_CRITICAL: float = 0.03
+
+## Vehicle E閾値
+const VEHICLE_E_LOW: float = 0.25
+const VEHICLE_E_HIGH: float = 0.60
+
+## Vehicle Critical時
+const VEHICLE_CRITICAL_CATASTROPHIC_CHANCE: float = 0.40
+const VEHICLE_CRITICAL_MISSION_KILL_CHANCE: float = 0.60
+
+## サブシステム割り振り（threat_classごと）[sensors, mobility, firepower]
+const SUBSYS_DIST_SMALLARMS: Array[float] = [0.70, 0.25, 0.05]
+const SUBSYS_DIST_AUTOCANNON: Array[float] = [0.20, 0.40, 0.40]
+const SUBSYS_DIST_HEFRAG: Array[float] = [0.35, 0.35, 0.30]
+const SUBSYS_DIST_AT: Array[float] = [0.20, 0.35, 0.45]
+
+# =============================================================================
+# v0.1R 面制圧補正
+# =============================================================================
+
+const AREA_ATTACK_SUPP_MULT_V01R: float = 0.80
+const AREA_ATTACK_HIT_MULT_V01R: float = 0.25

@@ -2,20 +2,15 @@ extends GutTest
 
 ## CombatSystemのユニットテスト
 
-var CombatSystemClass: GDScript
-var WeaponDataClass: GDScript
-var ElementDataClass: GDScript
-var combat_system: RefCounted
+const CombatSystem := preload("res://scripts/systems/combat_system.gd")
+const WeaponData := preload("res://scripts/data/weapon_data.gd")
+const ElementData := preload("res://scripts/data/element_data.gd")
 
-
-func before_all() -> void:
-	CombatSystemClass = load("res://scripts/systems/combat_system.gd")
-	WeaponDataClass = load("res://scripts/data/weapon_data.gd")
-	ElementDataClass = load("res://scripts/data/element_data.gd")
+var combat_system: CombatSystem
 
 
 func before_each() -> void:
-	combat_system = CombatSystemClass.new()
+	combat_system = CombatSystem.new()
 
 
 # =============================================================================
@@ -23,32 +18,32 @@ func before_each() -> void:
 # =============================================================================
 
 func test_shooter_coefficient_normal() -> void:
-	var shooter := _create_test_element()
+	var shooter: ElementData.ElementInstance = _create_test_element()
 	shooter.suppression = 0.0
-	var m_shooter := combat_system.calculate_shooter_coefficient(shooter)
+	var m_shooter: float = combat_system.calculate_shooter_coefficient(shooter)
 	assert_almost_eq(m_shooter, 1.0, 0.01)
 
 
 func test_shooter_coefficient_suppressed() -> void:
-	var shooter := _create_test_element()
+	var shooter: ElementData.ElementInstance = _create_test_element()
 	shooter.suppression = 0.50  # Suppressed状態
-	var m_shooter := combat_system.calculate_shooter_coefficient(shooter)
+	var m_shooter: float = combat_system.calculate_shooter_coefficient(shooter)
 	# M_SHOOTER_SUPPRESSED = 0.70
 	assert_almost_eq(m_shooter, 0.70, 0.01)
 
 
 func test_shooter_coefficient_pinned() -> void:
-	var shooter := _create_test_element()
+	var shooter: ElementData.ElementInstance = _create_test_element()
 	shooter.suppression = 0.75  # Pinned状態
-	var m_shooter := combat_system.calculate_shooter_coefficient(shooter)
+	var m_shooter: float = combat_system.calculate_shooter_coefficient(shooter)
 	# M_SHOOTER_PINNED = 0.35
 	assert_almost_eq(m_shooter, 0.35, 0.01)
 
 
 func test_shooter_coefficient_broken() -> void:
-	var shooter := _create_test_element()
+	var shooter: ElementData.ElementInstance = _create_test_element()
 	shooter.suppression = 0.95  # Broken状態
-	var m_shooter := combat_system.calculate_shooter_coefficient(shooter)
+	var m_shooter: float = combat_system.calculate_shooter_coefficient(shooter)
 	# M_SHOOTER_BROKEN = 0.15
 	assert_almost_eq(m_shooter, 0.15, 0.01)
 
@@ -58,17 +53,17 @@ func test_shooter_coefficient_broken() -> void:
 # =============================================================================
 
 func test_cover_coefficient_open() -> void:
-	var m_cover := combat_system.get_cover_coefficient_df(GameEnums.TerrainType.OPEN)
+	var m_cover: float = combat_system.get_cover_coefficient_df(GameEnums.TerrainType.OPEN)
 	assert_almost_eq(m_cover, 1.0, 0.01)
 
 
 func test_cover_coefficient_forest() -> void:
-	var m_cover := combat_system.get_cover_coefficient_df(GameEnums.TerrainType.FOREST)
+	var m_cover: float = combat_system.get_cover_coefficient_df(GameEnums.TerrainType.FOREST)
 	assert_almost_eq(m_cover, 0.50, 0.01)
 
 
 func test_cover_coefficient_urban() -> void:
-	var m_cover := combat_system.get_cover_coefficient_df(GameEnums.TerrainType.URBAN)
+	var m_cover: float = combat_system.get_cover_coefficient_df(GameEnums.TerrainType.URBAN)
 	assert_almost_eq(m_cover, 0.35, 0.01)
 
 
@@ -77,17 +72,17 @@ func test_cover_coefficient_urban() -> void:
 # =============================================================================
 
 func test_direct_fire_damage_calculation() -> void:
-	var shooter := _create_test_element()
+	var shooter: ElementData.ElementInstance = _create_test_element()
 	shooter.suppression = 0.0
 
-	var target := _create_test_element()
+	var target: ElementData.ElementInstance = _create_test_element()
 	target.suppression = 0.0
 
-	var weapon := WeaponDataClass.create_rifle()
-	var distance := 300.0  # Mid範囲
+	var weapon: WeaponData.WeaponType = WeaponData.create_rifle()
+	var distance: float = 300.0  # Mid範囲
 
 	# 直射効果を計算（1tick分、dt=0.1）
-	var result := combat_system.calculate_direct_fire_effect(
+	var result = combat_system.calculate_direct_fire_effect(
 		shooter, target, weapon, distance, 0.1
 	)
 
@@ -99,12 +94,12 @@ func test_direct_fire_damage_calculation() -> void:
 
 
 func test_direct_fire_out_of_range() -> void:
-	var shooter := _create_test_element()
-	var target := _create_test_element()
-	var weapon := WeaponDataClass.create_rifle()
-	var distance := 600.0  # 射程外（max_range=500）
+	var shooter: ElementData.ElementInstance = _create_test_element()
+	var target: ElementData.ElementInstance = _create_test_element()
+	var weapon: WeaponData.WeaponType = WeaponData.create_rifle()
+	var distance: float = 600.0  # 射程外（max_range=500）
 
-	var result := combat_system.calculate_direct_fire_effect(
+	var result = combat_system.calculate_direct_fire_effect(
 		shooter, target, weapon, distance, 0.1
 	)
 
@@ -114,20 +109,20 @@ func test_direct_fire_out_of_range() -> void:
 
 
 func test_direct_fire_suppressed_shooter_reduced() -> void:
-	var shooter := _create_test_element()
-	var target := _create_test_element()
-	var weapon := WeaponDataClass.create_rifle()
-	var distance := 300.0
+	var shooter: ElementData.ElementInstance = _create_test_element()
+	var target: ElementData.ElementInstance = _create_test_element()
+	var weapon: WeaponData.WeaponType = WeaponData.create_rifle()
+	var distance: float = 300.0
 
 	# 通常状態での効果
 	shooter.suppression = 0.0
-	var result_normal := combat_system.calculate_direct_fire_effect(
+	var result_normal = combat_system.calculate_direct_fire_effect(
 		shooter, target, weapon, distance, 0.1
 	)
 
 	# Suppressed状態での効果
 	shooter.suppression = 0.50
-	var result_suppressed := combat_system.calculate_direct_fire_effect(
+	var result_suppressed = combat_system.calculate_direct_fire_effect(
 		shooter, target, weapon, distance, 0.1
 	)
 
@@ -137,20 +132,20 @@ func test_direct_fire_suppressed_shooter_reduced() -> void:
 
 
 func test_direct_fire_moving_target_evasion() -> void:
-	var shooter := _create_test_element()
-	var target := _create_test_element()
-	var weapon := WeaponDataClass.create_rifle()
-	var distance := 300.0
+	var shooter: ElementData.ElementInstance = _create_test_element()
+	var target: ElementData.ElementInstance = _create_test_element()
+	var weapon: WeaponData.WeaponType = WeaponData.create_rifle()
+	var distance: float = 300.0
 
 	# 静止目標
 	target.is_moving = false
-	var result_stationary := combat_system.calculate_direct_fire_effect(
+	var result_stationary = combat_system.calculate_direct_fire_effect(
 		shooter, target, weapon, distance, 0.1
 	)
 
 	# 移動目標
 	target.is_moving = true
-	var result_moving := combat_system.calculate_direct_fire_effect(
+	var result_moving = combat_system.calculate_direct_fire_effect(
 		shooter, target, weapon, distance, 0.1
 	)
 
@@ -163,30 +158,30 @@ func test_direct_fire_moving_target_evasion() -> void:
 # =============================================================================
 
 func test_suppression_state_normal() -> void:
-	var element := _create_test_element()
+	var element: ElementData.ElementInstance = _create_test_element()
 	element.suppression = 0.30
-	var state := combat_system.get_suppression_state(element)
+	var state: GameEnums.UnitState = combat_system.get_suppression_state(element)
 	assert_eq(state, GameEnums.UnitState.ACTIVE)
 
 
 func test_suppression_state_suppressed() -> void:
-	var element := _create_test_element()
+	var element: ElementData.ElementInstance = _create_test_element()
 	element.suppression = 0.50
-	var state := combat_system.get_suppression_state(element)
+	var state: GameEnums.UnitState = combat_system.get_suppression_state(element)
 	assert_eq(state, GameEnums.UnitState.SUPPRESSED)
 
 
 func test_suppression_state_pinned() -> void:
-	var element := _create_test_element()
+	var element: ElementData.ElementInstance = _create_test_element()
 	element.suppression = 0.75
-	var state := combat_system.get_suppression_state(element)
+	var state: GameEnums.UnitState = combat_system.get_suppression_state(element)
 	assert_eq(state, GameEnums.UnitState.PINNED)
 
 
 func test_suppression_state_broken() -> void:
-	var element := _create_test_element()
+	var element: ElementData.ElementInstance = _create_test_element()
 	element.suppression = 0.95
-	var state := combat_system.get_suppression_state(element)
+	var state: GameEnums.UnitState = combat_system.get_suppression_state(element)
 	assert_eq(state, GameEnums.UnitState.BROKEN)
 
 
@@ -195,11 +190,11 @@ func test_suppression_state_broken() -> void:
 # =============================================================================
 
 func test_suppression_recovery() -> void:
-	var element := _create_test_element()
+	var element: ElementData.ElementInstance = _create_test_element()
 	element.suppression = 0.50
 
 	# 回復（被弾なし、通信Good、Defend姿勢）
-	var recovery := combat_system.calculate_suppression_recovery(
+	var recovery: float = combat_system.calculate_suppression_recovery(
 		element, false, GameEnums.CommState.GOOD, true, 0.1
 	)
 
@@ -207,11 +202,11 @@ func test_suppression_recovery() -> void:
 
 
 func test_suppression_no_recovery_under_fire() -> void:
-	var element := _create_test_element()
+	var element: ElementData.ElementInstance = _create_test_element()
 	element.suppression = 0.50
 
 	# 被弾中は回復なし
-	var recovery := combat_system.calculate_suppression_recovery(
+	var recovery: float = combat_system.calculate_suppression_recovery(
 		element, true, GameEnums.CommState.GOOD, true, 0.1
 	)
 
@@ -219,16 +214,16 @@ func test_suppression_no_recovery_under_fire() -> void:
 
 
 func test_suppression_recovery_reduced_comm_lost() -> void:
-	var element := _create_test_element()
+	var element: ElementData.ElementInstance = _create_test_element()
 	element.suppression = 0.50
 
 	# 通信Goodでの回復
-	var recovery_good := combat_system.calculate_suppression_recovery(
+	var recovery_good: float = combat_system.calculate_suppression_recovery(
 		element, false, GameEnums.CommState.GOOD, true, 0.1
 	)
 
 	# 通信Lostでの回復
-	var recovery_lost := combat_system.calculate_suppression_recovery(
+	var recovery_lost: float = combat_system.calculate_suppression_recovery(
 		element, false, GameEnums.CommState.LOST, true, 0.1
 	)
 
@@ -240,13 +235,13 @@ func test_suppression_recovery_reduced_comm_lost() -> void:
 # ヘルパー
 # =============================================================================
 
-func _create_test_element() -> ElementDataClass.ElementInstance:
-	var element_type := ElementDataClass.ElementType.new()
+func _create_test_element() -> ElementData.ElementInstance:
+	var element_type: ElementData.ElementType = ElementData.ElementType.new()
 	element_type.id = "test_infantry"
 	element_type.max_strength = 10
 	element_type.armor_class = 0  # Soft
 
-	var element := ElementDataClass.ElementInstance.new(element_type)
+	var element: ElementData.ElementInstance = ElementData.ElementInstance.new(element_type)
 	element.id = "test_element_" + str(randi())
 	element.faction = GameEnums.Faction.BLUE
 	element.position = Vector2(500, 500)

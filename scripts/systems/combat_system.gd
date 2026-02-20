@@ -2,10 +2,16 @@ class_name CombatSystem
 extends RefCounted
 
 ## 戦闘システム
-## 仕様書: docs/combat_v0.1.md
+## 仕様書: docs/combat_v0.1.md (v0.1R)
 ##
 ## 直射・間接の戦闘効果を計算する。
 ## VisionSystemのLoS情報と連携して動作。
+##
+## v0.1R変更点:
+## - 抑圧と損耗の脆弱性分離 (vulnerability_dmg_vs / vulnerability_supp_vs)
+## - 離散ヒットイベントモデル (p_hit = 1 - exp(-K × E))
+## - 車両サブシステムHP (mobility_hp, firepower_hp, sensors_hp)
+## - アスペクトアングル (Front/Side/Rear/Top)
 
 # =============================================================================
 # 定数参照
@@ -19,7 +25,15 @@ extends RefCounted
 
 class CombatEffectResult:
 	var d_supp: float = 0.0    ## 抑圧増加量
-	var d_dmg: float = 0.0     ## ダメージ（Strength減少量）
+	var d_dmg: float = 0.0     ## ダメージ（Strength減少量）- レガシー
+	var is_valid: bool = false ## 射撃が成立したか
+
+
+## v0.1R: 直射効果結果（離散ヒットモデル）
+class DirectFireResultV01R:
+	var d_supp: float = 0.0    ## 抑圧増加量
+	var p_hit: float = 0.0     ## ヒット確率（1秒あたり）
+	var exposure: float = 0.0  ## 期待危険度 E
 	var is_valid: bool = false ## 射撃が成立したか
 
 
@@ -428,17 +442,22 @@ func _get_indirect_vulnerability(
 # =============================================================================
 
 ## 要素にダメージを適用
+## d_supp: 抑圧増加量（0-1範囲、例: 0.05 = 5%増加）
+## d_dmg: ダメージ量（Strength減少量、小数点以下は蓄積）
 func apply_damage(
 	element: ElementData.ElementInstance,
 	d_supp: float,
 	d_dmg: float
 ) -> void:
-	# 抑圧増加
-	element.suppression = clampf(element.suppression + d_supp / 100.0, 0.0, 1.0)
+	# 抑圧増加（d_suppは0-1範囲なのでそのまま加算）
+	element.suppression = clampf(element.suppression + d_supp, 0.0, 1.0)
 
-	# Strength減少
-	var strength_reduction := d_dmg
-	element.current_strength = maxi(0, element.current_strength - int(strength_reduction))
+	# Strength減少（小数点以下は蓄積し、1.0超過分を適用）
+	element.accumulated_damage += d_dmg
+	if element.accumulated_damage >= 1.0:
+		var strength_reduction := int(element.accumulated_damage)
+		element.accumulated_damage -= float(strength_reduction)
+		element.current_strength = maxi(0, element.current_strength - strength_reduction)
 
 	# 状態更新
 	element.state = get_suppression_state(element)
@@ -464,3 +483,390 @@ func apply_suppression_recovery(
 
 	# 状態更新
 	element.state = get_suppression_state(element)
+
+
+# =============================================================================
+# v0.1R: 脆弱性（分離）
+# =============================================================================
+
+## v0.1R: 損耗脆弱性を取得
+func get_vulnerability_dmg(
+	target: ElementData.ElementInstance,
+	threat_class: WeaponData.ThreatClass
+) -> float:
+	if not target.element_type:
+		return 1.0
+
+	var armor_class := target.element_type.armor_class
+
+	# Soft (armor_class = 0)
+	if armor_class == 0:
+		match threat_class:
+			WeaponData.ThreatClass.SMALL_ARMS:
+				return GameConstants.VULN_SOFT_SMALLARMS_DMG
+			WeaponData.ThreatClass.AUTOCANNON:
+				return GameConstants.VULN_SOFT_AUTOCANNON_DMG
+			WeaponData.ThreatClass.HE_FRAG:
+				return GameConstants.VULN_SOFT_HEFRAG_DMG
+			WeaponData.ThreatClass.AT:
+				return GameConstants.VULN_SOFT_AT_DMG
+			_:
+				return 1.0
+
+	# Light (armor_class = 1)
+	if armor_class == 1:
+		match threat_class:
+			WeaponData.ThreatClass.SMALL_ARMS:
+				return GameConstants.VULN_LIGHT_SMALLARMS_DMG
+			WeaponData.ThreatClass.AUTOCANNON:
+				return GameConstants.VULN_LIGHT_AUTOCANNON_DMG
+			WeaponData.ThreatClass.HE_FRAG:
+				return GameConstants.VULN_LIGHT_HEFRAG_DMG
+			WeaponData.ThreatClass.AT:
+				return GameConstants.VULN_LIGHT_AT_DMG
+			_:
+				return 1.0
+
+	# Heavy (armor_class >= 2)
+	match threat_class:
+		WeaponData.ThreatClass.SMALL_ARMS:
+			return GameConstants.VULN_HEAVY_SMALLARMS_DMG
+		WeaponData.ThreatClass.AUTOCANNON:
+			return GameConstants.VULN_HEAVY_AUTOCANNON_DMG
+		WeaponData.ThreatClass.HE_FRAG:
+			return GameConstants.VULN_HEAVY_HEFRAG_DMG
+		WeaponData.ThreatClass.AT:
+			return GameConstants.VULN_HEAVY_AT_DMG
+		_:
+			return 1.0
+
+
+## v0.1R: 抑圧脆弱性を取得
+func get_vulnerability_supp(
+	target: ElementData.ElementInstance,
+	threat_class: WeaponData.ThreatClass
+) -> float:
+	if not target.element_type:
+		return 1.0
+
+	var armor_class := target.element_type.armor_class
+
+	# Soft (armor_class = 0)
+	if armor_class == 0:
+		match threat_class:
+			WeaponData.ThreatClass.SMALL_ARMS:
+				return GameConstants.VULN_SOFT_SMALLARMS_SUPP
+			WeaponData.ThreatClass.AUTOCANNON:
+				return GameConstants.VULN_SOFT_AUTOCANNON_SUPP
+			WeaponData.ThreatClass.HE_FRAG:
+				return GameConstants.VULN_SOFT_HEFRAG_SUPP
+			WeaponData.ThreatClass.AT:
+				return GameConstants.VULN_SOFT_AT_SUPP
+			_:
+				return 1.0
+
+	# Light (armor_class = 1)
+	if armor_class == 1:
+		match threat_class:
+			WeaponData.ThreatClass.SMALL_ARMS:
+				return GameConstants.VULN_LIGHT_SMALLARMS_SUPP
+			WeaponData.ThreatClass.AUTOCANNON:
+				return GameConstants.VULN_LIGHT_AUTOCANNON_SUPP
+			WeaponData.ThreatClass.HE_FRAG:
+				return GameConstants.VULN_LIGHT_HEFRAG_SUPP
+			WeaponData.ThreatClass.AT:
+				return GameConstants.VULN_LIGHT_AT_SUPP
+			_:
+				return 1.0
+
+	# Heavy (armor_class >= 2)
+	match threat_class:
+		WeaponData.ThreatClass.SMALL_ARMS:
+			return GameConstants.VULN_HEAVY_SMALLARMS_SUPP
+		WeaponData.ThreatClass.AUTOCANNON:
+			return GameConstants.VULN_HEAVY_AUTOCANNON_SUPP
+		WeaponData.ThreatClass.HE_FRAG:
+			return GameConstants.VULN_HEAVY_HEFRAG_SUPP
+		WeaponData.ThreatClass.AT:
+			return GameConstants.VULN_HEAVY_AT_SUPP
+		_:
+			return 1.0
+
+
+# =============================================================================
+# v0.1R: 離散ヒットイベントモデル
+# =============================================================================
+
+## v0.1R: ヒット確率を計算 (p_hit = 1 - exp(-K × E))
+func calculate_hit_probability(exposure: float) -> float:
+	if exposure <= 0.0:
+		return 0.0
+	return 1.0 - exp(-GameConstants.K_DF_HIT * exposure)
+
+
+## v0.1R: 直射の期待危険度 E を計算
+func calculate_exposure_df(
+	shooter: ElementData.ElementInstance,
+	target: ElementData.ElementInstance,
+	weapon: WeaponData.WeaponType,
+	distance_m: float,
+	t_los: float = 1.0,
+	target_terrain: GameEnums.TerrainType = GameEnums.TerrainType.OPEN,
+	is_entrenched: bool = false
+) -> float:
+	# 射程チェック
+	if not weapon.is_in_range(distance_m):
+		return 0.0
+
+	# LoSチェック
+	if t_los < GameConstants.LOS_BLOCK_THRESHOLD:
+		return 0.0
+
+	# 殺傷力レーティング
+	var target_class := _get_target_class(target)
+	var lethality := weapon.get_lethality(distance_m, target_class)
+
+	# 各種係数
+	var m_shooter := calculate_shooter_coefficient(shooter)
+	var m_strength := get_strength_fire_coefficient(shooter)
+	var m_visibility := _calculate_visibility_coefficient(t_los)
+	var m_evasion := get_target_evasion_coefficient(target)
+	var m_cover := get_cover_coefficient_df(target_terrain)
+	var m_entrench := GameConstants.ENTRENCH_DF_MULT if is_entrenched else 1.0
+	var m_vuln_dmg := get_vulnerability_dmg(target, weapon.threat_class)
+
+	# E = (L/100) × M_shooter × M_visibility × M_evasion × M_cover × M_entrench × M_vuln_dmg
+	return (float(lethality) / 100.0) * m_shooter * m_strength * m_visibility * m_evasion * m_cover * m_entrench * m_vuln_dmg
+
+
+## v0.1R: 直射効果を計算（離散ヒットモデル）
+func calculate_direct_fire_effect_v01r(
+	shooter: ElementData.ElementInstance,
+	target: ElementData.ElementInstance,
+	weapon: WeaponData.WeaponType,
+	distance_m: float,
+	dt: float,
+	t_los: float = 1.0,
+	target_terrain: GameEnums.TerrainType = GameEnums.TerrainType.OPEN,
+	is_entrenched: bool = false
+) -> DirectFireResultV01R:
+	var result := DirectFireResultV01R.new()
+
+	# 射程チェック
+	if not weapon.is_in_range(distance_m):
+		return result
+
+	# LoSチェック
+	if t_los < GameConstants.LOS_BLOCK_THRESHOLD:
+		return result
+
+	result.is_valid = true
+
+	# 抑圧レーティング
+	var supp_power := weapon.get_suppression_power(distance_m)
+
+	# 各種係数
+	var m_shooter := calculate_shooter_coefficient(shooter)
+	var m_strength := get_strength_fire_coefficient(shooter)
+	var m_visibility := _calculate_visibility_coefficient(t_los)
+	var m_evasion := get_target_evasion_coefficient(target)
+	var m_cover := get_cover_coefficient_df(target_terrain)
+	var m_entrench := GameConstants.ENTRENCH_DF_MULT if is_entrenched else 1.0
+	var m_vuln_supp := get_vulnerability_supp(target, weapon.threat_class)
+
+	# 抑圧増加（連続）
+	# dSupp = K_DF_SUPP × (S/100) × M_shooter × ... × M_vuln_supp × dt
+	result.d_supp = GameConstants.K_DF_SUPP * (float(supp_power) / 100.0) * m_shooter * m_strength * m_visibility * m_evasion * m_cover * m_entrench * m_vuln_supp * dt
+
+	# 期待危険度 E
+	result.exposure = calculate_exposure_df(
+		shooter, target, weapon, distance_m, t_los, target_terrain, is_entrenched
+	)
+
+	# ヒット確率（1秒あたり）→ dt秒あたりに調整
+	var p_hit_1s := calculate_hit_probability(result.exposure)
+	# dt秒でのヒット確率: p_hit_dt = 1 - (1 - p_hit_1s)^dt
+	result.p_hit = 1.0 - pow(1.0 - p_hit_1s, dt)
+
+	return result
+
+
+# =============================================================================
+# v0.1R: 車両サブシステム状態
+# =============================================================================
+
+## v0.1R: Mobility状態を取得
+func get_mobility_state(element: ElementData.ElementInstance) -> GameEnums.VehicleMobilityState:
+	if element.mobility_hp > GameConstants.VEHICLE_MOBILITY_DAMAGED_THRESHOLD:
+		return GameEnums.VehicleMobilityState.NORMAL
+	elif element.mobility_hp > GameConstants.VEHICLE_MOBILITY_CRITICAL_THRESHOLD:
+		return GameEnums.VehicleMobilityState.DAMAGED
+	elif element.mobility_hp > GameConstants.VEHICLE_MOBILITY_IMMOBILIZED_THRESHOLD:
+		return GameEnums.VehicleMobilityState.CRITICAL
+	else:
+		return GameEnums.VehicleMobilityState.IMMOBILIZED
+
+
+## v0.1R: Firepower状態を取得
+func get_firepower_state(element: ElementData.ElementInstance) -> GameEnums.VehicleFirepowerState:
+	if element.firepower_hp > GameConstants.VEHICLE_FIREPOWER_DAMAGED_THRESHOLD:
+		return GameEnums.VehicleFirepowerState.NORMAL
+	elif element.firepower_hp > GameConstants.VEHICLE_FIREPOWER_CRITICAL_THRESHOLD:
+		return GameEnums.VehicleFirepowerState.DAMAGED
+	elif element.firepower_hp > GameConstants.VEHICLE_FIREPOWER_DISABLED_THRESHOLD:
+		return GameEnums.VehicleFirepowerState.CRITICAL
+	else:
+		return GameEnums.VehicleFirepowerState.WEAPON_DISABLED
+
+
+## v0.1R: Sensors状態を取得
+func get_sensors_state(element: ElementData.ElementInstance) -> GameEnums.VehicleSensorsState:
+	if element.sensors_hp > GameConstants.VEHICLE_SENSORS_DAMAGED_THRESHOLD:
+		return GameEnums.VehicleSensorsState.NORMAL
+	elif element.sensors_hp > GameConstants.VEHICLE_SENSORS_CRITICAL_THRESHOLD:
+		return GameEnums.VehicleSensorsState.DAMAGED
+	elif element.sensors_hp > GameConstants.VEHICLE_SENSORS_DOWN_THRESHOLD:
+		return GameEnums.VehicleSensorsState.CRITICAL
+	else:
+		return GameEnums.VehicleSensorsState.SENSORS_DOWN
+
+
+## v0.1R: 車両の速度倍率を取得
+func get_vehicle_speed_multiplier(element: ElementData.ElementInstance) -> float:
+	var state := get_mobility_state(element)
+	match state:
+		GameEnums.VehicleMobilityState.NORMAL:
+			return 1.0
+		GameEnums.VehicleMobilityState.DAMAGED:
+			return GameConstants.VEHICLE_MOBILITY_DAMAGED_MULT
+		GameEnums.VehicleMobilityState.CRITICAL:
+			return GameConstants.VEHICLE_MOBILITY_CRITICAL_MULT
+		GameEnums.VehicleMobilityState.IMMOBILIZED:
+			return GameConstants.VEHICLE_MOBILITY_IMMOBILIZED_MULT
+		_:
+			return 1.0
+
+
+# =============================================================================
+# v0.1R: アスペクトアングル
+# =============================================================================
+
+## v0.1R: アスペクトを計算
+func calculate_aspect(
+	shooter_pos: Vector2,
+	target_pos: Vector2,
+	target_facing: float
+) -> WeaponData.ArmorZone:
+	# 射手→目標ベクトル
+	var to_target := (target_pos - shooter_pos).normalized()
+
+	# 目標の facing方向（ラジアン）を単位ベクトルに
+	var facing_dir := Vector2.from_angle(target_facing)
+
+	# 目標から見た射手の方向
+	var to_shooter := -to_target
+
+	# facing_dir と to_shooter の角度差を計算
+	var angle_diff: float = absf(facing_dir.angle_to(to_shooter))
+
+	# 角度に応じてゾーンを決定
+	# Front: ±45° (PI/4)
+	# Side: ±45° ~ ±135° (PI/4 ~ 3PI/4)
+	# Rear: ±135° ~ ±180° (3PI/4 ~ PI)
+	if angle_diff <= PI / 4.0:
+		return WeaponData.ArmorZone.FRONT
+	elif angle_diff <= 3.0 * PI / 4.0:
+		return WeaponData.ArmorZone.SIDE
+	else:
+		return WeaponData.ArmorZone.REAR
+
+
+## v0.1R: アスペクト倍率を取得
+func get_aspect_multiplier(
+	target: ElementData.ElementInstance,
+	aspect: WeaponData.ArmorZone
+) -> float:
+	if not target.element_type:
+		return 1.0
+
+	var armor_class := target.element_type.armor_class
+
+	# Heavy (armor_class >= 2)
+	if armor_class >= 2:
+		match aspect:
+			WeaponData.ArmorZone.FRONT:
+				return GameConstants.ASPECT_HEAVY_FRONT
+			WeaponData.ArmorZone.SIDE:
+				return GameConstants.ASPECT_HEAVY_SIDE
+			WeaponData.ArmorZone.REAR:
+				return GameConstants.ASPECT_HEAVY_REAR
+			WeaponData.ArmorZone.TOP:
+				return GameConstants.ASPECT_HEAVY_TOP
+			_:
+				return 1.0
+
+	# Light (armor_class == 1)
+	if armor_class == 1:
+		match aspect:
+			WeaponData.ArmorZone.FRONT:
+				return GameConstants.ASPECT_LIGHT_FRONT
+			WeaponData.ArmorZone.SIDE:
+				return GameConstants.ASPECT_LIGHT_SIDE
+			WeaponData.ArmorZone.REAR:
+				return GameConstants.ASPECT_LIGHT_REAR
+			WeaponData.ArmorZone.TOP:
+				return GameConstants.ASPECT_LIGHT_TOP
+			_:
+				return 1.0
+
+	# Soft (armor_class == 0) - アスペクトは影響しない
+	return 1.0
+
+
+# =============================================================================
+# v0.1R: 被害分布
+# =============================================================================
+
+## v0.1R: 被害カテゴリをロール
+func roll_damage_category(exposure: float) -> GameEnums.DamageCategory:
+	var minor_chance := GameConstants.DAMAGE_CAT_BASE_MINOR
+	var major_chance := GameConstants.DAMAGE_CAT_BASE_MAJOR
+	var critical_chance := GameConstants.DAMAGE_CAT_BASE_CRITICAL
+
+	# Eによる調整
+	if exposure >= 0.7:
+		critical_chance += 0.02
+		minor_chance -= 0.02
+	elif exposure <= 0.2:
+		major_chance -= 0.10
+		minor_chance += 0.10
+
+	var roll: float = randf()
+	if roll < critical_chance:
+		return GameEnums.DamageCategory.CRITICAL
+	elif roll < critical_chance + major_chance:
+		return GameEnums.DamageCategory.MAJOR
+	else:
+		return GameEnums.DamageCategory.MINOR
+
+
+## v0.1R: Soft被害量を計算
+func calculate_soft_damage(category: GameEnums.DamageCategory) -> float:
+	match category:
+		GameEnums.DamageCategory.MINOR:
+			return randf_range(
+				GameConstants.SOFT_DAMAGE_MINOR_MIN,
+				GameConstants.SOFT_DAMAGE_MINOR_MAX
+			)
+		GameEnums.DamageCategory.MAJOR:
+			return randf_range(
+				GameConstants.SOFT_DAMAGE_MAJOR_MIN,
+				GameConstants.SOFT_DAMAGE_MAJOR_MAX
+			)
+		GameEnums.DamageCategory.CRITICAL:
+			return randf_range(
+				GameConstants.SOFT_DAMAGE_CRITICAL_MIN,
+				GameConstants.SOFT_DAMAGE_CRITICAL_MAX
+			)
+		_:
+			return 1.0

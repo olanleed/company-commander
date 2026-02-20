@@ -279,8 +279,30 @@ func _draw_status_bar() -> void:
 		var sup_rect := Rect2(-bar_width / 2, sup_y, bar_width * element.suppression, bar_height)
 		draw_rect(sup_rect, Color(1.0, 0.5, 0.0, 0.8))
 
+	# 射撃中アイコン（ユニットの右上）
+	if element.current_target_id != "":
+		_draw_firing_indicator()
+
 	# 変換をリセット
 	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+
+
+## 射撃中インジケータを描画
+func _draw_firing_indicator() -> void:
+	var icon_pos := Vector2(30, -30)
+	var icon_size := 8.0
+
+	# マズルフラッシュ風のアイコン（三角形＋円）
+	var flash_color := Color(1.0, 0.8, 0.2, 0.9)
+
+	# 中心の円
+	draw_circle(icon_pos, icon_size * 0.5, flash_color)
+
+	# 放射状の線（4方向）
+	for i in range(4):
+		var angle := (PI / 4.0) + (PI / 2.0) * i
+		var dir := Vector2.from_angle(angle)
+		draw_line(icon_pos + dir * icon_size * 0.6, icon_pos + dir * icon_size * 1.2, flash_color, 2.0)
 
 
 func _get_hp_color(ratio: float) -> Color:
