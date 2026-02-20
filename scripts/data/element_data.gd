@@ -109,6 +109,12 @@ class ElementInstance:
 	var current_order_type: GameEnums.OrderType = GameEnums.OrderType.HOLD
 	var order_target_position: Vector2 = Vector2.ZERO
 
+	## 戦闘
+	var primary_weapon: WeaponData.WeaponType = null  ## 主武装
+	var current_target_id: String = ""  ## 現在の射撃目標
+	var last_fire_tick: int = -1  ## 最後に射撃したtick
+	var sop_mode: GameEnums.SOPMode = GameEnums.SOPMode.FIRE_AT_WILL  ## 射撃ルール
+
 	## 初期化
 	func _init(p_type: ElementType = null) -> void:
 		if p_type:

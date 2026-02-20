@@ -188,3 +188,106 @@ const OPEN_CROSSING_LONG_M: float = 80.0
 
 ## Smoothing
 const RISK_DECAY_DOWN_PER_SEC: float = 20.0
+
+# =============================================================================
+# 戦闘定数
+# 仕様書: docs/combat_v0.1.md
+# =============================================================================
+
+## 直射の基準係数
+const K_DF_DMG: float = 0.30    ## レーティング100・条件最良時のStrength減少/秒（調整: 0.06→0.30、約1.4分で10strength減少）
+const K_DF_SUPP: float = 2.5    ## レーティング100・条件最良時のSuppression増加/秒
+
+## 間接の基準係数（1発あたり）
+const K_IF_DMG: float = 5.0     ## レーティング100・爆心地のStrength減少/発
+const K_IF_SUPP: float = 25.0   ## レーティング100・爆心地のSuppression増加/発
+const R_BLAST_M: float = 40.0   ## 爆風半径（m）
+
+## 抑圧回復
+const SUPP_RECOVERY_BASE: float = 1.2   ## 基本回復/秒
+const SUPP_UNDER_FIRE_COOLDOWN_TICKS: int = 20  ## 被弾後の回復抑制時間（2秒）
+
+## 抑圧閾値
+const SUPP_THRESHOLD_SUPPRESSED: float = 0.40
+const SUPP_THRESHOLD_PINNED: float = 0.70
+const SUPP_THRESHOLD_BROKEN: float = 0.90
+
+## 射手状態係数（M_shooter）
+const M_SHOOTER_NORMAL: float = 1.00
+const M_SHOOTER_SUPPRESSED: float = 0.70
+const M_SHOOTER_PINNED: float = 0.35
+const M_SHOOTER_BROKEN: float = 0.15
+
+## 目標回避係数
+const M_EVASION_STATIONARY: float = 1.00
+const M_EVASION_MOVING: float = 0.85
+
+## Cohesion/Fatigue係数
+const M_COHESION_MIN: float = 0.6
+const M_COHESION_SCALE: float = 0.4
+const M_FATIGUE_MAX_PENALTY: float = 0.3
+
+## 抑圧による能力低下
+const SPEED_MULT_SUPPRESSED: float = 0.85
+const SPEED_MULT_PINNED: float = 0.20
+const SPEED_MULT_BROKEN: float = 0.00
+
+const CAP_MULT_SUPPRESSED: float = 0.50
+const CAP_MULT_PINNED: float = 0.20
+const CAP_MULT_BROKEN: float = 0.00
+
+## Strength影響
+const M_STRENGTH_FIRE_MIN: float = 0.5
+const M_STRENGTH_FIRE_SCALE: float = 0.5
+
+## 戦闘不能閾値
+const STRENGTH_DESTROYED: float = 0.0
+const STRENGTH_COMBAT_INEFFECTIVE: float = 15.0
+const STRENGTH_DEGRADED: float = 30.0
+
+## 弾薬ペナルティ閾値
+const AMMO_LOW_THRESHOLD: float = 0.20
+const AMMO_CRITICAL_THRESHOLD: float = 0.05
+const AMMO_LOW_FIRE_MULT: float = 0.85
+const AMMO_LOW_SUPP_MULT: float = 0.90
+const AMMO_CRITICAL_FIRE_MULT: float = 0.50
+const AMMO_CRITICAL_SUPP_MULT: float = 0.70
+
+## 煙・視界係数
+const M_SMOKE_FIRE_MIN: float = 0.25
+const M_FOLIAGE_FIRE_MIN: float = 0.35
+
+## 面制圧（Attack Area）
+const AREA_ATTACK_DMG_MULT: float = 0.35
+const AREA_ATTACK_SUPP_MULT: float = 0.70
+const AREA_ATTACK_DEFAULT_RADIUS_M: float = 35.0
+
+## 地形遮蔽係数（直射）
+const COVER_DF_OPEN: float = 1.0
+const COVER_DF_ROAD: float = 1.0
+const COVER_DF_FOREST: float = 0.50
+const COVER_DF_URBAN: float = 0.35
+
+## 地形遮蔽係数（間接）
+const COVER_IF_OPEN: float = 1.0
+const COVER_IF_ROAD: float = 0.9
+const COVER_IF_FOREST: float = 0.70
+const COVER_IF_URBAN: float = 0.55
+
+## Dig-in係数
+const ENTRENCH_DF_MULT: float = 0.70
+const ENTRENCH_IF_MULT: float = 0.90
+
+## 分散モード係数（間接）
+const DISPERSION_IF_COLUMN: float = 1.15
+const DISPERSION_IF_DEPLOYED: float = 1.00
+const DISPERSION_IF_DISPERSED: float = 0.85
+
+## 通信状態による抑圧回復倍率
+const COMM_RECOVERY_GOOD: float = 1.0
+const COMM_RECOVERY_DEGRADED: float = 0.7
+const COMM_RECOVERY_LOST: float = 0.4
+
+## 姿勢による抑圧回復倍率
+const POSTURE_RECOVERY_DEFEND: float = 1.2
+const POSTURE_RECOVERY_ATTACK: float = 0.8

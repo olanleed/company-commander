@@ -37,7 +37,9 @@ var nav_manager: NavigationManager
 var movement_system: MovementSystem
 var symbol_manager: SymbolManager
 var vision_system: VisionSystem
+var combat_system: CombatSystem
 var event_bus: CombatEventBus
+var combat_visualizer: CombatVisualizer
 
 ## 中隊AI（陣営別）
 var company_ais: Dictionary = {}  # faction -> CompanyControllerAI
@@ -67,6 +69,9 @@ func _ready() -> void:
 
 	_setup_camera()
 	_spawn_test_units()
+
+	# CombatVisualizerをユニットレイヤーに追加
+	units_layer.add_child(combat_visualizer)
 
 	# HUDセットアップ
 	_setup_hud()
@@ -107,8 +112,15 @@ func _setup_systems() -> void:
 	# VisionSystem
 	vision_system = VisionSystem.new()
 
+	# CombatSystem
+	combat_system = CombatSystem.new()
+
 	# CombatEventBus
 	event_bus = CombatEventBus.new()
+
+	# CombatVisualizer
+	combat_visualizer = CombatVisualizer.new()
+	combat_visualizer.name = "CombatVisualizer"
 
 
 func _load_test_map_async() -> void:
@@ -226,21 +238,22 @@ func _spawn_test_units() -> void:
 	ifv_type.max_strength = 3
 	ifv_type.armor_class = 2
 
-	# BLUE陣営
-	var entry_points := map_data.get_entry_points_for_faction(GameEnums.Faction.BLUE)
-	if entry_points.size() >= 3:
-		world_model.create_test_element(inf_type, GameEnums.Faction.BLUE, entry_points[0].position)
-		world_model.create_test_element(inf_type, GameEnums.Faction.BLUE, entry_points[1].position)
-		world_model.create_test_element(tank_type, GameEnums.Faction.BLUE, entry_points[2].position)
+	# BLUE陣営 - 中央CPの近くに配置（戦闘テスト用：距離約400mで視界内）
+	var blue_pos := Vector2(800, 1000)  # 中央CPの西側
+	world_model.create_test_element(inf_type, GameEnums.Faction.BLUE, blue_pos)
+	world_model.create_test_element(inf_type, GameEnums.Faction.BLUE, blue_pos + Vector2(0, 50))
+	world_model.create_test_element(tank_type, GameEnums.Faction.BLUE, blue_pos + Vector2(-30, 100))
 
-	# RED陣営
-	entry_points = map_data.get_entry_points_for_faction(GameEnums.Faction.RED)
-	if entry_points.size() >= 3:
-		world_model.create_test_element(inf_type, GameEnums.Faction.RED, entry_points[0].position)
-		world_model.create_test_element(ifv_type, GameEnums.Faction.RED, entry_points[1].position)
-		world_model.create_test_element(tank_type, GameEnums.Faction.RED, entry_points[2].position)
+	# RED陣営 - 中央CPの近くに配置（戦闘テスト用：距離約400mで視界内）
+	var red_pos := Vector2(1200, 1000)  # 中央CPの東側
+	world_model.create_test_element(inf_type, GameEnums.Faction.RED, red_pos)
+	world_model.create_test_element(ifv_type, GameEnums.Faction.RED, red_pos + Vector2(0, 50))
+	world_model.create_test_element(tank_type, GameEnums.Faction.RED, red_pos + Vector2(30, 100))
 
 	print("テストユニット生成完了: ", world_model.elements.size(), " elements")
+
+	# 武器を設定
+	_assign_weapons_to_elements()
 
 	# 中隊AIをセットアップ
 	_setup_company_ais()
@@ -370,6 +383,10 @@ func _update_selection_ui() -> void:
 # =============================================================================
 
 func _on_tick_advanced(tick: int) -> void:
+	# デバッグ（10秒ごと）
+	if tick % 100 == 0:
+		print("[Tick] %d" % tick)
+
 	# 全Elementの状態を保存
 	world_model.save_prev_states()
 
@@ -380,8 +397,94 @@ func _on_tick_advanced(tick: int) -> void:
 	# 視界更新
 	vision_system.update(tick, GameConstants.SIM_DT)
 
+	# 戦闘更新
+	_update_combat(tick, GameConstants.SIM_DT)
+
 	# 中隊AI更新
 	_update_company_ais(tick)
+
+
+func _update_combat(tick: int, dt: float) -> void:
+	# デバッグ: 接触状態を出力（10秒ごと）
+	if tick % 100 == 0:
+		for faction_val in [GameEnums.Faction.BLUE, GameEnums.Faction.RED]:
+			var contacts := vision_system.get_contacts_for_faction(faction_val)
+			var faction_name := "BLUE" if faction_val == GameEnums.Faction.BLUE else "RED"
+			if contacts.size() > 0:
+				print("[Vision] %s has %d contacts" % [faction_name, contacts.size()])
+				for c in contacts:
+					print("  - %s: state=%d" % [c.element_id, c.state])
+
+	# 被弾中フラグを追跡
+	var elements_under_fire: Dictionary = {}  # element_id -> bool
+
+	# 射撃処理
+	for shooter in world_model.elements:
+		if shooter.state == GameEnums.UnitState.DESTROYED:
+			continue
+		if shooter.state == GameEnums.UnitState.BROKEN:
+			continue  # Brokenは射撃不可
+		if not shooter.primary_weapon:
+			continue
+		if shooter.sop_mode == GameEnums.SOPMode.HOLD_FIRE:
+			continue
+
+		# 射撃対象を選択
+		var target := _select_target(shooter, tick)
+		if not target:
+			continue
+
+		# 射撃実行
+		var distance := shooter.position.distance_to(target.position)
+		var terrain := map_data.get_terrain_at(target.position) if map_data else GameEnums.TerrainType.OPEN
+
+		# LoS取得（簡易版：距離と地形から推定）
+		var t_los := _estimate_los(shooter, target)
+
+		var result := combat_system.calculate_direct_fire_effect(
+			shooter, target, shooter.primary_weapon, distance, dt, t_los, terrain, false
+		)
+
+		if result.is_valid:
+			# ダメージ適用
+			combat_system.apply_damage(target, result.d_supp, result.d_dmg)
+			elements_under_fire[target.id] = true
+			shooter.last_fire_tick = tick
+			shooter.current_target_id = target.id
+
+			# 戦闘可視化
+			# ダメージが発生していれば命中、抑圧のみなら外れ/抑圧射撃
+			var is_hit := result.d_dmg > 0.001
+			var weapon_mechanism := shooter.primary_weapon.mechanism if shooter.primary_weapon else WeaponData.Mechanism.SMALL_ARMS
+			if combat_visualizer:
+				combat_visualizer.add_fire_event(
+					shooter.id,
+					target.id,
+					shooter.position,
+					target.position,
+					shooter.faction,
+					result.d_dmg,
+					result.d_supp,
+					is_hit,
+					weapon_mechanism
+				)
+
+			# デバッグ出力（初回のみ）
+			if tick % 50 == 0:
+				print("[Combat] %s -> %s: supp=%.2f dmg=%.2f" % [shooter.id, target.id, result.d_supp, result.d_dmg])
+
+	# 抑圧回復を適用
+	for element in world_model.elements:
+		if element.state == GameEnums.UnitState.DESTROYED:
+			continue
+
+		var is_under_fire: bool = elements_under_fire.get(element.id, false)
+		var is_defending := element.current_order_type == GameEnums.OrderType.DEFEND
+		var comm_state := GameEnums.CommState.GOOD
+
+		combat_system.apply_suppression_recovery(
+			element, is_under_fire, comm_state, is_defending, dt
+		)
 
 
 func _update_company_ais(tick: int) -> void:
@@ -648,6 +751,93 @@ func _get_combat_state_name(state: GameEnums.CombatState) -> String:
 			return "Recov"
 		_:
 			return "?"
+
+# =============================================================================
+# 戦闘ヘルパー
+# =============================================================================
+
+## 武器を要素に割り当て
+func _assign_weapons_to_elements() -> void:
+	for element in world_model.elements:
+		if not element.element_type:
+			continue
+
+		# カテゴリに応じて武器を割り当て
+		match element.element_type.category:
+			ElementData.Category.INF:
+				element.primary_weapon = WeaponData.create_rifle()
+			ElementData.Category.VEH:
+				element.primary_weapon = WeaponData.create_machine_gun()
+			_:
+				element.primary_weapon = WeaponData.create_rifle()
+
+
+## 射撃対象を選択
+func _select_target(shooter: ElementData.ElementInstance, _tick: int) -> ElementData.ElementInstance:
+	if not vision_system:
+		return null
+
+	var contacts := vision_system.get_contacts_for_faction(shooter.faction)
+	if contacts.size() == 0:
+		return null
+
+	var best_target: ElementData.ElementInstance = null
+	var best_priority := -1.0
+
+	for contact in contacts:
+		# CONFIRMEDのみ射撃可能（RETURN_FIREの場合はSUSも可）
+		if shooter.sop_mode == GameEnums.SOPMode.FIRE_AT_WILL:
+			if contact.state != GameEnums.ContactState.CONFIRMED:
+				continue
+		elif shooter.sop_mode == GameEnums.SOPMode.RETURN_FIRE:
+			# 被弾時のみ射撃（簡略化：CONFIRMEDのみ）
+			if contact.state != GameEnums.ContactState.CONFIRMED:
+				continue
+
+		# 実際のElementを取得
+		var target := world_model.get_element_by_id(contact.element_id)
+		if not target:
+			continue
+		if target.state == GameEnums.UnitState.DESTROYED:
+			continue
+
+		# 射程内かチェック
+		var distance := shooter.position.distance_to(target.position)
+		if shooter.primary_weapon and not shooter.primary_weapon.is_in_range(distance):
+			continue
+
+		# 優先度計算（近い敵を優先）
+		var priority := 1000.0 - distance
+		if priority > best_priority:
+			best_priority = priority
+			best_target = target
+
+	return best_target
+
+
+## LoSを推定（簡易版）
+func _estimate_los(shooter: ElementData.ElementInstance, target: ElementData.ElementInstance) -> float:
+	if not map_data:
+		return 1.0
+
+	var t_los := 1.0
+	var sample_count := 5
+	var shooter_pos := shooter.position
+	var target_pos := target.position
+
+	for i in range(1, sample_count):
+		var t := float(i) / float(sample_count)
+		var sample_pos := shooter_pos.lerp(target_pos, t)
+		var terrain := map_data.get_terrain_at(sample_pos)
+
+		match terrain:
+			GameEnums.TerrainType.FOREST:
+				t_los *= 0.7
+			GameEnums.TerrainType.URBAN:
+				t_los *= 0.5
+
+	return maxf(t_los, 0.1)
+
 
 # =============================================================================
 # マーカー作成ヘルパー
