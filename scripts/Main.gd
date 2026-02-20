@@ -1,6 +1,8 @@
 extends Node2D
 
 const CompanyControllerAIClass = preload("res://scripts/ai/company_controller_ai.gd")
+const InputControllerClass = preload("res://scripts/ui/input_controller.gd")
+const OrderPreviewClass = preload("res://scripts/ui/order_preview.gd")
 
 ## Company Commander - メインシーン
 ## 2D現代戦リアルタイムストラテジー
@@ -17,8 +19,12 @@ const CompanyControllerAIClass = preload("res://scripts/ai/company_controller_ai
 @onready var camera: Camera2D = $Camera2D
 @onready var map_layer: Node2D = $MapLayer
 @onready var units_layer: Node2D = $UnitsLayer
-@onready var hud: Control = $UILayer/HUD
-@onready var status_label: Label = $UILayer/HUD/Label
+@onready var ui_layer: CanvasLayer = $UILayer
+
+## HUD関連
+var hud_manager: HUDManager
+var input_controller  # InputControllerClass
+var order_preview  # OrderPreviewClass
 
 # =============================================================================
 # コンポーネント
@@ -62,16 +68,19 @@ func _ready() -> void:
 	_setup_camera()
 	_spawn_test_units()
 
+	# HUDセットアップ
+	_setup_hud()
+
 	# シミュレーション開始
 	sim_runner.start()
 
-	_update_status_label()
+	_update_hud()
 
 
 func _process(_delta: float) -> void:
 	_handle_input()
 	_update_element_views()
-	_update_status_label()
+	_update_hud()
 
 
 func _setup_systems() -> void:
@@ -299,9 +308,6 @@ func _update_element_views() -> void:
 
 func _handle_input() -> void:
 	_handle_camera_input()
-	_handle_time_input()
-	_handle_selection_input()
-	_handle_order_input()
 
 
 func _handle_camera_input() -> void:
@@ -325,68 +331,10 @@ func _handle_camera_input() -> void:
 	camera.zoom = camera.zoom.clamp(Vector2(0.1, 0.1), Vector2(2.0, 2.0))
 
 
-func _handle_time_input() -> void:
-	if Input.is_action_just_pressed("ui_select"):
-		sim_runner.toggle_pause()
-	if Input.is_key_pressed(KEY_EQUAL):
-		sim_runner.speed_up()
-	if Input.is_key_pressed(KEY_MINUS):
-		sim_runner.speed_down()
-
-
-func _handle_selection_input() -> void:
-	if Input.is_action_just_pressed("ui_accept"):  # Enter
-		# テスト用: 全味方ユニットを選択
-		_clear_selection()
-		for element in world_model.get_elements_for_faction(player_faction):
-			_add_to_selection(element)
-
-
-func _handle_order_input() -> void:
-	# Escで移動命令（右クリック代替）
-	if Input.is_action_just_pressed("ui_cancel"):
-		if _selected_elements.size() > 0:
-			var target := _get_world_mouse_position()
-			for element in _selected_elements:
-				if element.faction == player_faction:
-					movement_system.issue_move_order(element, target, false)
-
-
 func _get_world_mouse_position() -> Vector2:
 	var viewport_mouse_pos: Vector2 = get_viewport().get_mouse_position()
 	var canvas_xform_inv: Transform2D = get_viewport().get_canvas_transform().affine_inverse()
 	return canvas_xform_inv * viewport_mouse_pos
-
-
-func _input(event: InputEvent) -> void:
-	if event is InputEventMouseButton:
-		var mouse_event := event as InputEventMouseButton
-		var canvas_xform_inv: Transform2D = get_viewport().get_canvas_transform().affine_inverse()
-		var world_pos: Vector2 = canvas_xform_inv * mouse_event.position
-
-		# 左クリックで選択
-		if mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.pressed:
-			var clicked_element := _get_element_at_position(world_pos)
-
-			if clicked_element:
-				if not Input.is_key_pressed(KEY_SHIFT):
-					_clear_selection()
-				_add_to_selection(clicked_element)
-				print("選択: ", clicked_element.id, " (total: ", _selected_elements.size(), ")")
-			else:
-				# 何もないところをクリックしたら選択解除
-				if not Input.is_key_pressed(KEY_SHIFT):
-					_clear_selection()
-					print("選択解除")
-
-		# 右クリックで移動命令
-		elif mouse_event.button_index == MOUSE_BUTTON_RIGHT and mouse_event.pressed:
-			if _selected_elements.size() > 0:
-				print("移動命令: ", _selected_elements.size(), " units to ", world_pos)
-				for element in _selected_elements:
-					if element.faction == player_faction:
-						print("  Element ", element.id, " at ", element.position, " -> ", world_pos)
-						movement_system.issue_move_order(element, world_pos, false)
 
 
 func _get_element_at_position(pos: Vector2) -> ElementData.ElementInstance:
@@ -402,6 +350,7 @@ func _clear_selection() -> void:
 		if element.id in _element_views:
 			_element_views[element.id].set_selected(false)
 	_selected_elements.clear()
+	_update_selection_ui()
 
 
 func _add_to_selection(element: ElementData.ElementInstance) -> void:
@@ -409,6 +358,12 @@ func _add_to_selection(element: ElementData.ElementInstance) -> void:
 		_selected_elements.append(element)
 		if element.id in _element_views:
 			_element_views[element.id].set_selected(true)
+		_update_selection_ui()
+
+
+func _update_selection_ui() -> void:
+	if hud_manager:
+		hud_manager.set_selected_elements(_selected_elements)
 
 # =============================================================================
 # Tick処理
@@ -447,36 +402,214 @@ func _update_company_ais(tick: int) -> void:
 
 
 func _on_speed_changed(_new_speed: float) -> void:
-	_update_status_label()
+	_update_hud()
 
 # =============================================================================
-# UI更新
+# HUD セットアップと更新
 # =============================================================================
 
-func _update_status_label() -> void:
-	if not sim_runner:
+func _setup_hud() -> void:
+	# HUDManager
+	hud_manager = HUDManager.new()
+	hud_manager.name = "HUDManager"
+	ui_layer.add_child(hud_manager)
+	hud_manager.setup(world_model, map_data, player_faction)
+
+	# シグナル接続
+	hud_manager.command_selected.connect(_on_hud_command_selected)
+	hud_manager.pie_command_selected.connect(_on_pie_command_selected)
+	hud_manager.unit_selected_from_list.connect(_on_unit_selected_from_list)
+	hud_manager.minimap_clicked.connect(_on_minimap_clicked)
+
+	# InputController
+	input_controller = InputControllerClass.new()
+	input_controller.name = "InputController"
+	add_child(input_controller)
+	input_controller.setup(camera, hud_manager.pie_menu, hud_manager)
+
+	# シグナル接続
+	input_controller.left_click.connect(_on_input_left_click)
+	input_controller.right_click.connect(_on_input_right_click)
+	input_controller.box_selection_ended.connect(_on_box_selection_ended)
+	input_controller.command_hotkey_pressed.connect(_on_command_hotkey_pressed)
+	input_controller.speed_change_requested.connect(_on_speed_change_requested)
+	input_controller.camera_center_requested.connect(_on_camera_center_requested)
+	input_controller.escape_pressed.connect(_on_escape_pressed)
+
+	# OrderPreview
+	order_preview = OrderPreviewClass.new()
+	order_preview.name = "OrderPreview"
+	units_layer.add_child(order_preview)
+
+
+func _update_hud() -> void:
+	if not sim_runner or not hud_manager:
 		return
 
-	var speed_text := "Paused" if sim_runner.is_paused() else str(sim_runner.sim_speed) + "x"
-	var time_text := "%.1f" % sim_runner.get_sim_time()
-	var selected_text := str(_selected_elements.size()) + " selected"
+	var company_ai = company_ais.get(player_faction)
+	hud_manager.update_hud(sim_runner, company_ai)
 
-	# AI状態を取得
-	var ai_text := ""
-	if player_faction in company_ais:
-		var ai = company_ais[player_faction]
-		var tpl_name := _get_template_name(ai.get_current_template_type())
-		var phase: int = ai.get_current_phase()
-		var combat := _get_combat_state_name(ai.get_combat_state())
-		ai_text = " | AI: %s P%d (%s)" % [tpl_name, phase, combat]
+	# カメラ範囲をミニマップに反映
+	if hud_manager.minimap:
+		var viewport_size := get_viewport().get_visible_rect().size
+		var cam_rect := Rect2(
+			camera.position - viewport_size / 2 / camera.zoom,
+			viewport_size / camera.zoom
+		)
+		hud_manager.minimap.set_camera_rect(cam_rect)
 
-	status_label.text = "Tick: %d | Time: %s sec | Speed: %s | %s%s | RClick=Move" % [
-		sim_runner.tick_index,
-		time_text,
-		speed_text,
-		selected_text,
-		ai_text
-	]
+
+# =============================================================================
+# HUDシグナルハンドラ
+# =============================================================================
+
+func _on_hud_command_selected(command_type: GameEnums.OrderType, _world_pos: Vector2) -> void:
+	# コマンドバーからのコマンド選択
+	_execute_command_for_selected(command_type, _get_world_mouse_position())
+
+
+func _on_pie_command_selected(command_type: GameEnums.OrderType, world_pos: Vector2) -> void:
+	# Pie Menuからのコマンド選択
+	_execute_command_for_selected(command_type, world_pos)
+
+
+func _on_unit_selected_from_list(element_id: String) -> void:
+	var element := world_model.get_element_by_id(element_id)
+	if element:
+		_clear_selection()
+		_add_to_selection(element)
+
+
+func _on_minimap_clicked(world_pos: Vector2) -> void:
+	# カメラをその位置に移動
+	camera.position = world_pos
+
+
+# =============================================================================
+# 入力シグナルハンドラ
+# =============================================================================
+
+func _on_input_left_click(world_pos: Vector2, _screen_pos: Vector2) -> void:
+	var clicked_element := _get_element_at_position(world_pos)
+
+	if clicked_element:
+		if not input_controller.is_shift_held():
+			_clear_selection()
+		_add_to_selection(clicked_element)
+	else:
+		if not input_controller.is_shift_held():
+			_clear_selection()
+
+
+func _on_input_right_click(world_pos: Vector2, _screen_pos: Vector2) -> void:
+	# スマートコマンド: 右クリック先に応じて自動判定
+	if _selected_elements.size() == 0:
+		return
+
+	# 敵ユニットをクリックした場合は攻撃
+	var target_element := _get_element_at_position(world_pos)
+	if target_element and target_element.faction != player_faction:
+		_execute_command_for_selected(GameEnums.OrderType.ATTACK, world_pos)
+		return
+
+	# 拠点をクリックした場合
+	var cp := _get_cp_at_position(world_pos)
+	if cp:
+		if cp.initial_owner == player_faction or cp.initial_owner == GameEnums.Faction.NONE:
+			_execute_command_for_selected(GameEnums.OrderType.DEFEND, world_pos)
+		else:
+			_execute_command_for_selected(GameEnums.OrderType.ATTACK, world_pos)
+		return
+
+	# それ以外は移動
+	_execute_command_for_selected(GameEnums.OrderType.MOVE, world_pos)
+
+
+func _on_box_selection_ended(start_pos: Vector2, end_pos: Vector2) -> void:
+	if not input_controller.is_shift_held():
+		_clear_selection()
+
+	# スクリーン座標をワールド座標に変換
+	var canvas_xform_inv := get_viewport().get_canvas_transform().affine_inverse()
+	var world_start: Vector2 = canvas_xform_inv * start_pos
+	var world_end: Vector2 = canvas_xform_inv * end_pos
+
+	var rect := Rect2(
+		Vector2(min(world_start.x, world_end.x), min(world_start.y, world_end.y)),
+		Vector2(abs(world_end.x - world_start.x), abs(world_end.y - world_start.y))
+	)
+
+	# 範囲内の味方ユニットを選択
+	for element in world_model.get_elements_for_faction(player_faction):
+		if rect.has_point(element.position):
+			_add_to_selection(element)
+
+
+func _on_command_hotkey_pressed(command_type: GameEnums.OrderType) -> void:
+	# ホットキーでコマンドモードに入る（次のクリックで実行）
+	# TODO: コマンドモード実装
+	print("Hotkey command: ", command_type)
+
+
+func _on_speed_change_requested(speed: int) -> void:
+	if speed == 0:
+		sim_runner.pause()
+	else:
+		sim_runner.resume()
+		sim_runner.set_speed(speed)
+
+
+func _on_camera_center_requested() -> void:
+	if _selected_elements.size() > 0:
+		var center := Vector2.ZERO
+		for element in _selected_elements:
+			center += element.position
+		center /= _selected_elements.size()
+		camera.position = center
+
+
+func _on_escape_pressed() -> void:
+	_clear_selection()
+	order_preview.hide_preview()
+
+
+# =============================================================================
+# コマンド実行
+# =============================================================================
+
+func _execute_command_for_selected(command_type: GameEnums.OrderType, target_pos: Vector2) -> void:
+	if _selected_elements.size() == 0:
+		return
+
+	var use_road: bool = input_controller.is_alt_held()
+
+	for element in _selected_elements:
+		if element.faction != player_faction:
+			continue
+
+		match command_type:
+			GameEnums.OrderType.MOVE:
+				movement_system.issue_move_order(element, target_pos, use_road)
+			GameEnums.OrderType.ATTACK:
+				# TODO: 攻撃命令実装
+				movement_system.issue_move_order(element, target_pos, use_road)
+			GameEnums.OrderType.DEFEND:
+				# TODO: 防御命令実装
+				movement_system.issue_move_order(element, target_pos, use_road)
+			_:
+				# その他のコマンドは移動として処理（暫定）
+				movement_system.issue_move_order(element, target_pos, use_road)
+
+
+func _get_cp_at_position(pos: Vector2) -> MapData.CapturePoint:
+	if not map_data:
+		return null
+
+	for cp in map_data.capture_points:
+		if pos.distance_to(cp.position) <= map_data.cp_radius_m:
+			return cp
+
+	return null
 
 
 func _get_template_name(tpl: GameEnums.TacticalTemplate) -> String:

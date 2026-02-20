@@ -107,8 +107,10 @@ enum LoSResult {
 enum UnitState {
 	ACTIVE = 0,      ## 戦闘可能
 	SUPPRESSED = 1,  ## 制圧中
-	ROUTING = 2,     ## 潰走中
-	DESTROYED = 3,   ## 撃破
+	PINNED = 2,      ## 釘付け（動けない）
+	BROKEN = 3,      ## 壊走（士気崩壊）
+	ROUTING = 4,     ## 潰走中
+	DESTROYED = 5,   ## 撃破
 }
 
 # =============================================================================
@@ -127,13 +129,19 @@ enum VehicleState {
 # =============================================================================
 
 enum OrderType {
-	MOVE = 0,           ## 移動
-	MOVE_FAST = 1,      ## 急速移動
-	ATTACK_MOVE = 2,    ## 攻撃前進
-	HOLD = 3,           ## 停止
-	DEFEND = 4,         ## 防御
-	ATTACK = 5,         ## 攻撃
-	RETREAT = 6,        ## 後退
+	NONE = 0,           ## なし
+	MOVE = 1,           ## 移動
+	MOVE_FAST = 2,      ## 急速移動
+	ATTACK_MOVE = 3,    ## 攻撃前進
+	HOLD = 4,           ## 停止
+	DEFEND = 5,         ## 防御
+	ATTACK = 6,         ## 攻撃
+	RETREAT = 7,        ## 後退
+	RECON = 8,          ## 偵察
+	SUPPRESS = 9,       ## 制圧射撃
+	SMOKE = 10,         ## 煙幕展開
+	SUPPORT = 11,       ## 支援
+	BREAK_CONTACT = 12, ## 離脱
 }
 
 # =============================================================================
@@ -210,9 +218,12 @@ enum CombatEventType {
 	EV_CONTACT_SUS_ACQUIRED = 0,    ## 疑似接触
 	EV_CONTACT_CONF_ACQUIRED = 1,   ## 確定接触
 	EV_CONTACT_TYPE_REFINED = 2,    ## 識別進展
+	EV_CONTACT_LOST = 3,            ## 接触喪失
 	## 拠点
 	EV_CP_CONTESTED_ENTER = 10,     ## 拠点争奪開始
 	EV_CP_CONTESTED_EXIT = 11,      ## 拠点争奪解消
+	EV_CP_CAPTURED = 12,            ## 拠点制圧
+	EV_CP_LOST = 13,                ## 拠点喪失
 	## 火力支援
 	EV_FIRE_SUPPORT_REQUESTED = 20, ## 火力支援要請
 	EV_FIRE_MISSION_INBOUND = 21,   ## 着弾予告
