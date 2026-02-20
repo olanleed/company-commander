@@ -58,10 +58,54 @@ const PATH_RECALC_HZ: float = 1.0
 
 # =============================================================================
 # 拠点定数
+# 仕様書: docs/capture_v0.1.md
 # =============================================================================
 
 ## 拠点の半径 (メートル)
 const CP_RADIUS_M: float = 40.0
+
+## 占領速度 (controlポイント/秒/有効パワー)
+const CAPTURE_RATE: float = 1.5
+
+## スタッキング上限（パワーの合計上限）
+const CAPTURE_CAP: float = 2.0      ## CapturePower上限
+const NEUTRALIZE_CAP: float = 2.0   ## NeutralizePower上限
+const CONTEST_CAP: float = 3.0      ## ContestPower上限
+
+## Contest閾値（この値以上でContest扱い）
+const CONTEST_THRESHOLD: float = 0.05
+
+## control_milli範囲
+const CONTROL_MILLI_MAX: int = 100000   ## +100000 = Blue完全支配
+const CONTROL_MILLI_MIN: int = -100000  ## -100000 = Red完全支配
+
+## 役割別基礎パワー [capture, neutralize, contest]
+## INF
+const CP_POWER_INF_CAPTURE: float = 1.00
+const CP_POWER_INF_NEUTRALIZE: float = 1.00
+const CP_POWER_INF_CONTEST: float = 1.00
+## REC
+const CP_POWER_REC_CAPTURE: float = 0.70
+const CP_POWER_REC_NEUTRALIZE: float = 0.70
+const CP_POWER_REC_CONTEST: float = 0.80
+## VEH (IFV/APC)
+const CP_POWER_VEH_CAPTURE: float = 0.00
+const CP_POWER_VEH_NEUTRALIZE: float = 0.40
+const CP_POWER_VEH_CONTEST: float = 0.80
+## TANK
+const CP_POWER_TANK_CAPTURE: float = 0.00
+const CP_POWER_TANK_NEUTRALIZE: float = 0.60
+const CP_POWER_TANK_CONTEST: float = 1.00
+## WEAP/LOG/HQ - 全て0
+const CP_POWER_NONE_CAPTURE: float = 0.00
+const CP_POWER_NONE_NEUTRALIZE: float = 0.00
+const CP_POWER_NONE_CONTEST: float = 0.00
+
+## 姿勢倍率
+const CP_POSTURE_DEFEND: float = 1.00
+const CP_POSTURE_ATTACK: float = 0.90
+const CP_POSTURE_MOVE: float = 0.80
+const CP_POSTURE_BREAK_CONTACT: float = 0.60
 
 # =============================================================================
 # 視界・索敵定数

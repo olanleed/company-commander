@@ -34,12 +34,43 @@ var cp_radius_m: float = 40.0
 # =============================================================================
 
 ## 拠点データ
+## 仕様書: docs/capture_v0.1.md
 class CapturePoint:
+	## 固定データ（マップ読み込み時）
 	var id: String = ""
 	var position: Vector2 = Vector2.ZERO
 	var attribute: GameEnums.CPAttribute = GameEnums.CPAttribute.COM
 	var initial_owner: GameEnums.Faction = GameEnums.Faction.NONE
 	var arrival_points: Array[Vector2] = []
+
+	## 動的状態（試合中更新）
+	var control_milli: int = 0  ## -100000〜+100000（+:Blue, -:Red）
+	var state: GameEnums.CPState = GameEnums.CPState.NEUTRAL
+
+	## 初期化（initial_ownerに基づいてcontrol_milliを設定）
+	func initialize_control() -> void:
+		match initial_owner:
+			GameEnums.Faction.BLUE:
+				control_milli = GameConstants.CONTROL_MILLI_MAX
+				state = GameEnums.CPState.CONTROLLED_BLUE
+			GameEnums.Faction.RED:
+				control_milli = GameConstants.CONTROL_MILLI_MIN
+				state = GameEnums.CPState.CONTROLLED_RED
+			_:
+				control_milli = 0
+				state = GameEnums.CPState.NEUTRAL
+
+	## 現在の支配陣営を取得
+	func get_controlling_faction() -> GameEnums.Faction:
+		if state == GameEnums.CPState.CONTROLLED_BLUE:
+			return GameEnums.Faction.BLUE
+		elif state == GameEnums.CPState.CONTROLLED_RED:
+			return GameEnums.Faction.RED
+		return GameEnums.Faction.NONE
+
+	## 制圧進行率（-1.0〜+1.0）を取得
+	func get_control_ratio() -> float:
+		return float(control_milli) / float(GameConstants.CONTROL_MILLI_MAX)
 
 ## 全拠点
 var capture_points: Array[CapturePoint] = []

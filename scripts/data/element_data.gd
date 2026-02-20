@@ -58,8 +58,8 @@ class ElementType:
 	var cross_speed: float = 3.0  # m/s
 
 	## Combat
-	var base_strength: int = 10
-	var max_strength: int = 10
+	var base_strength: int = 100
+	var max_strength: int = 100
 
 	## Sensors
 	var spot_range_base: float = 300.0  # m
@@ -91,7 +91,7 @@ class ElementInstance:
 
 	## 状態
 	var state: GameEnums.UnitState = GameEnums.UnitState.ACTIVE
-	var current_strength: int = 10
+	var current_strength: int = 100  # 仕様: Strength 0-100 スケール
 	var suppression: float = 0.0  # 0.0 ~ 1.0
 
 	## 視界状態 (他陣営から見た状態)

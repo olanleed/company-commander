@@ -40,6 +40,7 @@ var vision_system: VisionSystem
 var combat_system: CombatSystem
 var event_bus: CombatEventBus
 var combat_visualizer: CombatVisualizer
+var capture_system: CaptureSystem
 
 ## 中隊AI（陣営別）
 var company_ais: Dictionary = {}  # faction -> CompanyControllerAI
@@ -47,6 +48,7 @@ var company_ais: Dictionary = {}  # faction -> CompanyControllerAI
 var background_sprite: Sprite2D
 var _element_views: Dictionary = {}  # element_id -> ElementView
 var _selected_elements: Array[ElementData.ElementInstance] = []
+var _cp_views: Dictionary = {}  # cp_id -> CapturePointView
 
 # =============================================================================
 # プレイヤー設定
@@ -122,6 +124,9 @@ func _setup_systems() -> void:
 	combat_visualizer = CombatVisualizer.new()
 	combat_visualizer.name = "CombatVisualizer"
 
+	# CaptureSystem
+	capture_system = CaptureSystem.new()
+
 
 func _load_test_map_async() -> void:
 	var map_path := "res://maps/MVP_01_CROSSROADS/"
@@ -131,7 +136,14 @@ func _load_test_map_async() -> void:
 		print("マップ読み込み完了: " + map_data.map_id)
 		print("  拠点数: " + str(map_data.capture_points.size()))
 		print("  地形ゾーン数: " + str(map_data.terrain_zones.size()))
+
+		# 拠点の初期状態を設定
+		for cp in map_data.capture_points:
+			cp.initialize_control()
+			print("  CP %s: owner=%d" % [cp.id, cp.initial_owner])
+
 		_setup_map_visuals()
+		_setup_capture_point_views()
 
 		# MovementSystem をセットアップ (nav_managerへの参照を先に設定)
 		movement_system.setup(nav_manager, map_data)
@@ -174,15 +186,19 @@ func _draw_placeholder_background() -> void:
 
 
 func _draw_debug_markers() -> void:
-	# 拠点マーカー
-	for cp in map_data.capture_points:
-		var marker := _create_cp_marker(cp)
-		map_layer.add_child(marker)
-
 	# 地形ゾーンのアウトライン
 	for zone in map_data.terrain_zones:
 		var outline := _create_zone_outline(zone)
 		map_layer.add_child(outline)
+
+
+func _setup_capture_point_views() -> void:
+	# 拠点ビューを作成
+	for cp in map_data.capture_points:
+		var cp_view := CapturePointView.new(cp)
+		cp_view.name = "CP_" + cp.id
+		units_layer.add_child(cp_view)
+		_cp_views[cp.id] = cp_view
 
 
 func _setup_camera() -> void:
@@ -210,7 +226,7 @@ func _spawn_test_units() -> void:
 	inf_type.mobility_class = GameEnums.MobilityType.FOOT
 	inf_type.road_speed = 5.0
 	inf_type.cross_speed = 3.0
-	inf_type.max_strength = 10
+	inf_type.max_strength = 100  # 仕様: Strength 0-100 スケール
 	inf_type.spot_range_base = 300.0
 
 	# 戦車タイプ
@@ -222,7 +238,7 @@ func _spawn_test_units() -> void:
 	tank_type.mobility_class = GameEnums.MobilityType.TRACKED
 	tank_type.road_speed = 12.0
 	tank_type.cross_speed = 8.0
-	tank_type.max_strength = 4
+	tank_type.max_strength = 100  # 仕様: Strength 0-100 スケール
 	tank_type.spot_range_base = 500.0
 	tank_type.armor_class = 3
 
@@ -235,7 +251,7 @@ func _spawn_test_units() -> void:
 	ifv_type.mobility_class = GameEnums.MobilityType.TRACKED
 	ifv_type.road_speed = 15.0
 	ifv_type.cross_speed = 10.0
-	ifv_type.max_strength = 3
+	ifv_type.max_strength = 100  # 仕様: Strength 0-100 スケール
 	ifv_type.armor_class = 2
 
 	# BLUE陣営 - 中央CPの近くに配置（戦闘テスト用：距離約400mで視界内）
@@ -400,6 +416,9 @@ func _on_tick_advanced(tick: int) -> void:
 	# 戦闘更新
 	_update_combat(tick, GameConstants.SIM_DT)
 
+	# 拠点制圧更新
+	_update_capture(tick)
+
 	# 中隊AI更新
 	_update_company_ais(tick)
 
@@ -502,6 +521,28 @@ func _update_company_ais(tick: int) -> void:
 
 		# 大局評価（0.2Hz）
 		ai.update_operational(tick)
+
+
+func _update_capture(tick: int) -> void:
+	if not capture_system or not map_data:
+		return
+
+	# 拠点制圧を更新
+	capture_system.update(world_model, map_data)
+
+	# 10秒ごとにデバッグ出力
+	if tick % 100 == 0:
+		var cp_count := capture_system.get_controlled_count(map_data)
+		print("[Capture] Blue=%d Red=%d" % [cp_count.blue, cp_count.red])
+		for cp in map_data.capture_points:
+			print("  %s" % capture_system.get_cp_state_string(cp))
+			# CP内のユニット数を表示
+			var power := capture_system.get_cp_effective_power(cp, world_model, map_data.cp_radius_m)
+			if power.blue_contest > 0 or power.red_contest > 0:
+				print("    Power: B_cap=%.2f B_neut=%.2f B_cont=%.2f | R_cap=%.2f R_neut=%.2f R_cont=%.2f" % [
+					power.blue_capture, power.blue_neutralize, power.blue_contest,
+					power.red_capture, power.red_neutralize, power.red_contest
+				])
 
 
 func _on_speed_changed(_new_speed: float) -> void:
