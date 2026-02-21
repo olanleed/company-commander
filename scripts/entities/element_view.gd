@@ -219,6 +219,9 @@ func _draw() -> void:
 	# HP/状態バー（味方のみ、または敵CONF時）
 	if _is_friendly or _contact_state == GameEnums.ContactState.CONFIRMED:
 		_draw_status_bar()
+		# 車両はサブシステムバーも描画
+		if element.is_vehicle():
+			_draw_subsystem_bars()
 
 
 ## ワールド座標をローカル座標に変換（回転を考慮）
@@ -321,6 +324,59 @@ func _draw_firing_indicator() -> void:
 		var angle := (PI / 4.0) + (PI / 2.0) * i
 		var dir := Vector2.from_angle(angle)
 		draw_line(icon_pos + dir * icon_size * 0.6, icon_pos + dir * icon_size * 1.2, flash_color, 2.0)
+
+
+## サブシステムHP バー描画（車両用）
+## MOB=水色, FPW=赤, SEN=緑 の3本のバーをHPバーの下に表示
+func _draw_subsystem_bars() -> void:
+	if not element:
+		return
+
+	var bar_width := 50.0
+	var bar_height := 3.0
+	var bar_spacing := 1.0
+	var start_y := 44.0  # HPバーの下
+
+	# 回転を打ち消すためにdraw_set_transformを使用（既に_draw_status_barで設定済み）
+	draw_set_transform(Vector2.ZERO, -rotation, Vector2.ONE)
+
+	# Mobility HP（水色）
+	_draw_single_subsystem_bar(-bar_width / 2, start_y,
+		bar_width, bar_height, element.mobility_hp, Color(0.3, 0.7, 0.9))
+
+	# Firepower HP（赤/オレンジ）
+	_draw_single_subsystem_bar(-bar_width / 2, start_y + bar_height + bar_spacing,
+		bar_width, bar_height, element.firepower_hp, Color(0.9, 0.4, 0.3))
+
+	# Sensors HP（緑）
+	_draw_single_subsystem_bar(-bar_width / 2, start_y + (bar_height + bar_spacing) * 2,
+		bar_width, bar_height, element.sensors_hp, Color(0.5, 0.8, 0.4))
+
+	# 変換をリセット
+	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+
+
+## 単一のサブシステムバーを描画
+func _draw_single_subsystem_bar(x: float, y: float, width: float, height: float,
+		hp: int, color: Color) -> void:
+	# 背景
+	var bg_rect := Rect2(x, y, width, height)
+	draw_rect(bg_rect, Color(0.15, 0.15, 0.15, 0.8))
+
+	# HP バー
+	var hp_ratio := clampf(float(hp) / 100.0, 0.0, 1.0)
+	if hp_ratio > 0:
+		# HP値に応じて色を調整
+		var bar_color: Color
+		if hp >= 70:
+			bar_color = color
+		elif hp >= 30:
+			bar_color = Color(0.9, 0.8, 0.2)  # 警告色（黄）
+		else:
+			bar_color = Color(0.9, 0.3, 0.2)  # 危険色（赤）
+
+		var hp_rect := Rect2(x, y, width * hp_ratio, height)
+		draw_rect(hp_rect, bar_color)
 
 
 ## 爆発マーク描画（catastrophic kill用）

@@ -19,6 +19,15 @@ var _order_label: Label
 var _state_label: Label
 var _position_label: Label
 
+# 車両サブシステムHP
+var _subsystem_section: VBoxContainer
+var _mobility_bar: ProgressBar
+var _mobility_label: Label
+var _firepower_bar: ProgressBar
+var _firepower_label: Label
+var _sensors_bar: ProgressBar
+var _sensors_label: Label
+
 # AI思考情報
 var _ai_section: VBoxContainer
 var _ai_template_label: Label
@@ -106,6 +115,41 @@ func _setup_layout() -> void:
 	# セパレータ
 	var sep2 := HSeparator.new()
 	_vbox.add_child(sep2)
+
+	# サブシステムHP（車両のみ表示）
+	_subsystem_section = VBoxContainer.new()
+	_subsystem_section.add_theme_constant_override("separation", 4)
+	_subsystem_section.visible = false  # デフォルトは非表示
+
+	var subsys_header := Label.new()
+	subsys_header.text = "SUBSYSTEMS"
+	subsys_header.add_theme_font_size_override("font_size", 10)
+	subsys_header.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	_subsystem_section.add_child(subsys_header)
+
+	# Mobility HP
+	var mob_section := _create_subsystem_bar("MOB", Color(0.3, 0.7, 0.9))
+	_mobility_bar = mob_section.get_node("Bar") as ProgressBar
+	_mobility_label = mob_section.get_node("Value") as Label
+	_subsystem_section.add_child(mob_section)
+
+	# Firepower HP
+	var fire_section := _create_subsystem_bar("FPW", Color(0.9, 0.4, 0.3))
+	_firepower_bar = fire_section.get_node("Bar") as ProgressBar
+	_firepower_label = fire_section.get_node("Value") as Label
+	_subsystem_section.add_child(fire_section)
+
+	# Sensors HP
+	var sens_section := _create_subsystem_bar("SEN", Color(0.5, 0.8, 0.4))
+	_sensors_bar = sens_section.get_node("Bar") as ProgressBar
+	_sensors_label = sens_section.get_node("Value") as Label
+	_subsystem_section.add_child(sens_section)
+
+	_vbox.add_child(_subsystem_section)
+
+	# セパレータ（サブシステムの後）
+	var sep2b := HSeparator.new()
+	_vbox.add_child(sep2b)
 
 	# Order
 	var order_section := VBoxContainer.new()
@@ -232,6 +276,49 @@ func _create_stat_section(header_text: String, bar_color: Color) -> VBoxContaine
 	return section
 
 
+## サブシステムHP用のコンパクトなバーを作成
+func _create_subsystem_bar(label_text: String, bar_color: Color) -> HBoxContainer:
+	var container := HBoxContainer.new()
+	container.add_theme_constant_override("separation", 4)
+
+	# ラベル（短縮名）
+	var label := Label.new()
+	label.text = label_text
+	label.custom_minimum_size.x = 30
+	label.add_theme_font_size_override("font_size", 10)
+	label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+	container.add_child(label)
+
+	# プログレスバー
+	var bar := ProgressBar.new()
+	bar.name = "Bar"
+	bar.custom_minimum_size = Vector2(80, 12)
+	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar.value = 100
+	bar.show_percentage = false
+
+	var bg_style := StyleBoxFlat.new()
+	bg_style.bg_color = Color(0.15, 0.15, 0.15)
+	bar.add_theme_stylebox_override("background", bg_style)
+
+	var fill_style := StyleBoxFlat.new()
+	fill_style.bg_color = bar_color
+	bar.add_theme_stylebox_override("fill", fill_style)
+
+	container.add_child(bar)
+
+	# 値ラベル
+	var value_label := Label.new()
+	value_label.name = "Value"
+	value_label.text = "100"
+	value_label.custom_minimum_size.x = 28
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	value_label.add_theme_font_size_override("font_size", 10)
+	container.add_child(value_label)
+
+	return container
+
+
 func _setup_style() -> void:
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.1, 0.12, 0.15, 0.85)
@@ -271,6 +358,7 @@ func _show_empty() -> void:
 	_strength_label.text = "---"
 	_suppression_bar.value = 0
 	_suppression_label.text = "---"
+	_subsystem_section.visible = false
 	_order_label.text = "NONE"
 	_state_label.text = "---"
 	_position_label.text = "---"
@@ -291,6 +379,9 @@ func _show_single(element: ElementData.ElementInstance) -> void:
 	var sup_pct := element.suppression * 100.0
 	_suppression_bar.value = sup_pct
 	_suppression_label.text = "%d%%" % int(sup_pct)
+
+	# サブシステムHP（車両のみ）
+	_update_subsystem_display(element)
 
 	# Order
 	_order_label.text = _get_order_name(element.current_order_type)
@@ -328,6 +419,9 @@ func _show_multiple() -> void:
 	_suppression_bar.value = avg_sup
 	_suppression_label.text = "AVG: %d%%" % int(avg_sup)
 
+	# サブシステムHP（複数選択時は非表示）
+	_subsystem_section.visible = false
+
 	_order_label.text = "MULTIPLE"
 	_state_label.text = "---"
 	_position_label.text = "---"
@@ -342,6 +436,48 @@ func _show_multiple() -> void:
 		_ai_weapon_label.text = "Weapon: ---"
 	else:
 		_clear_ai_info()
+
+
+## サブシステムHP表示を更新（車両のみ）
+func _update_subsystem_display(element: ElementData.ElementInstance) -> void:
+	# 車両かどうかを判定（armor_class >= 1）
+	if element.is_vehicle():
+		_subsystem_section.visible = true
+
+		# Mobility HP
+		_mobility_bar.value = element.mobility_hp
+		_mobility_label.text = "%d" % element.mobility_hp
+		_update_subsystem_bar_color(_mobility_bar, element.mobility_hp)
+
+		# Firepower HP
+		_firepower_bar.value = element.firepower_hp
+		_firepower_label.text = "%d" % element.firepower_hp
+		_update_subsystem_bar_color(_firepower_bar, element.firepower_hp)
+
+		# Sensors HP
+		_sensors_bar.value = element.sensors_hp
+		_sensors_label.text = "%d" % element.sensors_hp
+		_update_subsystem_bar_color(_sensors_bar, element.sensors_hp)
+	else:
+		_subsystem_section.visible = false
+
+
+## サブシステムバーの色をHP値に応じて変更
+func _update_subsystem_bar_color(bar: ProgressBar, hp: int) -> void:
+	var fill_style := bar.get_theme_stylebox("fill") as StyleBoxFlat
+	if not fill_style:
+		return
+
+	# HP値に応じて色を変更
+	if hp >= 70:
+		# 緑（健全）
+		fill_style.bg_color = Color(0.3, 0.8, 0.3)
+	elif hp >= 30:
+		# 黄（警告）
+		fill_style.bg_color = Color(0.9, 0.8, 0.2)
+	else:
+		# 赤（危険）
+		fill_style.bg_color = Color(0.9, 0.3, 0.2)
 
 
 func _get_order_name(order_type: GameEnums.OrderType) -> String:

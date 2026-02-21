@@ -29,7 +29,7 @@ func _test_infantry_vs_tank_at_distances() -> void:
 	# 武装を装備
 	var all_weapons := WeaponData.get_all_concrete_weapons()
 	infantry.weapons.append(all_weapons["CW_RIFLE_STD"])
-	infantry.weapons.append(all_weapons["CW_LAW"])
+	infantry.weapons.append(all_weapons["CW_CARL_GUSTAF"])
 	infantry.primary_weapon = infantry.weapons[0]
 
 	# 戦車を作成
@@ -45,9 +45,9 @@ func _test_infantry_vs_tank_at_distances() -> void:
 		int(all_weapons["CW_RIFLE_STD"].max_range_m),
 		all_weapons["CW_RIFLE_STD"].preferred_target
 	])
-	print("CW_LAW: max_range=%dm, preferred=%d" % [
-		int(all_weapons["CW_LAW"].max_range_m),
-		all_weapons["CW_LAW"].preferred_target
+	print("CW_CARL_GUSTAF: max_range=%dm, preferred=%d" % [
+		int(all_weapons["CW_CARL_GUSTAF"].max_range_m),
+		all_weapons["CW_CARL_GUSTAF"].preferred_target
 	])
 	print("")
 
@@ -58,13 +58,14 @@ func _test_infantry_vs_tank_at_distances() -> void:
 	print("--------------------------------------------------")
 
 	var all_pass := true
+	# Carl Gustaf射程: 20-500m
 	var test_cases: Array = [
-		[100, "CW_LAW"],
-		[150, "CW_LAW"],
-		[200, "CW_LAW"],
-		[250, "CW_LAW"],
-		[260, ""],  # LAW射程外、RIFLEは装甲に効果なし
-		[300, ""],  # 同上
+		[100, "CW_CARL_GUSTAF"],
+		[200, "CW_CARL_GUSTAF"],
+		[300, "CW_CARL_GUSTAF"],
+		[400, "CW_CARL_GUSTAF"],
+		[500, "CW_CARL_GUSTAF"],
+		[510, ""],  # Carl Gustaf射程外、RIFLEは装甲に効果なし
 	]
 
 	for test_data in test_cases:

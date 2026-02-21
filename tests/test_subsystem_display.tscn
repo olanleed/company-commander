@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://c1subsys_display_test"]
+
+[ext_resource type="Script" path="res://tests/test_subsystem_display.gd" id="1_subsys"]
+
+[node name="TestSubsystemDisplay" type="Node"]
+script = ExtResource("1_subsys")

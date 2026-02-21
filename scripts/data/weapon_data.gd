@@ -134,6 +134,13 @@ class WeaponType:
 	## 爆風半径（BLAST_FRAG用）
 	var blast_radius_m: float = 40.0
 
+	## 弾速（m/s）：砲弾のビジュアル表示用
+	## 0の場合は即着弾（hitscan）として扱う
+	var projectile_speed_mps: float = 0.0
+
+	## 砲弾のサイズ（ピクセル）：視覚表示用
+	var projectile_size: float = 3.0
+
 
 	## 射程帯を取得
 	func get_range_band(distance_m: float) -> RangeBand:
@@ -477,6 +484,10 @@ static func create_cw_rpg_heat() -> WeaponType:
 		RangeBand.FAR: 85,    # 425mm RHA相当
 	}
 
+	# 弾速: RPG-7 = 約300m/s
+	w.projectile_speed_mps = 300.0
+	w.projectile_size = 5.0
+
 	return w
 
 
@@ -496,7 +507,7 @@ static func create_cw_tank_ke() -> WeaponType:
 	w.threat_class = ThreatClass.AT
 	w.preferred_target = PreferredTarget.ARMOR
 	w.ammo_endurance_min = 10.0
-	w.rof_rpm = 6.0
+	w.rof_rpm = 15.0  # 4秒に1発
 	w.sigma_hit_m = 1.5
 	w.direct_hit_radius_m = 2.0
 	w.shock_radius_m = 5.0
@@ -535,6 +546,10 @@ static func create_cw_tank_ke() -> WeaponType:
 		RangeBand.MID: 130,   # 650mm RHA相当
 		RangeBand.FAR: 120,   # 600mm RHA相当
 	}
+
+	# 弾速: APFSDS = 約1700m/s
+	w.projectile_speed_mps = 1700.0
+	w.projectile_size = 4.0
 
 	return w
 
@@ -741,64 +756,67 @@ static func create_cw_coax_mg() -> WeaponType:
 	return w
 
 
-## CW_LAW: 軽対戦車火器（M72 LAW/RPG-26相当）
-## 歩兵分隊の対装甲自衛用
-## RHA換算: M72 LAW = 約300mm CE貫徹力
-## スケール: 100 = 500mm RHA → LAW = 60
-static func create_cw_law() -> WeaponType:
+## CW_CARL_GUSTAF: 84mm無反動砲（Carl Gustaf M3/M4相当）
+## 歩兵分隊の主力対装甲火器、再装填可能
+## RHA換算: 84mm HEAT FFV551 = 約400mm CE貫徹力
+## スケール: 100 = 500mm RHA → Carl Gustaf = 80
+static func create_cw_carl_gustaf() -> WeaponType:
 	var w := WeaponType.new()
-	w.id = "CW_LAW"
-	w.display_name = "Light AT Rocket"
+	w.id = "CW_CARL_GUSTAF"
+	w.display_name = "84mm Recoilless"
 	w.mechanism = Mechanism.SHAPED_CHARGE
 	w.fire_model = FireModel.DISCRETE
-	w.min_range_m = 10.0
-	w.max_range_m = 250.0  # M72 LAW相当の有効射程
-	w.range_band_thresholds_m = [80.0, 150.0]
+	w.min_range_m = 20.0
+	w.max_range_m = 500.0  # Carl Gustaf HEAT有効射程
+	w.range_band_thresholds_m = [150.0, 300.0]
 	w.threat_class = ThreatClass.AT
 	w.preferred_target = PreferredTarget.ARMOR
-	w.ammo_endurance_min = 3.0  # 使い捨て火器なので少ない
-	w.rof_rpm = 1.0  # 装填不要だが1本/分程度
-	w.sigma_hit_m = 3.0
-	w.direct_hit_radius_m = 1.0
-	w.shock_radius_m = 8.0
+	w.ammo_endurance_min = 5.0  # 再装填可能、複数弾携行
+	w.rof_rpm = 6.0  # 約10秒に1発（再装填込み）
+	w.sigma_hit_m = 2.5
+	w.direct_hit_radius_m = 1.5
+	w.shock_radius_m = 12.0
 
-	# AT武器のlethalityは「当たった時の効果」を表す
-	# 距離による減衰は命中精度の低下として反映
-	# HEAVY目標への値を上げて、ヒット率を確保
+	# 84mm HEATは軽装甲に対して非常に有効
+	# MBT正面は厳しいが側面/後部なら貫通可能
 	w.lethality = {
 		RangeBand.NEAR: {
-			TargetClass.SOFT: 60,
-			TargetClass.LIGHT: 90,   # 軽装甲に対しては有効
-			TargetClass.HEAVY: 75,   # MBT側面/後部なら有効（上方修正）
-			TargetClass.FORTIFIED: 60,
+			TargetClass.SOFT: 70,
+			TargetClass.LIGHT: 95,   # 軽装甲は確実
+			TargetClass.HEAVY: 80,   # MBT側面/後部に有効
+			TargetClass.FORTIFIED: 70,
 		},
 		RangeBand.MID: {
-			TargetClass.SOFT: 45,
-			TargetClass.LIGHT: 80,
-			TargetClass.HEAVY: 65,   # 上方修正
-			TargetClass.FORTIFIED: 50,
+			TargetClass.SOFT: 55,
+			TargetClass.LIGHT: 90,
+			TargetClass.HEAVY: 70,
+			TargetClass.FORTIFIED: 60,
 		},
 		RangeBand.FAR: {
-			TargetClass.SOFT: 30,
-			TargetClass.LIGHT: 65,
-			TargetClass.HEAVY: 55,   # 上方修正（35→55）
-			TargetClass.FORTIFIED: 40,
+			TargetClass.SOFT: 40,
+			TargetClass.LIGHT: 80,
+			TargetClass.HEAVY: 60,
+			TargetClass.FORTIFIED: 50,
 		},
 	}
 
 	w.suppression_power = {
-		RangeBand.NEAR: 55,
-		RangeBand.MID: 45,
-		RangeBand.FAR: 35,
+		RangeBand.NEAR: 65,
+		RangeBand.MID: 55,
+		RangeBand.FAR: 45,
 	}
 
-	# RHA換算貫徹力: 300mm = 60（スケール: 100 = 500mm RHA）
-	# 距離による減衰はHEATでは小さい
+	# RHA換算貫徹力: 400mm = 80（スケール: 100 = 500mm RHA）
+	# HEATは距離による減衰が小さい
 	w.pen_ce = {
-		RangeBand.NEAR: 60,   # 300mm RHA相当
-		RangeBand.MID: 58,    # 290mm RHA相当
-		RangeBand.FAR: 55,    # 275mm RHA相当
+		RangeBand.NEAR: 80,   # 400mm RHA相当
+		RangeBand.MID: 78,    # 390mm RHA相当
+		RangeBand.FAR: 75,    # 375mm RHA相当
 	}
+
+	# 弾速: Carl Gustaf HEAT = 約255m/s
+	w.projectile_speed_mps = 255.0
+	w.projectile_size = 5.0
 
 	return w
 
@@ -809,7 +827,7 @@ static func get_all_concrete_weapons() -> Dictionary:
 		"CW_RIFLE_STD": create_cw_rifle_std(),
 		"CW_MG_STD": create_cw_mg_std(),
 		"CW_RPG_HEAT": create_cw_rpg_heat(),
-		"CW_LAW": create_cw_law(),
+		"CW_CARL_GUSTAF": create_cw_carl_gustaf(),
 		"CW_COAX_MG": create_cw_coax_mg(),
 		"CW_TANK_KE": create_cw_tank_ke(),
 		"CW_TANK_HEATMP": create_cw_tank_heatmp(),

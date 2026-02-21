@@ -13,7 +13,7 @@ extends RefCounted
 
 ## アーキタイプ別のデフォルト武装マッピング
 const ARCHETYPE_WEAPONS: Dictionary = {
-	"INF_LINE": ["CW_RIFLE_STD", "CW_LAW"],  # 小銃 + 軽AT武器
+	"INF_LINE": ["CW_RIFLE_STD", "CW_CARL_GUSTAF"],  # 小銃 + 84mm無反動砲
 	"INF_AT": ["CW_RIFLE_STD", "CW_RPG_HEAT"],
 	"INF_MG": ["CW_MG_STD"],
 	"TANK_PLT": ["CW_TANK_KE", "CW_TANK_HEATMP", "CW_COAX_MG"],  # 主砲AP/HE + 同軸MG

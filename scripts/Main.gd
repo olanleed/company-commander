@@ -41,6 +41,7 @@ var combat_system: CombatSystem
 var event_bus: CombatEventBus
 var combat_visualizer: CombatVisualizer
 var capture_system: CaptureSystem
+var projectile_manager: ProjectileManager
 
 ## 中隊AI（陣営別）
 var company_ais: Dictionary = {}  # faction -> CompanyControllerAI
@@ -75,6 +76,9 @@ func _ready() -> void:
 	# CombatVisualizerをユニットレイヤーに追加
 	units_layer.add_child(combat_visualizer)
 
+	# ProjectileManagerをユニットレイヤーに追加
+	units_layer.add_child(projectile_manager)
+
 	# HUDセットアップ
 	_setup_hud()
 
@@ -84,10 +88,14 @@ func _ready() -> void:
 	_update_hud()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_handle_input()
 	_update_element_views()
 	_update_hud()
+
+	# 砲弾の更新
+	if projectile_manager:
+		projectile_manager.update_projectiles(delta)
 
 
 func _setup_systems() -> void:
@@ -126,6 +134,10 @@ func _setup_systems() -> void:
 
 	# CaptureSystem
 	capture_system = CaptureSystem.new()
+
+	# ProjectileManager
+	projectile_manager = ProjectileManager.new()
+	projectile_manager.name = "ProjectileManager"
 
 
 func _load_test_map_async() -> void:
@@ -220,26 +232,20 @@ func _spawn_test_units() -> void:
 	# ElementFactoryを使用してユニットを生成
 	ElementFactory.reset_id_counters()
 
-	# BLUE陣営 - 歩兵3ユニット
-	# 装甲テスト用: 歩兵 vs 戦車（距離200m、小銃射程内）
-	var blue_pos := Vector2(900, 1000)
-
-	# ライフル分隊 x3
-	var blue_inf1 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, blue_pos)
+	# === BLUE陣営: 歩兵2ユニット（LAW装備） ===
+	# 歩兵はLAW射程（10-250m）内に戦車を捉える位置に配置
+	var blue_inf1_pos := Vector2(600, 900)   # 歩兵1
+	var blue_inf1 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, blue_inf1_pos)
 	world_model.add_element(blue_inf1)
 
-	var blue_inf2 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, blue_pos + Vector2(0, 50))
+	var blue_inf2_pos := Vector2(600, 1100)  # 歩兵2
+	var blue_inf2 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, blue_inf2_pos)
 	world_model.add_element(blue_inf2)
 
-	var blue_inf3 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, blue_pos + Vector2(0, -50))
-	world_model.add_element(blue_inf3)
-
-	# RED陣営 - 戦車1ユニット（歩兵から200m離れた位置）
-	# LAW vs 戦車の貫徹テスト（RHA換算ベース）
-	var red_pos := Vector2(1100, 1000)  # 距離約200m
-
-	# 戦車小隊 x1
-	var red_tank := ElementFactory.create_element("TANK_PLT", GameEnums.Faction.RED, red_pos)
+	# === RED陣営: 戦車1ユニット ===
+	# BLUE歩兵からLAW射程内（約200m）に配置
+	var red_tank_pos := Vector2(800, 1000)   # 歩兵から約200m
+	var red_tank := ElementFactory.create_element("TANK_PLT", GameEnums.Faction.RED, red_tank_pos)
 	world_model.add_element(red_tank)
 
 	# スポーン後に衝突を解消
@@ -247,14 +253,14 @@ func _spawn_test_units() -> void:
 		movement_system.resolve_hard_collisions(element)
 
 	print("テストユニット生成完了: ", world_model.elements.size(), " elements")
-	print("=== LAW vs 戦車テスト（RHA換算）===")
-	print("  BLUE: 歩兵3ユニット（LAW装備, pen=60=300mm RHA）")
-	print("  RED:  戦車1ユニット")
-	print("    - 正面CE装甲: 140 (700mm RHA) → LAW貫通不可")
-	print("    - 側面CE装甲: 24 (120mm RHA) → LAW ~91%貫通")
-	print("    - 後部CE装甲: 8 (40mm RHA) → LAW ~97%貫通")
-	print("  期待: 側面/後方からの攻撃は高確率で貫通")
-	print("========================")
+	print("=== LAW vs 戦車テスト ===")
+	print("  BLUE: 歩兵2分隊（LAW装備, pen=60 CE）")
+	print("  RED:  戦車1小隊（4両）")
+	print("  距離: ~200m（LAW射程: 10-250m）")
+	print("  戦車側面CE装甲: 24 → LAW貫徹確率~91%%")
+	print("  戦車正面CE装甲: 140 → LAW貫徹確率<1%%")
+	print("  期待: 側面攻撃でLAWが戦車を撃破可能")
+	print("==========================")
 	for element in world_model.elements:
 		var weapons_str := ""
 		for w in element.weapons:
@@ -345,6 +351,14 @@ func _on_element_removed(element: ElementData.ElementInstance) -> void:
 		_element_views.erase(element.id)
 
 
+## プレイヤー陣営に生存中のユニットがいるか確認
+func _has_alive_friendly_unit() -> bool:
+	for element in world_model.elements:
+		if element.faction == player_faction and not element.is_destroyed:
+			return true
+	return false
+
+
 func _update_element_views() -> void:
 	var alpha := sim_runner.alpha if sim_runner else 0.0
 	var current_tick: int = sim_runner.tick_index if sim_runner else 0
@@ -370,16 +384,18 @@ func _update_element_views() -> void:
 			view.queue_redraw()
 			continue
 
-		# FoW状態を更新
-		if element.faction != player_faction:
-			# 敵ユニット: Contact状態に基づく
-			var contact := vision_system.get_contact(player_faction, element_id)
-			if contact:
-				view.update_contact_state(contact.state, contact.pos_est_m, contact.pos_error_m)
-			# else: Contactがない場合は現在の表示状態を維持（初期はCONFIRMED）
-		else:
-			# 味方ユニット: 常にCONFIRMED
+		# FoW状態を更新（シンプルモデル）
+		# プレイヤー側のユニットは常に表示
+		# 敵ユニットはプレイヤー側に生存ユニットがいる場合のみ表示
+		if element.faction == player_faction:
 			view.update_contact_state(GameEnums.ContactState.CONFIRMED)
+		else:
+			# プレイヤー側に生存ユニットがいるか確認
+			var has_observer := _has_alive_friendly_unit()
+			if has_observer:
+				view.update_contact_state(GameEnums.ContactState.CONFIRMED)
+			else:
+				view.update_contact_state(GameEnums.ContactState.UNKNOWN)
 
 		# 位置更新（FoW考慮）
 		view.update_position_with_fow(alpha)
@@ -550,6 +566,22 @@ func _update_combat(tick: int, dt: float) -> void:
 		# 現在使用中の武器を記録（HUD表示用）
 		shooter.current_weapon = selected_weapon
 
+		# DISCRETE武器の発射レート制御
+		var can_fire := true
+		if selected_weapon.fire_model == WeaponData.FireModel.DISCRETE:
+			if shooter.last_fire_tick >= 0 and selected_weapon.rof_rpm > 0:
+				# rof_rpm発/分 → 1発あたりの間隔(tick)を計算
+				# 10Hz = 10tick/秒 = 600tick/分
+				var ticks_per_shot := int(600.0 / selected_weapon.rof_rpm)
+				var elapsed := tick - shooter.last_fire_tick
+				if elapsed < ticks_per_shot:
+					can_fire = false
+
+		if not can_fire:
+			# 発射レート制限中は射撃しない（ただし照準は維持）
+			shooter.current_target_id = target.id
+			continue
+
 		# 装甲目標かどうかで計算方法を分岐
 		var d_supp: float = 0.0
 		var d_dmg: float = 0.0
@@ -629,6 +661,17 @@ func _update_combat(tick: int, dt: float) -> void:
 					is_hit,
 					weapon_mechanism
 				)
+
+			# DISCRETE武器の砲弾発射
+			if selected_weapon.fire_model == WeaponData.FireModel.DISCRETE:
+				if projectile_manager and selected_weapon.projectile_speed_mps > 0:
+					projectile_manager.fire_projectile(
+						shooter.position,
+						target.position,
+						selected_weapon,
+						shooter.faction,
+						is_hit
+					)
 
 			# デバッグ出力（初回のみ）
 			if tick % 50 == 0:

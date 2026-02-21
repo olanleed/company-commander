@@ -442,7 +442,7 @@ const VULN_HEAVY_AUTOCANNON_SUPP: float = 0.35
 const VULN_HEAVY_HEFRAG_DMG: float = 0.10
 const VULN_HEAVY_HEFRAG_SUPP: float = 0.50
 const VULN_HEAVY_AT_DMG: float = 1.00
-const VULN_HEAVY_AT_SUPP: float = 1.00
+const VULN_HEAVY_AT_SUPP: float = 0.30  # 戦車乗員は装甲で守られており抑圧されにくい
 
 # =============================================================================
 # v0.1R 被害分布
