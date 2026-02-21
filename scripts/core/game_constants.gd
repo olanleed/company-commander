@@ -515,3 +515,84 @@ const VEHICLE_SMALLARMS_SUPP_CAP: float = 0.20
 ## ゾーン判定角度閾値（仕様書: ±60°=FRONT, ±150°〜=REAR）
 const ZONE_FRONT_ANGLE_RAD: float = 1.047  # PI/3 = 60°
 const ZONE_REAR_ANGLE_RAD: float = 2.618   # 5*PI/6 = 150°
+
+# =============================================================================
+# v0.2 戦車戦モデル (Tank Combat Model)
+# 先手必勝・アスペクト重視の離散ヒットモデル
+# =============================================================================
+
+## 距離帯定義（メートル）
+const TANK_RANGE_BAND_NEAR_M: float = 500.0
+const TANK_RANGE_BAND_MID_M: float = 1500.0
+
+## 砲発射間隔（秒）
+const TANK_GUN_RELOAD_TIME: float = 6.0
+const AUTOCANNON_BURST_INTERVAL: float = 0.5
+
+## APFSDS（戦車砲）撃破確率テーブル
+## [aspect][range_band] = {"kill": float, "mission_kill": float}
+## FRONT
+const APFSDS_KILL_FRONT_NEAR: float = 0.50
+const APFSDS_MKILL_FRONT_NEAR: float = 0.30
+const APFSDS_KILL_FRONT_MID: float = 0.35
+const APFSDS_MKILL_FRONT_MID: float = 0.35
+const APFSDS_KILL_FRONT_FAR: float = 0.20
+const APFSDS_MKILL_FRONT_FAR: float = 0.40
+## SIDE
+const APFSDS_KILL_SIDE_NEAR: float = 0.85
+const APFSDS_MKILL_SIDE_NEAR: float = 0.10
+const APFSDS_KILL_SIDE_MID: float = 0.75
+const APFSDS_MKILL_SIDE_MID: float = 0.15
+const APFSDS_KILL_SIDE_FAR: float = 0.65
+const APFSDS_MKILL_SIDE_FAR: float = 0.20
+## REAR
+const APFSDS_KILL_REAR_NEAR: float = 0.95
+const APFSDS_MKILL_REAR_NEAR: float = 0.05
+const APFSDS_KILL_REAR_MID: float = 0.90
+const APFSDS_MKILL_REAR_MID: float = 0.08
+const APFSDS_KILL_REAR_FAR: float = 0.85
+const APFSDS_MKILL_REAR_FAR: float = 0.10
+
+## HEAT/RPG 撃破確率テーブル
+## FRONT (正面装甲は厚いので撃破困難)
+const HEAT_KILL_FRONT_NEAR: float = 0.05
+const HEAT_MKILL_FRONT_NEAR: float = 0.15
+const HEAT_KILL_FRONT_MID: float = 0.03
+const HEAT_MKILL_FRONT_MID: float = 0.10
+const HEAT_KILL_FRONT_FAR: float = 0.02
+const HEAT_MKILL_FRONT_FAR: float = 0.08
+## SIDE
+const HEAT_KILL_SIDE_NEAR: float = 0.70
+const HEAT_MKILL_SIDE_NEAR: float = 0.20
+const HEAT_KILL_SIDE_MID: float = 0.65
+const HEAT_MKILL_SIDE_MID: float = 0.22
+const HEAT_KILL_SIDE_FAR: float = 0.60
+const HEAT_MKILL_SIDE_FAR: float = 0.25
+## REAR
+const HEAT_KILL_REAR_NEAR: float = 0.85
+const HEAT_MKILL_REAR_NEAR: float = 0.12
+const HEAT_KILL_REAR_MID: float = 0.80
+const HEAT_MKILL_REAR_MID: float = 0.15
+const HEAT_KILL_REAR_FAR: float = 0.75
+const HEAT_MKILL_REAR_FAR: float = 0.18
+
+## 戦車砲命中確率テーブル [shooter_moving][target_moving][range_band]
+## 静止→静止
+const TANK_HIT_SS_NEAR: float = 0.90
+const TANK_HIT_SS_MID: float = 0.75
+const TANK_HIT_SS_FAR: float = 0.50
+## 静止→移動
+const TANK_HIT_SM_NEAR: float = 0.75
+const TANK_HIT_SM_MID: float = 0.55
+const TANK_HIT_SM_FAR: float = 0.30
+## 移動→静止
+const TANK_HIT_MS_NEAR: float = 0.65
+const TANK_HIT_MS_MID: float = 0.45
+const TANK_HIT_MS_FAR: float = 0.25
+## 移動→移動
+const TANK_HIT_MM_NEAR: float = 0.50
+const TANK_HIT_MM_MID: float = 0.30
+const TANK_HIT_MM_FAR: float = 0.15
+
+## Catastrophic Kill 爆発確率
+const TANK_CATASTROPHIC_CHANCE: float = 0.40

@@ -232,6 +232,211 @@ func test_suppression_recovery_reduced_comm_lost() -> void:
 
 
 # =============================================================================
+# v0.2 戦車戦モデルテスト
+# =============================================================================
+
+func test_get_range_band_near() -> void:
+	var range_band = combat_system.get_range_band(300.0)
+	assert_eq(range_band, GameEnums.RangeBand.NEAR, "300m is NEAR range")
+
+
+func test_get_range_band_mid() -> void:
+	var range_band = combat_system.get_range_band(800.0)
+	assert_eq(range_band, GameEnums.RangeBand.MID, "800m is MID range")
+
+
+func test_get_range_band_far() -> void:
+	var range_band = combat_system.get_range_band(2000.0)
+	assert_eq(range_band, GameEnums.RangeBand.FAR, "2000m is FAR range")
+
+
+func test_get_range_band_boundary_near_mid() -> void:
+	# 500m is boundary, should be NEAR
+	var range_band = combat_system.get_range_band(500.0)
+	assert_eq(range_band, GameEnums.RangeBand.NEAR, "500m is NEAR (boundary)")
+
+	# 501m should be MID
+	range_band = combat_system.get_range_band(501.0)
+	assert_eq(range_band, GameEnums.RangeBand.MID, "501m is MID")
+
+
+func test_get_range_band_boundary_mid_far() -> void:
+	# 1500m is boundary, should be MID
+	var range_band = combat_system.get_range_band(1500.0)
+	assert_eq(range_band, GameEnums.RangeBand.MID, "1500m is MID (boundary)")
+
+	# 1501m should be FAR
+	range_band = combat_system.get_range_band(1501.0)
+	assert_eq(range_band, GameEnums.RangeBand.FAR, "1501m is FAR")
+
+
+func test_calculate_armor_aspect_front() -> void:
+	# Shooter at (0,0), target at (100,0) = shooter is to the LEFT of target
+	# Target facing LEFT (PI) = facing towards shooter = FRONT armor exposed
+	var shooter_pos := Vector2(0, 0)
+	var target_pos := Vector2(100, 0)
+	var target_facing := PI  # Facing left (towards shooter)
+
+	var aspect = combat_system.calculate_armor_aspect(shooter_pos, target_pos, target_facing)
+	assert_eq(aspect, GameEnums.ArmorAspect.FRONT, "Target facing shooter = FRONT")
+
+
+func test_calculate_armor_aspect_rear() -> void:
+	# Shooter at (0,0), target at (100,0) = shooter is to the LEFT of target
+	# Target facing RIGHT (0) = facing away from shooter = REAR armor exposed
+	var shooter_pos := Vector2(0, 0)
+	var target_pos := Vector2(100, 0)
+	var target_facing := 0.0  # Facing right (away from shooter)
+
+	var aspect = combat_system.calculate_armor_aspect(shooter_pos, target_pos, target_facing)
+	assert_eq(aspect, GameEnums.ArmorAspect.REAR, "Target facing away = REAR")
+
+
+func test_calculate_armor_aspect_side() -> void:
+	# Shooter to the side of target
+	var shooter_pos := Vector2(0, 0)
+	var target_pos := Vector2(100, 0)
+	var target_facing := PI / 2  # Facing up (perpendicular to shooter)
+
+	var aspect = combat_system.calculate_armor_aspect(shooter_pos, target_pos, target_facing)
+	assert_eq(aspect, GameEnums.ArmorAspect.SIDE, "Target facing perpendicular = SIDE")
+
+
+func test_tank_hit_probability_stationary_vs_stationary() -> void:
+	var shooter := _create_test_tank()
+	var target := _create_test_tank()
+	shooter.is_moving = false
+	target.is_moving = false
+
+	var p_hit := combat_system.get_tank_hit_probability(shooter, target, GameEnums.RangeBand.NEAR)
+	assert_almost_eq(p_hit, GameConstants.TANK_HIT_SS_NEAR, 0.01, "SS NEAR hit prob")
+
+	p_hit = combat_system.get_tank_hit_probability(shooter, target, GameEnums.RangeBand.MID)
+	assert_almost_eq(p_hit, GameConstants.TANK_HIT_SS_MID, 0.01, "SS MID hit prob")
+
+	p_hit = combat_system.get_tank_hit_probability(shooter, target, GameEnums.RangeBand.FAR)
+	assert_almost_eq(p_hit, GameConstants.TANK_HIT_SS_FAR, 0.01, "SS FAR hit prob")
+
+
+func test_tank_hit_probability_moving_shooter_reduces_accuracy() -> void:
+	var shooter := _create_test_tank()
+	var target := _create_test_tank()
+
+	# Stationary shooter
+	shooter.is_moving = false
+	target.is_moving = false
+	var p_hit_stationary := combat_system.get_tank_hit_probability(shooter, target, GameEnums.RangeBand.MID)
+
+	# Moving shooter
+	shooter.is_moving = true
+	var p_hit_moving := combat_system.get_tank_hit_probability(shooter, target, GameEnums.RangeBand.MID)
+
+	assert_lt(p_hit_moving, p_hit_stationary, "Moving shooter has lower hit prob")
+
+
+func test_tank_hit_probability_moving_target_reduces_accuracy() -> void:
+	var shooter := _create_test_tank()
+	var target := _create_test_tank()
+
+	# Stationary target
+	shooter.is_moving = false
+	target.is_moving = false
+	var p_hit_stationary := combat_system.get_tank_hit_probability(shooter, target, GameEnums.RangeBand.MID)
+
+	# Moving target
+	target.is_moving = true
+	var p_hit_moving := combat_system.get_tank_hit_probability(shooter, target, GameEnums.RangeBand.MID)
+
+	assert_lt(p_hit_moving, p_hit_stationary, "Moving target is harder to hit")
+
+
+func test_tank_hit_probability_suppressed_shooter() -> void:
+	var shooter := _create_test_tank()
+	var target := _create_test_tank()
+	shooter.is_moving = false
+	target.is_moving = false
+
+	# Normal shooter
+	shooter.suppression = 0.0
+	var p_hit_normal := combat_system.get_tank_hit_probability(shooter, target, GameEnums.RangeBand.MID)
+
+	# Suppressed shooter
+	shooter.suppression = 0.50
+	var p_hit_suppressed := combat_system.get_tank_hit_probability(shooter, target, GameEnums.RangeBand.MID)
+
+	assert_lt(p_hit_suppressed, p_hit_normal, "Suppressed shooter has lower hit prob")
+
+
+func test_apfsds_kill_probability_front() -> void:
+	var result := combat_system.get_apfsds_kill_probability(GameEnums.ArmorAspect.FRONT, GameEnums.RangeBand.NEAR)
+	assert_almost_eq(result.kill, GameConstants.APFSDS_KILL_FRONT_NEAR, 0.01)
+	assert_almost_eq(result.mission_kill, GameConstants.APFSDS_MKILL_FRONT_NEAR, 0.01)
+
+
+func test_apfsds_kill_probability_side_higher_than_front() -> void:
+	var result_front := combat_system.get_apfsds_kill_probability(GameEnums.ArmorAspect.FRONT, GameEnums.RangeBand.NEAR)
+	var result_side := combat_system.get_apfsds_kill_probability(GameEnums.ArmorAspect.SIDE, GameEnums.RangeBand.NEAR)
+
+	assert_gt(result_side.kill, result_front.kill, "Side kill prob > front kill prob")
+
+
+func test_apfsds_kill_probability_rear_highest() -> void:
+	var result_front := combat_system.get_apfsds_kill_probability(GameEnums.ArmorAspect.FRONT, GameEnums.RangeBand.NEAR)
+	var result_rear := combat_system.get_apfsds_kill_probability(GameEnums.ArmorAspect.REAR, GameEnums.RangeBand.NEAR)
+
+	assert_gt(result_rear.kill, result_front.kill, "Rear kill prob > front kill prob")
+
+
+func test_heat_kill_probability_front_very_low() -> void:
+	var result := combat_system.get_heat_kill_probability(GameEnums.ArmorAspect.FRONT, GameEnums.RangeBand.NEAR)
+
+	# HEAT is very ineffective against front armor
+	assert_lt(result.kill, 0.10, "HEAT vs front armor has very low kill prob")
+
+
+func test_heat_kill_probability_side_effective() -> void:
+	var result := combat_system.get_heat_kill_probability(GameEnums.ArmorAspect.SIDE, GameEnums.RangeBand.NEAR)
+
+	# HEAT is effective against side armor
+	assert_gt(result.kill, 0.50, "HEAT vs side armor is effective")
+
+
+func test_is_heavy_armor() -> void:
+	var tank := _create_test_tank()
+	assert_true(combat_system.is_heavy_armor(tank), "Tank is heavy armor")
+
+	var infantry := _create_test_element()
+	assert_false(combat_system.is_heavy_armor(infantry), "Infantry is not heavy armor")
+
+
+func test_should_use_tank_combat_heavy_vs_heavy() -> void:
+	var shooter := _create_test_tank()
+	var target := _create_test_tank()
+	var tank_gun := _create_test_tank_gun()
+
+	var should_use := combat_system.should_use_tank_combat(shooter, target, tank_gun)
+	assert_true(should_use, "Tank vs tank should use tank combat model")
+
+
+func test_should_use_tank_combat_infantry_target() -> void:
+	var shooter := _create_test_tank()
+	var target := _create_test_element()  # Infantry
+	var tank_gun := _create_test_tank_gun()
+
+	var should_use := combat_system.should_use_tank_combat(shooter, target, tank_gun)
+	assert_false(should_use, "Tank vs infantry should NOT use tank combat model")
+
+
+func test_should_use_tank_combat_rifle_weapon() -> void:
+	var shooter := _create_test_element()
+	var target := _create_test_tank()
+	var rifle := WeaponData.create_rifle()
+
+	var should_use := combat_system.should_use_tank_combat(shooter, target, rifle)
+	assert_false(should_use, "Rifle vs tank should NOT use tank combat model")
+
+
+# =============================================================================
 # ヘルパー
 # =============================================================================
 
@@ -250,3 +455,35 @@ func _create_test_element() -> ElementData.ElementInstance:
 	element.is_moving = false
 
 	return element
+
+
+func _create_test_tank() -> ElementData.ElementInstance:
+	var element_type: ElementData.ElementType = ElementData.ElementType.new()
+	element_type.id = "test_tank"
+	element_type.max_strength = 4  # 4両編成
+	element_type.armor_class = 4  # Heavy armor (>= 3 is heavy)
+	element_type.category = ElementData.Category.VEH
+
+	var element: ElementData.ElementInstance = ElementData.ElementInstance.new(element_type)
+	element.id = "test_tank_" + str(randi())
+	element.faction = GameEnums.Faction.BLUE
+	element.position = Vector2(500, 500)
+	element.suppression = 0.0
+	element.current_strength = 4
+	element.is_moving = false
+	element.facing = 0.0
+	element.mobility_hp = 100
+	element.firepower_hp = 100
+	element.sensors_hp = 100
+
+	return element
+
+
+func _create_test_tank_gun() -> WeaponData.WeaponType:
+	var weapon := WeaponData.WeaponType.new()
+	weapon.id = "test_tank_gun"
+	weapon.display_name = "120mm APFSDS"
+	weapon.mechanism = WeaponData.Mechanism.KINETIC
+	weapon.threat_class = WeaponData.ThreatClass.AT
+	weapon.max_range_m = 2500.0
+	return weapon

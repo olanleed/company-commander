@@ -161,6 +161,7 @@ func _scan_faction_vs_faction(observer_faction: GameEnums.Faction, target_factio
 				is_visible = true
 				best_t_los = maxf(best_t_los, result.t_los)
 
+	
 		# Contactの更新
 		_update_contact(contacts, target, is_visible, best_t_los, current_tick)
 

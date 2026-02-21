@@ -1323,3 +1323,423 @@ func log_weapon_switch(
 	print("[Weapon] %s: %s -> %s (target %s is %s)" % [
 		shooter.id, old_weapon.id, new_weapon.id, target.id, target_type
 	])
+
+
+# =============================================================================
+# v0.2: 戦車戦モデル (Tank Combat Model)
+# 先手必勝・アスペクト重視の離散ヒットモデル
+# =============================================================================
+
+## v0.2: 戦車交戦結果
+class TankEngagementResult:
+	var fired: bool = false         ## 発砲したか
+	var hit: bool = false           ## 命中したか
+	var aspect: GameEnums.ArmorAspect = GameEnums.ArmorAspect.FRONT  ## 命中部位
+	var kill: bool = false          ## 撃破したか
+	var mission_kill: bool = false  ## ミッションキルか
+	var catastrophic: bool = false  ## 爆発炎上か
+	var p_hit: float = 0.0          ## 命中確率（デバッグ用）
+	var p_kill: float = 0.0         ## 撃破確率（デバッグ用）
+
+
+## v0.2: 距離帯を取得
+func get_range_band(distance_m: float) -> GameEnums.RangeBand:
+	if distance_m <= GameConstants.TANK_RANGE_BAND_NEAR_M:
+		return GameEnums.RangeBand.NEAR
+	elif distance_m <= GameConstants.TANK_RANGE_BAND_MID_M:
+		return GameEnums.RangeBand.MID
+	else:
+		return GameEnums.RangeBand.FAR
+
+
+## v0.2: アスペクト（射撃者から見た目標の方向）を計算
+func calculate_armor_aspect(
+	shooter_pos: Vector2,
+	target_pos: Vector2,
+	target_facing: float
+) -> GameEnums.ArmorAspect:
+	# 射手→目標ベクトル
+	var to_target := (target_pos - shooter_pos).normalized()
+
+	# 目標の facing方向を単位ベクトルに
+	var facing_dir := Vector2.from_angle(target_facing)
+
+	# 目標から見た射手の方向
+	var to_shooter := -to_target
+
+	# facing_dir と to_shooter の角度差を計算
+	var angle_diff: float = absf(facing_dir.angle_to(to_shooter))
+
+	# 仕様書: |θ| ≤ 60° = FRONT, |θ| ≥ 150° = REAR, else = SIDE
+	if angle_diff <= GameConstants.ZONE_FRONT_ANGLE_RAD:
+		return GameEnums.ArmorAspect.FRONT
+	elif angle_diff >= GameConstants.ZONE_REAR_ANGLE_RAD:
+		return GameEnums.ArmorAspect.REAR
+	else:
+		return GameEnums.ArmorAspect.SIDE
+
+
+## v0.2: 戦車砲命中確率を取得
+func get_tank_hit_probability(
+	shooter: ElementData.ElementInstance,
+	target: ElementData.ElementInstance,
+	range_band: GameEnums.RangeBand
+) -> float:
+	var shooter_moving := shooter.is_moving
+	var target_moving := target.is_moving
+
+	var p_hit: float
+
+	if not shooter_moving and not target_moving:
+		# 静止→静止
+		match range_band:
+			GameEnums.RangeBand.NEAR:
+				p_hit = GameConstants.TANK_HIT_SS_NEAR
+			GameEnums.RangeBand.MID:
+				p_hit = GameConstants.TANK_HIT_SS_MID
+			GameEnums.RangeBand.FAR:
+				p_hit = GameConstants.TANK_HIT_SS_FAR
+			_:
+				p_hit = GameConstants.TANK_HIT_SS_MID
+	elif not shooter_moving and target_moving:
+		# 静止→移動
+		match range_band:
+			GameEnums.RangeBand.NEAR:
+				p_hit = GameConstants.TANK_HIT_SM_NEAR
+			GameEnums.RangeBand.MID:
+				p_hit = GameConstants.TANK_HIT_SM_MID
+			GameEnums.RangeBand.FAR:
+				p_hit = GameConstants.TANK_HIT_SM_FAR
+			_:
+				p_hit = GameConstants.TANK_HIT_SM_MID
+	elif shooter_moving and not target_moving:
+		# 移動→静止
+		match range_band:
+			GameEnums.RangeBand.NEAR:
+				p_hit = GameConstants.TANK_HIT_MS_NEAR
+			GameEnums.RangeBand.MID:
+				p_hit = GameConstants.TANK_HIT_MS_MID
+			GameEnums.RangeBand.FAR:
+				p_hit = GameConstants.TANK_HIT_MS_FAR
+			_:
+				p_hit = GameConstants.TANK_HIT_MS_MID
+	else:
+		# 移動→移動
+		match range_band:
+			GameEnums.RangeBand.NEAR:
+				p_hit = GameConstants.TANK_HIT_MM_NEAR
+			GameEnums.RangeBand.MID:
+				p_hit = GameConstants.TANK_HIT_MM_MID
+			GameEnums.RangeBand.FAR:
+				p_hit = GameConstants.TANK_HIT_MM_FAR
+			_:
+				p_hit = GameConstants.TANK_HIT_MM_MID
+
+	# 射手の抑圧による命中率低下
+	var m_shooter := calculate_shooter_coefficient(shooter)
+	p_hit *= m_shooter
+
+	# センサー損傷による命中率低下
+	if shooter.is_vehicle():
+		var sensors_state := get_sensors_state(shooter)
+		match sensors_state:
+			GameEnums.VehicleSensorsState.DAMAGED:
+				p_hit *= 0.85
+			GameEnums.VehicleSensorsState.CRITICAL:
+				p_hit *= 0.65
+			GameEnums.VehicleSensorsState.SENSORS_DOWN:
+				p_hit *= 0.40
+
+	# 火器損傷による命中率低下
+	if shooter.is_vehicle():
+		var firepower_state := get_firepower_state(shooter)
+		match firepower_state:
+			GameEnums.VehicleFirepowerState.DAMAGED:
+				p_hit *= 0.90
+			GameEnums.VehicleFirepowerState.CRITICAL:
+				p_hit *= 0.60
+			GameEnums.VehicleFirepowerState.WEAPON_DISABLED:
+				p_hit = 0.0  # 射撃不能
+
+	return clampf(p_hit, 0.0, 1.0)
+
+
+## v0.2: APFSDS（戦車砲）の撃破確率を取得
+func get_apfsds_kill_probability(
+	aspect: GameEnums.ArmorAspect,
+	range_band: GameEnums.RangeBand
+) -> Dictionary:
+	var result := {"kill": 0.0, "mission_kill": 0.0}
+
+	match aspect:
+		GameEnums.ArmorAspect.FRONT:
+			match range_band:
+				GameEnums.RangeBand.NEAR:
+					result.kill = GameConstants.APFSDS_KILL_FRONT_NEAR
+					result.mission_kill = GameConstants.APFSDS_MKILL_FRONT_NEAR
+				GameEnums.RangeBand.MID:
+					result.kill = GameConstants.APFSDS_KILL_FRONT_MID
+					result.mission_kill = GameConstants.APFSDS_MKILL_FRONT_MID
+				GameEnums.RangeBand.FAR:
+					result.kill = GameConstants.APFSDS_KILL_FRONT_FAR
+					result.mission_kill = GameConstants.APFSDS_MKILL_FRONT_FAR
+
+		GameEnums.ArmorAspect.SIDE:
+			match range_band:
+				GameEnums.RangeBand.NEAR:
+					result.kill = GameConstants.APFSDS_KILL_SIDE_NEAR
+					result.mission_kill = GameConstants.APFSDS_MKILL_SIDE_NEAR
+				GameEnums.RangeBand.MID:
+					result.kill = GameConstants.APFSDS_KILL_SIDE_MID
+					result.mission_kill = GameConstants.APFSDS_MKILL_SIDE_MID
+				GameEnums.RangeBand.FAR:
+					result.kill = GameConstants.APFSDS_KILL_SIDE_FAR
+					result.mission_kill = GameConstants.APFSDS_MKILL_SIDE_FAR
+
+		GameEnums.ArmorAspect.REAR:
+			match range_band:
+				GameEnums.RangeBand.NEAR:
+					result.kill = GameConstants.APFSDS_KILL_REAR_NEAR
+					result.mission_kill = GameConstants.APFSDS_MKILL_REAR_NEAR
+				GameEnums.RangeBand.MID:
+					result.kill = GameConstants.APFSDS_KILL_REAR_MID
+					result.mission_kill = GameConstants.APFSDS_MKILL_REAR_MID
+				GameEnums.RangeBand.FAR:
+					result.kill = GameConstants.APFSDS_KILL_REAR_FAR
+					result.mission_kill = GameConstants.APFSDS_MKILL_REAR_FAR
+
+	return result
+
+
+## v0.2: HEAT/RPGの撃破確率を取得
+func get_heat_kill_probability(
+	aspect: GameEnums.ArmorAspect,
+	range_band: GameEnums.RangeBand
+) -> Dictionary:
+	var result := {"kill": 0.0, "mission_kill": 0.0}
+
+	match aspect:
+		GameEnums.ArmorAspect.FRONT:
+			match range_band:
+				GameEnums.RangeBand.NEAR:
+					result.kill = GameConstants.HEAT_KILL_FRONT_NEAR
+					result.mission_kill = GameConstants.HEAT_MKILL_FRONT_NEAR
+				GameEnums.RangeBand.MID:
+					result.kill = GameConstants.HEAT_KILL_FRONT_MID
+					result.mission_kill = GameConstants.HEAT_MKILL_FRONT_MID
+				GameEnums.RangeBand.FAR:
+					result.kill = GameConstants.HEAT_KILL_FRONT_FAR
+					result.mission_kill = GameConstants.HEAT_MKILL_FRONT_FAR
+
+		GameEnums.ArmorAspect.SIDE:
+			match range_band:
+				GameEnums.RangeBand.NEAR:
+					result.kill = GameConstants.HEAT_KILL_SIDE_NEAR
+					result.mission_kill = GameConstants.HEAT_MKILL_SIDE_NEAR
+				GameEnums.RangeBand.MID:
+					result.kill = GameConstants.HEAT_KILL_SIDE_MID
+					result.mission_kill = GameConstants.HEAT_MKILL_SIDE_MID
+				GameEnums.RangeBand.FAR:
+					result.kill = GameConstants.HEAT_KILL_SIDE_FAR
+					result.mission_kill = GameConstants.HEAT_MKILL_SIDE_FAR
+
+		GameEnums.ArmorAspect.REAR:
+			match range_band:
+				GameEnums.RangeBand.NEAR:
+					result.kill = GameConstants.HEAT_KILL_REAR_NEAR
+					result.mission_kill = GameConstants.HEAT_MKILL_REAR_NEAR
+				GameEnums.RangeBand.MID:
+					result.kill = GameConstants.HEAT_KILL_REAR_MID
+					result.mission_kill = GameConstants.HEAT_MKILL_REAR_MID
+				GameEnums.RangeBand.FAR:
+					result.kill = GameConstants.HEAT_KILL_REAR_FAR
+					result.mission_kill = GameConstants.HEAT_MKILL_REAR_FAR
+
+	return result
+
+
+## v0.2: 戦車交戦を処理（離散発砲モデル）
+## 重装甲同士の交戦で呼ばれる。発砲→命中→撃破判定を1回で処理
+func process_tank_engagement(
+	shooter: ElementData.ElementInstance,
+	target: ElementData.ElementInstance,
+	weapon: WeaponData.WeaponType,
+	distance_m: float,
+	current_tick: int
+) -> TankEngagementResult:
+	var result := TankEngagementResult.new()
+
+	# 発砲可能かチェック（リロード時間）
+	if not _can_fire_tank_gun(shooter, current_tick):
+		return result
+
+	# 発砲をマーク
+	result.fired = true
+	shooter.last_fire_tick = current_tick
+
+	# 距離帯
+	var range_band := get_range_band(distance_m)
+
+	# アスペクト（命中部位）
+	result.aspect = calculate_armor_aspect(
+		shooter.position, target.position, target.facing
+	)
+
+	# 命中判定
+	var p_hit := get_tank_hit_probability(shooter, target, range_band)
+	result.p_hit = p_hit
+
+	if randf() > p_hit:
+		# ミス
+		print("[TankCombat] %s FIRED at %s (%.0fm, %s): MISS (p_hit=%.1f%%)" % [
+			shooter.id, target.id, distance_m,
+			_aspect_to_string(result.aspect), p_hit * 100.0
+		])
+		return result
+
+	result.hit = true
+
+	# 撃破確率テーブルを取得
+	var kill_table: Dictionary
+	match weapon.mechanism:
+		WeaponData.Mechanism.KINETIC:
+			kill_table = get_apfsds_kill_probability(result.aspect, range_band)
+		WeaponData.Mechanism.SHAPED_CHARGE:
+			kill_table = get_heat_kill_probability(result.aspect, range_band)
+		_:
+			# その他の武器は旧モデルにフォールバック
+			return result
+
+	result.p_kill = kill_table.kill
+
+	# 撃破判定
+	var damage_roll := randf()
+	if damage_roll < kill_table.kill:
+		# Kill
+		result.kill = true
+
+		# Catastrophic判定
+		if randf() < GameConstants.TANK_CATASTROPHIC_CHANCE:
+			result.catastrophic = true
+
+		# ダメージ適用
+		_apply_tank_kill(target, current_tick, result.catastrophic)
+
+		print("[TankCombat] %s HIT %s (%s, %.0fm): %s (p_kill=%.1f%%)" % [
+			shooter.id, target.id,
+			_aspect_to_string(result.aspect), distance_m,
+			"CATASTROPHIC KILL" if result.catastrophic else "KILL",
+			kill_table.kill * 100.0
+		])
+
+	elif damage_roll < kill_table.kill + kill_table.mission_kill:
+		# Mission Kill
+		result.mission_kill = true
+		_apply_mission_kill(target, weapon.threat_class)
+
+		print("[TankCombat] %s HIT %s (%s, %.0fm): MISSION KILL" % [
+			shooter.id, target.id,
+			_aspect_to_string(result.aspect), distance_m
+		])
+
+	else:
+		# No Effect（貫通失敗）
+		print("[TankCombat] %s HIT %s (%s, %.0fm): NO EFFECT (armor held)" % [
+			shooter.id, target.id,
+			_aspect_to_string(result.aspect), distance_m
+		])
+
+	return result
+
+
+## v0.2: 砲発射可能かチェック
+func _can_fire_tank_gun(shooter: ElementData.ElementInstance, current_tick: int) -> bool:
+	# 火器損傷チェック
+	if shooter.is_vehicle():
+		var firepower_state := get_firepower_state(shooter)
+		if firepower_state == GameEnums.VehicleFirepowerState.WEAPON_DISABLED:
+			return false
+
+	# リロード時間チェック
+	var ticks_since_last_fire := current_tick - shooter.last_fire_tick
+	var reload_ticks := int(GameConstants.TANK_GUN_RELOAD_TIME * GameConstants.SIM_HZ)
+
+	var can_fire := ticks_since_last_fire >= reload_ticks
+	if not can_fire and current_tick % 50 == 0:
+		print("[TankCombat] %s: RELOADING (%d/%d ticks)" % [
+			shooter.id, ticks_since_last_fire, reload_ticks
+		])
+	return can_fire
+
+
+## v0.2: 戦車撃破を適用
+func _apply_tank_kill(
+	target: ElementData.ElementInstance,
+	current_tick: int,
+	is_catastrophic: bool
+) -> void:
+	# 1両撃破
+	target.current_strength = maxi(0, target.current_strength - 1)
+
+	print("[TankCombat] %s: %d vehicles remaining" % [target.id, target.current_strength])
+
+	# Strengthが0になったらユニット壊滅
+	if target.current_strength <= 0:
+		_mark_destroyed(target, current_tick, is_catastrophic)
+
+
+## v0.2: ミッションキルを適用
+func _apply_mission_kill(
+	target: ElementData.ElementInstance,
+	_threat_class: WeaponData.ThreatClass
+) -> void:
+	# ランダムでmobilityかfirepowerを0に
+	if randf() < 0.5:
+		target.mobility_hp = 0
+		print("[TankCombat] %s: IMMOBILIZED (mobility_hp=0)" % target.id)
+	else:
+		target.firepower_hp = 0
+		print("[TankCombat] %s: WEAPON DISABLED (firepower_hp=0)" % target.id)
+
+
+## v0.2: アスペクトを文字列に変換（ログ用）
+func _aspect_to_string(aspect: GameEnums.ArmorAspect) -> String:
+	match aspect:
+		GameEnums.ArmorAspect.FRONT:
+			return "FRONT"
+		GameEnums.ArmorAspect.SIDE:
+			return "SIDE"
+		GameEnums.ArmorAspect.REAR:
+			return "REAR"
+		_:
+			return "UNKNOWN"
+
+
+## v0.2: 重装甲目標かどうかを判定
+func is_heavy_armor(element: ElementData.ElementInstance) -> bool:
+	if not element.element_type:
+		return false
+	return element.element_type.armor_class >= 3
+
+
+## v0.2: 戦車戦で処理すべきかを判定
+## 目標が重装甲、武器がAT（KINETIC or SHAPED_CHARGE）
+func should_use_tank_combat(
+	_shooter: ElementData.ElementInstance,
+	target: ElementData.ElementInstance,
+	weapon: WeaponData.WeaponType
+) -> bool:
+	# 目標が重装甲でなければ通常モデル
+	if not is_heavy_armor(target):
+		return false
+
+	# 武器がAT系でなければ通常モデル
+	if weapon.mechanism != WeaponData.Mechanism.KINETIC and \
+	   weapon.mechanism != WeaponData.Mechanism.SHAPED_CHARGE:
+		return false
+
+	# 武器がAT脅威クラスでなければ通常モデル
+	if weapon.threat_class != WeaponData.ThreatClass.AT:
+		return false
+
+	return true

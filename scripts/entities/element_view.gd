@@ -25,7 +25,7 @@ var _selection_indicator: Node2D
 var _is_selected: bool = false
 
 ## FoW関連
-var _contact_state: GameEnums.ContactState = GameEnums.ContactState.CONFIRMED
+var _contact_state: GameEnums.ContactState = GameEnums.ContactState.UNKNOWN
 var _estimated_position: Vector2 = Vector2.ZERO
 var _position_error: float = 0.0
 var _is_friendly: bool = true
@@ -77,7 +77,11 @@ func setup(p_element: ElementData.ElementInstance, p_symbol_manager: SymbolManag
 		_setup_selection_indicator()
 	update_symbol()
 	update_position_immediate()
-	# 初期状態で視認性を設定（味方は不透明、敵はFoW次第）
+	# 初期状態で視認性を設定（味方は表示、敵はUNKNOWN=非表示）
+	if _is_friendly:
+		_contact_state = GameEnums.ContactState.CONFIRMED
+	else:
+		_contact_state = GameEnums.ContactState.UNKNOWN
 	_update_visibility()
 
 
@@ -207,6 +211,9 @@ func _draw() -> void:
 	# 敵のSUS/LOST時は位置誤差円を描画
 	if not _is_friendly and _contact_state == GameEnums.ContactState.SUSPECTED and _position_error > 0:
 		_draw_error_ellipse()
+
+	# 方向インジケーター（車体前方を示す三角形）
+	_draw_facing_indicator()
 
 	# 選択時のハイライト（円なので回転の影響を受けない）
 	if _is_selected:
@@ -395,6 +402,50 @@ func _draw_explosion_mark() -> void:
 		var angle := TAU * float(i) / 8.0
 		var dir := Vector2.from_angle(angle)
 		draw_line(center + dir * size * 0.8, center + dir * size * 1.4, explosion_color, 3.0)
+
+
+## 方向インジケーター描画（車体前方を示す三角形）
+func _draw_facing_indicator() -> void:
+	if not element:
+		return
+
+	# 回転を打ち消して、facing方向に三角形を描画
+	# ユニットの facing は element.facing に格納されている
+	var facing := element.facing
+
+	# インジケーターのサイズと位置
+	var indicator_distance := 32.0  # ユニット中心からの距離
+	var indicator_size := 10.0  # 三角形のサイズ
+
+	# facing方向の先端位置（ローカル座標系で、回転を打ち消した状態で描画）
+	# 元の回転を打ち消すために -rotation を適用
+	draw_set_transform(Vector2.ZERO, -rotation, Vector2.ONE)
+
+	# facing方向に三角形を描画
+	var tip := Vector2.from_angle(facing) * (indicator_distance + indicator_size)
+	var base_left := Vector2.from_angle(facing) * indicator_distance + Vector2.from_angle(facing + PI / 2) * indicator_size * 0.6
+	var base_right := Vector2.from_angle(facing) * indicator_distance + Vector2.from_angle(facing - PI / 2) * indicator_size * 0.6
+
+	# 色を陣営に応じて設定
+	var indicator_color: Color
+	if _is_friendly:
+		indicator_color = Color(0.2, 0.6, 1.0, 0.9)  # 青
+	else:
+		indicator_color = Color(1.0, 0.3, 0.3, 0.9)  # 赤
+
+	# 三角形を描画
+	var points := PackedVector2Array([tip, base_left, base_right])
+	var colors := PackedColorArray([indicator_color, indicator_color, indicator_color])
+	draw_polygon(points, colors)
+
+	# 輪郭線
+	var outline_color := indicator_color.darkened(0.3)
+	draw_line(tip, base_left, outline_color, 1.5)
+	draw_line(base_left, base_right, outline_color, 1.5)
+	draw_line(base_right, tip, outline_color, 1.5)
+
+	# 変換をリセット
+	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
 
 
 ## 破壊マーク描画（通常破壊用）

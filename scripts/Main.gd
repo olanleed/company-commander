@@ -561,6 +561,39 @@ func _update_combat(tick: int, dt: float) -> void:
 		# 射撃対象を選択
 		var target := _select_target(shooter, tick)
 		if not target:
+			# デバッグ: 100tickごとにターゲットが見つからないユニットを報告
+			if tick % 100 == 0:
+				var contacts := vision_system.get_contacts_for_faction(shooter.faction)
+				var fireable := vision_system.get_fireable_targets(shooter)
+				var confirmed_count := 0
+				for c in contacts:
+					if c.state == GameEnums.ContactState.CONFIRMED:
+						confirmed_count += 1
+				print("[NoTarget] %s (faction=%d): contacts=%d (conf=%d), fireable=%d, supp=%.2f" % [
+					shooter.id, shooter.faction, contacts.size(), confirmed_count, fireable.size(),
+					shooter.suppression
+				])
+				# 詳細デバッグ: 敵ユニットとの距離と視界
+				var enemy_faction := GameEnums.Faction.BLUE if shooter.faction == GameEnums.Faction.RED else GameEnums.Faction.RED
+				var enemies := world_model.get_elements_for_faction(enemy_faction)
+				for enemy in enemies:
+					if enemy.state == GameEnums.UnitState.DESTROYED:
+						continue
+					var dist := shooter.position.distance_to(enemy.position)
+					# 抑圧を考慮した実効視界を計算
+					var r_base := shooter.element_type.spot_range_base if shooter.element_type else 0.0
+					var m_observer := 1.0
+					if shooter.suppression >= 0.90:
+						m_observer = 0.20
+					elif shooter.suppression >= 0.70:
+						m_observer = 0.40
+					elif shooter.suppression >= 0.40:
+						m_observer = 0.75
+					var m_activity := 1.25 if enemy.is_moving else 1.0
+					var r_eff := r_base * m_observer * m_activity
+					print("    -> %s: dist=%.0fm, r_eff=%.0fm (base=%.0f*obs=%.2f*act=%.2f)" % [
+						enemy.id, dist, r_eff, r_base, m_observer, m_activity
+					])
 			continue
 
 		# 射撃実行
@@ -582,74 +615,111 @@ func _update_combat(tick: int, dt: float) -> void:
 		shooter.current_target_id = target.id
 		shooters_firing[shooter.id] = true
 
-		# DISCRETE武器の発射レート制御
-		var can_fire := true
-		if selected_weapon.fire_model == WeaponData.FireModel.DISCRETE:
-			if shooter.last_fire_tick >= 0 and selected_weapon.rof_rpm > 0:
-				# rof_rpm発/分 → 1発あたりの間隔(tick)を計算
-				# 10Hz = 10tick/秒 = 600tick/分
-				var ticks_per_shot := int(600.0 / selected_weapon.rof_rpm)
-				var elapsed := tick - shooter.last_fire_tick
-				if elapsed < ticks_per_shot:
-					can_fire = false
-
-		if not can_fire:
-			# 発射レート制限中は射撃しない（ただし照準は維持）
-			shooter.current_target_id = target.id
-			continue
-
 		# 装甲目標かどうかで計算方法を分岐
 		var d_supp: float = 0.0
 		var d_dmg: float = 0.0
 		var is_valid: bool = false
 
-		if target.is_vehicle():
-			# 装甲目標: ゾーン別装甲・貫徹判定を使用
-			var result_armor := combat_system.calculate_direct_fire_vs_armor(
-				shooter, target, selected_weapon, distance, dt, t_los, terrain, false
+		# v0.2: 戦車戦モデルを使用するか判定
+		if combat_system.should_use_tank_combat(shooter, target, selected_weapon):
+			# 戦車対重装甲: v0.2離散発砲モデル
+			var tank_result := combat_system.process_tank_engagement(
+				shooter, target, selected_weapon, distance, tick
 			)
-			is_valid = result_armor.is_valid
-			d_supp = result_armor.d_supp
 
-			# デバッグ: アスペクトと貫徹確率を取得
-			var aspect := combat_system.calculate_aspect_v01r(
-				shooter.position, target.position, target.facing
-			)
-			var p_pen := combat_system.get_penetration_probability(
-				shooter, target, selected_weapon, distance, aspect
-			)
-			var aspect_name: String = str(WeaponData.ArmorZone.keys()[aspect])
+			# 射撃中フラグを維持（リロード中でも照準は維持）
+			shooter.current_target_id = target.id
+			shooters_firing[shooter.id] = true
 
-			# 離散ヒットモデル: p_hitでダメージ発生を判定
-			var roll := randf()
-			var did_hit := result_armor.p_hit > 0 and roll < result_armor.p_hit
-			if did_hit:
-				# ヒット時は車両ダメージ処理
-				combat_system.apply_vehicle_damage(
-					target,
-					selected_weapon.threat_class,
-					result_armor.exposure,
-					tick
-				)
-				# ヒット時のデバッグログ
-				if tick % 10 == 0:
-					print("[Combat] %s -> %s [%s] %s: p_pen=%.2f p_hit=%.2f roll=%.2f -> HIT!" % [
-						shooter.id, target.id, selected_weapon.id, aspect_name, p_pen, result_armor.p_hit, roll
-					])
-			else:
-				# ミス時のデバッグログ（50tickごと）
-				if tick % 50 == 0:
-					print("[Combat] %s -> %s [%s] %s: p_pen=%.2f p_hit=%.4f E=%.4f roll=%.2f -> miss" % [
-						shooter.id, target.id, selected_weapon.id, aspect_name, p_pen, result_armor.p_hit, result_armor.exposure, roll
-					])
+			if tank_result.fired:
+				# 砲弾発射エフェクト
+				if projectile_manager and selected_weapon.projectile_speed_mps > 0:
+					projectile_manager.fire_projectile(
+						shooter.position,
+						target.position,
+						selected_weapon,
+						shooter.faction,
+						tank_result.hit
+					)
+
+				if tank_result.hit:
+					elements_under_fire[target.id] = true
+					is_valid = true
+					# 戦車戦では抑圧もヒット時に適用
+					d_supp = GameConstants.K_DF_SUPP
+
+					# 戦闘可視化（ヒット）
+					if combat_visualizer:
+						combat_visualizer.add_fire_event(
+							shooter.id,
+							target.id,
+							shooter.position,
+							target.position,
+							shooter.faction,
+							1.0 if tank_result.kill else 0.5,  # ダメージ表示用
+							d_supp,
+							true,
+							selected_weapon.mechanism
+						)
+				else:
+					# ミス時も射線は表示
+					if combat_visualizer:
+						combat_visualizer.add_fire_event(
+							shooter.id,
+							target.id,
+							shooter.position,
+							target.position,
+							shooter.faction,
+							0.0,
+							0.0,
+							false,
+							selected_weapon.mechanism
+						)
+			# リロード中は射線を表示しない（照準維持のみ）
+			continue  # 戦車戦は専用処理で完結
+
 		else:
-			# 非装甲目標: 従来の計算
-			var result := combat_system.calculate_direct_fire_effect(
-				shooter, target, selected_weapon, distance, dt, t_los, terrain, false
-			)
-			is_valid = result.is_valid
-			d_supp = result.d_supp
-			d_dmg = result.d_dmg
+			# 非戦車戦v0.2: DISCRETE武器の発射レート制御
+			var can_fire := true
+			if selected_weapon.fire_model == WeaponData.FireModel.DISCRETE:
+				if shooter.last_fire_tick >= 0 and selected_weapon.rof_rpm > 0:
+					var ticks_per_shot := int(600.0 / selected_weapon.rof_rpm)
+					var elapsed := tick - shooter.last_fire_tick
+					if elapsed < ticks_per_shot:
+						can_fire = false
+
+			if not can_fire:
+				shooter.current_target_id = target.id
+				continue
+
+			if target.is_vehicle():
+				# 装甲目標（v0.2非対象）: v0.1R ゾーン別装甲・貫徹判定を使用
+				var result_armor := combat_system.calculate_direct_fire_vs_armor(
+					shooter, target, selected_weapon, distance, dt, t_los, terrain, false
+				)
+				is_valid = result_armor.is_valid
+				d_supp = result_armor.d_supp
+
+				# 離散ヒットモデル: p_hitでダメージ発生を判定
+				var roll := randf()
+				var did_hit := result_armor.p_hit > 0 and roll < result_armor.p_hit
+				if did_hit:
+					# ヒット時は車両ダメージ処理
+					combat_system.apply_vehicle_damage(
+						target,
+						selected_weapon.threat_class,
+						result_armor.exposure,
+						tick
+					)
+
+			else:
+				# 非装甲目標: 従来の計算
+				var result := combat_system.calculate_direct_fire_effect(
+					shooter, target, selected_weapon, distance, dt, t_los, terrain, false
+				)
+				is_valid = result.is_valid
+				d_supp = result.d_supp
+				d_dmg = result.d_dmg
 
 		if is_valid:
 			# 抑圧とダメージを適用（threat_classを渡して車両の抑圧上限を適用）

@@ -144,13 +144,23 @@ func test_position_error_growth() -> void:
 # =============================================================================
 
 func test_moving_target_easier_to_detect() -> void:
-	# 移動中のユニットは見つかりやすい
-	var blue := world_model.create_test_element(_test_type, GameEnums.Faction.BLUE, Vector2(100, 100))
-	var red := world_model.create_test_element(_test_type, GameEnums.Faction.RED, Vector2(350, 100))
+	# 移動中のユニットは見つかりやすい（m_activity = 1.15）
+	# spot_range_base = 300m
+	# 静止目標: 300m まで見える
+	# 移動目標: 300 * 1.15 = 345m まで見える
 
-	# 静止状態では見えない距離
+	# 330m地点に配置（静止なら見えない、移動なら見える距離）
+	var blue := world_model.create_test_element(_test_type, GameEnums.Faction.BLUE, Vector2(100, 100))
+	var red := world_model.create_test_element(_test_type, GameEnums.Faction.RED, Vector2(430, 100))  # 330m away
+
+	# 静止状態では見えない
+	red.is_moving = false
 	vision_system.update(0, 0.1)
-	var contact := vision_system.get_contact(GameEnums.Faction.BLUE, red.id)
+	vision_system.update(2, 0.1)
+	vision_system.update(4, 0.1)
+
+	var contact_stationary := vision_system.get_contact(GameEnums.Faction.BLUE, red.id)
+	assert_null(contact_stationary, "静止目標330mは視界外")
 
 	# REDを移動状態にする
 	red.is_moving = true
@@ -158,14 +168,12 @@ func test_moving_target_easier_to_detect() -> void:
 
 	# 再スキャン
 	vision_system.mark_dirty()
-	vision_system.update(2, 0.1)
-	vision_system.update(4, 0.1)
 	vision_system.update(6, 0.1)
+	vision_system.update(8, 0.1)
+	vision_system.update(10, 0.1)
 
-	contact = vision_system.get_contact(GameEnums.Faction.BLUE, red.id)
-	# 移動中は発見距離が1.15倍なので、350m以内なら見える可能性が上がる
-	# 300 * 1.15 = 345m なので、350mは微妙だが、この距離なら見えるはず
-	# （実際の判定は係数の組み合わせによる）
+	var contact_moving := vision_system.get_contact(GameEnums.Faction.BLUE, red.id)
+	assert_not_null(contact_moving, "移動目標330mは視界内（m_activity=1.15）")
 
 
 # =============================================================================
@@ -327,3 +335,102 @@ func test_get_effective_view_range_suppressed() -> void:
 	var view_range: float = vision_system.get_effective_view_range(blue)
 	# 300 * 0.75 = 225
 	assert_almost_eq(view_range, 225.0, 1.0, "抑圧されると視界が狭まる")
+
+
+# =============================================================================
+# 双方向視認テスト（RED->BLUE, BLUE->RED）
+# =============================================================================
+
+func test_destroyed_observer_cannot_see() -> void:
+	var blue := world_model.create_test_element(_test_type, GameEnums.Faction.BLUE, Vector2(100, 100))
+	var _red := world_model.create_test_element(_test_type, GameEnums.Faction.RED, Vector2(200, 100))
+
+	# BLUEをDESTROYEDにする
+	blue.state = GameEnums.UnitState.DESTROYED
+
+	# スキャン実行
+	for i in range(5):
+		vision_system.update(i * 2, 0.1)
+
+	# 破壊されたBLUEはREDを見れない
+	var blue_contacts := vision_system.get_contacts_for_faction(GameEnums.Faction.BLUE)
+	assert_eq(blue_contacts.size(), 0, "破壊されたユニットはContactを作成しない")
+
+	# 破壊されたBLUEはREDからも視認対象にならない（目標として無効）
+	var red_contacts := vision_system.get_contacts_for_faction(GameEnums.Faction.RED)
+	assert_eq(red_contacts.size(), 0, "破壊されたユニットはContactの目標にならない")
+
+
+func test_multiple_enemies_detection() -> void:
+	var _blue := world_model.create_test_element(_test_type, GameEnums.Faction.BLUE, Vector2(100, 100))
+	var _red1 := world_model.create_test_element(_test_type, GameEnums.Faction.RED, Vector2(200, 100))
+	var _red2 := world_model.create_test_element(_test_type, GameEnums.Faction.RED, Vector2(150, 150))
+	var _red3 := world_model.create_test_element(_test_type, GameEnums.Faction.RED, Vector2(180, 80))
+
+	# CONF化
+	for i in range(5):
+		vision_system.update(i * 2, 0.1)
+
+	var contacts := vision_system.get_contacts_for_faction(GameEnums.Faction.BLUE)
+	assert_eq(contacts.size(), 3, "3体のREDユニットを認識")
+
+	# 全てがCONFIRMED
+	for contact in contacts:
+		assert_eq(contact.state, GameEnums.ContactState.CONFIRMED)
+
+
+func test_friendly_not_detected_as_enemy() -> void:
+	var _blue1 := world_model.create_test_element(_test_type, GameEnums.Faction.BLUE, Vector2(100, 100))
+	var _blue2 := world_model.create_test_element(_test_type, GameEnums.Faction.BLUE, Vector2(200, 100))
+
+	# スキャン実行
+	for i in range(5):
+		vision_system.update(i * 2, 0.1)
+
+	# 味方はContactとして検出されない
+	var contacts := vision_system.get_contacts_for_faction(GameEnums.Faction.BLUE)
+	assert_eq(contacts.size(), 0, "味方ユニットはContactに含まれない")
+
+
+func test_bidirectional_contact_creation() -> void:
+	# BLUEとREDを近くに配置
+	var blue := world_model.create_test_element(_test_type, GameEnums.Faction.BLUE, Vector2(100, 100))
+	var red := world_model.create_test_element(_test_type, GameEnums.Faction.RED, Vector2(200, 100))
+
+	# CONF化
+	for i in range(5):
+		vision_system.update(i * 2, 0.1)
+
+	# BLUE->RED のContact
+	var blue_contacts := vision_system.get_contacts_for_faction(GameEnums.Faction.BLUE)
+	assert_eq(blue_contacts.size(), 1, "BLUEは1つのContactを持つ")
+	assert_eq(blue_contacts[0].element_id, red.id, "BLUEはREDを認識")
+	assert_eq(blue_contacts[0].state, GameEnums.ContactState.CONFIRMED, "BLUEからREDはCONF")
+
+	# RED->BLUE のContact
+	var red_contacts := vision_system.get_contacts_for_faction(GameEnums.Faction.RED)
+	assert_eq(red_contacts.size(), 1, "REDは1つのContactを持つ")
+	assert_eq(red_contacts[0].element_id, blue.id, "REDはBLUEを認識")
+	assert_eq(red_contacts[0].state, GameEnums.ContactState.CONFIRMED, "REDからBLUEはCONF")
+
+
+func test_bidirectional_fireable_targets() -> void:
+	# BLUEとREDを近くに配置
+	var blue := world_model.create_test_element(_test_type, GameEnums.Faction.BLUE, Vector2(100, 100))
+	var red := world_model.create_test_element(_test_type, GameEnums.Faction.RED, Vector2(200, 100))
+
+	# CONF化
+	for i in range(5):
+		vision_system.update(i * 2, 0.1)
+
+	# BLUE->RED の射撃可能判定
+	var blue_targets := vision_system.get_fireable_targets(blue)
+	assert_eq(blue_targets.size(), 1, "BLUEは1体を射撃可能")
+	assert_eq(blue_targets[0].id, red.id, "BLUEはREDを射撃可能")
+
+	# RED->BLUE の射撃可能判定
+	var red_targets := vision_system.get_fireable_targets(red)
+	assert_eq(red_targets.size(), 1, "REDは1体を射撃可能")
+	assert_eq(red_targets[0].id, blue.id, "REDはBLUEを射撃可能")
+
+
