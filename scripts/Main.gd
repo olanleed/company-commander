@@ -394,17 +394,19 @@ func _update_element_views() -> void:
 			view.queue_redraw()
 			continue
 
-		# FoW状態を更新（シンプルモデル）
+		# FoW状態を更新（VisionSystemベース）
 		# プレイヤー側のユニットは常に表示
-		# 敵ユニットはプレイヤー側に生存ユニットがいる場合のみ表示
+		# 敵ユニットはVisionSystemのContact状態に基づく
 		if element.faction == player_faction:
 			view.update_contact_state(GameEnums.ContactState.CONFIRMED)
 		else:
-			# プレイヤー側に生存ユニットがいるか確認
-			var has_observer := _has_alive_friendly_unit()
-			if has_observer:
-				view.update_contact_state(GameEnums.ContactState.CONFIRMED)
+			# VisionSystemからContact状態を取得
+			var contact := vision_system.get_contact(player_faction, element_id)
+			if contact:
+				# Contact状態と推定位置を反映
+				view.update_contact_state(contact.state, contact.pos_est_m, contact.pos_error_m)
 			else:
+				# 接触なし = UNKNOWN（非表示）
 				view.update_contact_state(GameEnums.ContactState.UNKNOWN)
 
 		# 位置更新（FoW考慮）
