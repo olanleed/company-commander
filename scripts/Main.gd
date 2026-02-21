@@ -83,7 +83,7 @@ func _ready() -> void:
 	units_layer.add_child(projectile_manager)
 
 	# TacticalOverlayをユニットレイヤーに追加（ユニットの上、UIの下に描画）
-	tactical_overlay.setup(world_model)
+	tactical_overlay.setup(world_model, vision_system)
 	units_layer.add_child(tactical_overlay)
 
 	# HUDセットアップ
@@ -351,10 +351,8 @@ func _issue_initial_ai_orders() -> void:
 
 func _on_element_added(element: ElementData.ElementInstance) -> void:
 	var view := ElementView.new()
+	# setupで味方はCONFIRMED（表示）、敵はUNKNOWN（非表示）に設定される
 	view.setup(element, symbol_manager, player_faction)
-	# 初期状態では全ユニットを不透明で表示（FoWは後で適用される）
-	view.modulate = Color(1, 1, 1, 1)
-	view.visible = true
 	units_layer.add_child(view)
 	_element_views[element.id] = view
 
@@ -542,15 +540,6 @@ func _on_tick_advanced(tick: int) -> void:
 
 
 func _update_combat(tick: int, dt: float) -> void:
-	# デバッグ: 接触状態を出力（10秒ごと）
-	if tick % 100 == 0:
-		for faction_val in [GameEnums.Faction.BLUE, GameEnums.Faction.RED]:
-			var contacts := vision_system.get_contacts_for_faction(faction_val)
-			var faction_name := "BLUE" if faction_val == GameEnums.Faction.BLUE else "RED"
-			if contacts.size() > 0:
-				print("[Vision] %s has %d contacts" % [faction_name, contacts.size()])
-				for c in contacts:
-					print("  - %s: state=%d" % [c.element_id, c.state])
 
 	# 被弾中フラグを追跡
 	var elements_under_fire: Dictionary = {}  # element_id -> bool
@@ -726,7 +715,7 @@ func _update_combat(tick: int, dt: float) -> void:
 
 
 ## ATTACK命令中のユニットの移動を制御
-## 強制目標が射程内に入ったら停止、射程外なら追跡
+## 強制目標が射撃可能になったら停止、射撃不可なら追跡
 func _update_attack_movement() -> void:
 	for element in world_model.elements:
 		# ATTACK命令で強制目標がある場合のみ
@@ -742,19 +731,17 @@ func _update_attack_movement() -> void:
 			element.order_target_id = ""
 			continue
 
-		var distance := element.position.distance_to(target.position)
-		var in_range := false
-		if element.primary_weapon:
-			in_range = element.primary_weapon.is_in_range(distance)
+		# VisionSystemで射撃可能か判定（視界範囲 + DataLink考慮）
+		var can_fire := vision_system.can_fire_at(element, element.forced_target_id) if vision_system else false
 
-		if in_range:
-			# 射程内：移動停止
+		if can_fire:
+			# 射撃可能：移動停止
 			if element.is_moving:
 				element.current_path = PackedVector2Array()
 				element.is_moving = false
 				element.velocity = Vector2.ZERO
 		else:
-			# 射程外：目標に向かって移動（まだ移動していない場合）
+			# 射撃不可：目標に向かって移動（まだ移動していない場合）
 			if not element.is_moving:
 				movement_system.issue_move_order(element, target.position, false)
 			else:
@@ -939,10 +926,9 @@ func _on_input_right_click(world_pos: Vector2, _screen_pos: Vector2) -> void:
 			print("[CompanyAI] BLUE -> ATTACK_CP %s" % cp.id)
 		return
 
-	# それ以外は移動（中隊AI経由）
-	var use_road: bool = input_controller.is_alt_held() if input_controller else false
-	company_ai.order_move(world_pos, use_road)
-	print("[CompanyAI] BLUE -> MOVE to %s" % world_pos)
+	# それ以外は移動（選択ユニットのみに直接命令）
+	# 注意: company_ai.order_move() は全ユニットに命令を出すため使用しない
+	_execute_command_for_selected(GameEnums.OrderType.MOVE, world_pos)
 
 
 func _on_box_selection_ended(start_pos: Vector2, end_pos: Vector2) -> void:
@@ -1043,22 +1029,19 @@ func _execute_attack_command(attackers: Array[ElementData.ElementInstance], targ
 		element.order_target_id = target.id
 		element.current_order_type = GameEnums.OrderType.ATTACK
 
-		# 射程内かチェック
-		var distance := element.position.distance_to(target.position)
-		var in_range := false
-		if element.primary_weapon:
-			in_range = element.primary_weapon.is_in_range(distance)
+		# VisionSystemで射撃可能か判定（視界範囲 + DataLink考慮）
+		var can_fire := vision_system.can_fire_at(element, target.id) if vision_system else false
 
-		if in_range:
-			# 射程内なら移動停止
+		if can_fire:
+			# 射撃可能なら移動停止
 			element.current_path = PackedVector2Array()
 			element.is_moving = false
 		else:
-			# 射程外なら目標に向かって移動（射程内に入るまで）
+			# 射撃不可なら目標に向かって移動
 			var use_road: bool = input_controller.is_alt_held() if input_controller else false
 			movement_system.issue_move_order(element, target.position, use_road)
 
-		print("[Order] %s -> ATTACK %s (in_range=%s)" % [element.id, target.id, in_range])
+		print("[Order] %s -> ATTACK %s (can_fire=%s)" % [element.id, target.id, can_fire])
 
 
 func _get_cp_at_position(pos: Vector2) -> MapData.CapturePoint:
@@ -1113,8 +1096,8 @@ func _get_combat_state_name(state: GameEnums.CombatState) -> String:
 # 戦闘ヘルパー
 # =============================================================================
 
-## 武器を要素に割り当て
-## 射撃対象を選択
+## 射撃対象を選択（VisionSystem統合API使用）
+## VisionSystemが「見えている敵だけを撃てる」という原則を保証
 func _select_target(shooter: ElementData.ElementInstance, _tick: int) -> ElementData.ElementInstance:
 	if not vision_system:
 		return null
@@ -1123,13 +1106,9 @@ func _select_target(shooter: ElementData.ElementInstance, _tick: int) -> Element
 	if shooter.forced_target_id != "":
 		var forced_target := world_model.get_element_by_id(shooter.forced_target_id)
 		if forced_target and forced_target.state != GameEnums.UnitState.DESTROYED:
-			# 視界内にいるか確認
-			var contact := vision_system.get_contact(shooter.faction, shooter.forced_target_id)
-			if contact and contact.state == GameEnums.ContactState.CONFIRMED:
-				# 射程内かチェック
-				var distance := shooter.position.distance_to(forced_target.position)
-				if shooter.primary_weapon and shooter.primary_weapon.is_in_range(distance):
-					return forced_target
+			# VisionSystemで射撃可能か判定（DataLink + 視界範囲を一元管理）
+			if vision_system.can_fire_at(shooter, shooter.forced_target_id):
+				return forced_target
 			# 射程外または視界外でも、目標が存在する限り他の目標には切り替えない
 			# （目標に近づくため移動を続ける）
 			return null
@@ -1138,36 +1117,22 @@ func _select_target(shooter: ElementData.ElementInstance, _tick: int) -> Element
 			shooter.forced_target_id = ""
 			shooter.order_target_id = ""
 
-	var contacts := vision_system.get_contacts_for_faction(shooter.faction)
-	if contacts.size() == 0:
+	# VisionSystemから射撃可能な全目標を取得（DataLink + 視界範囲考慮済み）
+	var fireable_targets := vision_system.get_fireable_targets(shooter)
+	if fireable_targets.size() == 0:
 		return null
 
+	# SOPモードによるフィルタリング
+	if shooter.sop_mode == GameEnums.SOPMode.HOLD_FIRE:
+		return null
+	# RETURN_FIREの場合は被弾時のみ射撃（現在は簡略化してFIRE_AT_WILLと同じ）
+
+	# 最も近い敵を選択
 	var best_target: ElementData.ElementInstance = null
 	var best_priority := -1.0
 
-	for contact in contacts:
-		# CONFIRMEDのみ射撃可能（RETURN_FIREの場合はSUSも可）
-		if shooter.sop_mode == GameEnums.SOPMode.FIRE_AT_WILL:
-			if contact.state != GameEnums.ContactState.CONFIRMED:
-				continue
-		elif shooter.sop_mode == GameEnums.SOPMode.RETURN_FIRE:
-			# 被弾時のみ射撃（簡略化：CONFIRMEDのみ）
-			if contact.state != GameEnums.ContactState.CONFIRMED:
-				continue
-
-		# 実際のElementを取得
-		var target := world_model.get_element_by_id(contact.element_id)
-		if not target:
-			continue
-		if target.state == GameEnums.UnitState.DESTROYED:
-			continue
-
-		# 射程内かチェック
+	for target in fireable_targets:
 		var distance := shooter.position.distance_to(target.position)
-		if shooter.primary_weapon and not shooter.primary_weapon.is_in_range(distance):
-			continue
-
-		# 優先度計算（近い敵を優先）
 		var priority := 1000.0 - distance
 		if priority > best_priority:
 			best_priority = priority

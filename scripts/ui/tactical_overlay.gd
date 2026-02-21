@@ -9,6 +9,7 @@ extends Node2D
 # =============================================================================
 
 var world_model: WorldModel
+var vision_system: VisionSystem
 var _selected_elements: Array[ElementData.ElementInstance] = []
 
 # =============================================================================
@@ -31,8 +32,9 @@ func _ready() -> void:
 	z_index = 100
 
 
-func setup(p_world_model: WorldModel) -> void:
+func setup(p_world_model: WorldModel, p_vision_system: VisionSystem = null) -> void:
 	world_model = p_world_model
+	vision_system = p_vision_system
 
 
 func set_selected_elements(elements: Array[ElementData.ElementInstance]) -> void:
@@ -62,15 +64,23 @@ func _draw_view_ranges() -> void:
 		if not element.element_type:
 			continue
 
-		# 移動中かどうかで視界範囲が変わる
-		var view_range: float
-		if element.is_moving:
-			view_range = element.element_type.spot_range_moving
+		# VisionSystemを使用して実効視界範囲を取得
+		# 実効視界 = r_base × m_observer（抑圧係数）
+		# これが「静止している敵が見える最大距離」
+		var effective_range: float
+		if vision_system:
+			effective_range = vision_system.get_effective_view_range(element)
 		else:
-			view_range = element.element_type.spot_range_base
+			# フォールバック（VisionSystemがない場合）
+			effective_range = element.element_type.spot_range_base
 
-		# 視界範囲円を描画
-		_draw_view_circle(element.position, view_range)
+		# 実効視界範囲円を描画（静止敵を発見できる範囲）
+		_draw_view_circle(element.position, effective_range)
+
+		# 移動中の敵目標に対する拡張視界範囲（+25%）を破線で表示
+		# VisionSystemでは移動中の車両は+25%、歩兵は+15%で発見される
+		var extended_range: float = effective_range * 1.25
+		_draw_extended_view_circle(element.position, extended_range)
 
 
 ## 視界範囲円を描画
@@ -80,6 +90,21 @@ func _draw_view_circle(center: Vector2, radius: float) -> void:
 
 	# 境界線
 	draw_arc(center, radius, 0, TAU, 64, COLOR_VIEW_RANGE_BORDER, 2.0)
+
+
+## 拡張視界範囲円を描画（移動中の敵目標に対する範囲、破線）
+func _draw_extended_view_circle(center: Vector2, radius: float) -> void:
+	# 破線スタイルで境界線のみ（塗りつぶしなし）
+	var dash_color := Color(0.5, 0.7, 1.0, 0.25)  # より薄い色
+	var segments := 32
+	var arc_length := TAU / float(segments)
+
+	# 交互に描画して破線を表現
+	for i in range(segments):
+		if i % 2 == 0:
+			var start_angle := arc_length * float(i)
+			var end_angle := arc_length * float(i + 1)
+			draw_arc(center, radius, start_angle, end_angle, 8, dash_color, 1.5)
 
 
 ## 選択ユニットのロックオンターゲットを描画

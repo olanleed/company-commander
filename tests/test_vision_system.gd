@@ -204,3 +204,126 @@ func test_get_element_visibility_state() -> void:
 		vision_system.get_element_visibility_state(GameEnums.Faction.BLUE, red.id),
 		GameEnums.ContactState.CONFIRMED
 	)
+
+
+# =============================================================================
+# 統合API テスト（射撃可能判定のSingle Source of Truth）
+# =============================================================================
+
+func test_is_visible_now_within_range() -> void:
+	var blue := world_model.create_test_element(_test_type, GameEnums.Faction.BLUE, Vector2(100, 100))
+	var red := world_model.create_test_element(_test_type, GameEnums.Faction.RED, Vector2(200, 100))
+
+	# 近距離では即座に見える
+	assert_true(vision_system.is_visible_now(blue, red), "近距離ではis_visible_now=true")
+	assert_true(vision_system.is_visible_now(red, blue), "双方から見える")
+
+
+func test_is_visible_now_out_of_range() -> void:
+	var blue := world_model.create_test_element(_test_type, GameEnums.Faction.BLUE, Vector2(100, 100))
+	var red := world_model.create_test_element(_test_type, GameEnums.Faction.RED, Vector2(500, 100))
+
+	# 遠距離では見えない
+	assert_false(vision_system.is_visible_now(blue, red), "遠距離ではis_visible_now=false")
+
+
+func test_is_visible_now_destroyed_unit() -> void:
+	var blue := world_model.create_test_element(_test_type, GameEnums.Faction.BLUE, Vector2(100, 100))
+	var red := world_model.create_test_element(_test_type, GameEnums.Faction.RED, Vector2(200, 100))
+
+	# 破壊されたユニットは見えない
+	red.state = GameEnums.UnitState.DESTROYED
+	assert_false(vision_system.is_visible_now(blue, red), "破壊されたユニットは見えない")
+
+
+func test_can_fire_at_requires_confirmed_contact() -> void:
+	var blue := world_model.create_test_element(_test_type, GameEnums.Faction.BLUE, Vector2(100, 100))
+	var red := world_model.create_test_element(_test_type, GameEnums.Faction.RED, Vector2(200, 100))
+
+	# Contact未確定では射撃不可
+	assert_false(vision_system.can_fire_at(blue, red.id), "Contact未確定では射撃不可")
+
+	# CONF化
+	for i in range(5):
+		vision_system.update(i * 2, 0.1)
+
+	# CONF確定後は射撃可能
+	assert_true(vision_system.can_fire_at(blue, red.id), "CONF確定後は射撃可能")
+
+
+func test_can_fire_at_out_of_range() -> void:
+	var blue := world_model.create_test_element(_test_type, GameEnums.Faction.BLUE, Vector2(100, 100))
+	var red := world_model.create_test_element(_test_type, GameEnums.Faction.RED, Vector2(200, 100))
+
+	# CONF化
+	for i in range(5):
+		vision_system.update(i * 2, 0.1)
+
+	# 射程内→射撃可能
+	assert_true(vision_system.can_fire_at(blue, red.id))
+
+	# REDを遠くに移動
+	red.position = Vector2(500, 100)
+
+	# 視界外→射撃不可（Contactは残っているが今は見えない）
+	assert_false(vision_system.can_fire_at(blue, red.id), "視界外では射撃不可")
+
+
+func test_get_fireable_targets() -> void:
+	var blue := world_model.create_test_element(_test_type, GameEnums.Faction.BLUE, Vector2(100, 100))
+	var red1 := world_model.create_test_element(_test_type, GameEnums.Faction.RED, Vector2(200, 100))
+	var red2 := world_model.create_test_element(_test_type, GameEnums.Faction.RED, Vector2(250, 100))
+	var red3 := world_model.create_test_element(_test_type, GameEnums.Faction.RED, Vector2(500, 100))  # 遠い
+
+	# CONF化
+	for i in range(5):
+		vision_system.update(i * 2, 0.1)
+
+	# 射撃可能な目標を取得
+	var targets := vision_system.get_fireable_targets(blue)
+
+	# red1とred2は射程内、red3は射程外
+	assert_eq(targets.size(), 2, "2体が射撃可能")
+	assert_true(targets.has(red1), "red1は射撃可能")
+	assert_true(targets.has(red2), "red2は射撃可能")
+	assert_false(targets.has(red3), "red3は射程外")
+
+
+func test_get_nearest_fireable_target() -> void:
+	var blue := world_model.create_test_element(_test_type, GameEnums.Faction.BLUE, Vector2(100, 100))
+	var red1 := world_model.create_test_element(_test_type, GameEnums.Faction.RED, Vector2(250, 100))  # 150m
+	var red2 := world_model.create_test_element(_test_type, GameEnums.Faction.RED, Vector2(200, 100))  # 100m（近い）
+
+	# CONF化
+	for i in range(5):
+		vision_system.update(i * 2, 0.1)
+
+	# 最も近い目標を取得
+	var nearest := vision_system.get_nearest_fireable_target(blue)
+
+	assert_not_null(nearest)
+	assert_eq(nearest.id, red2.id, "最も近いred2が返される")
+
+
+func test_get_base_view_range() -> void:
+	var blue := world_model.create_test_element(_test_type, GameEnums.Faction.BLUE, Vector2(100, 100))
+
+	var range := vision_system.get_base_view_range(blue)
+	assert_eq(range, 300.0, "基本視界範囲はspot_range_base")
+
+
+func test_get_effective_view_range_no_suppression() -> void:
+	var blue := world_model.create_test_element(_test_type, GameEnums.Faction.BLUE, Vector2(100, 100))
+	blue.suppression = 0.0
+
+	var view_range: float = vision_system.get_effective_view_range(blue)
+	assert_eq(view_range, 300.0, "抑圧なしでは実効視界=基本視界")
+
+
+func test_get_effective_view_range_suppressed() -> void:
+	var blue := world_model.create_test_element(_test_type, GameEnums.Faction.BLUE, Vector2(100, 100))
+	blue.suppression = 0.50  # SUPPRESSEDレベル → m_observer=0.75
+
+	var view_range: float = vision_system.get_effective_view_range(blue)
+	# 300 * 0.75 = 225
+	assert_almost_eq(view_range, 225.0, 1.0, "抑圧されると視界が狭まる")

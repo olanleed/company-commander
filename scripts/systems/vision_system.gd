@@ -428,8 +428,152 @@ func _get_contact_from_single_observer(observer: ElementData.ElementInstance, ta
 
 
 ## 指定ユニットからターゲットが射撃可能か（視界+DataLink考慮）
+## 注意: このAPIは非推奨。can_fire_at()を使用してください。
 func can_engage_target(shooter: ElementData.ElementInstance, target_id: String) -> bool:
-	var contact := get_contact_for_unit(shooter, target_id)
-	if not contact:
+	return can_fire_at(shooter, target_id)
+
+
+# =============================================================================
+# 統合API（射撃可能判定の唯一の真実の源）
+# =============================================================================
+
+## この瞬間、observerからtargetが見えるか（距離+LoS判定）
+## Contact状態とは独立した「今見えているか」の判定
+func is_visible_now(observer: ElementData.ElementInstance, target: ElementData.ElementInstance) -> bool:
+	if not observer or not target:
 		return false
-	return contact.state == GameEnums.ContactState.CONFIRMED
+	if observer.state == GameEnums.UnitState.DESTROYED:
+		return false
+	if target.state == GameEnums.UnitState.DESTROYED:
+		return false
+
+	var result := _check_visibility(observer, target)
+	return result.visible
+
+
+## shooterがtargetを射撃可能か（DataLink考慮）
+## 条件: Contact=CONFIRMED AND 今この瞬間見えている
+func can_fire_at(shooter: ElementData.ElementInstance, target_id: String) -> bool:
+	if not _world_model:
+		return false
+
+	# Contact状態を確認（DataLink考慮）
+	var contact := get_contact_for_unit(shooter, target_id)
+	if not contact or contact.state != GameEnums.ContactState.CONFIRMED:
+		return false
+
+	# 今この瞬間見えているか確認
+	var target := _world_model.get_element_by_id(target_id)
+	if not target:
+		return false
+
+	return is_visible_now(shooter, target)
+
+
+## shooterが射撃可能な全目標を返す（DataLink考慮）
+## 条件: Contact=CONFIRMED AND 今この瞬間見えている
+func get_fireable_targets(shooter: ElementData.ElementInstance) -> Array[ElementData.ElementInstance]:
+	var result: Array[ElementData.ElementInstance] = []
+
+	if not _world_model or not shooter:
+		return result
+	if shooter.state == GameEnums.UnitState.DESTROYED:
+		return result
+
+	# DataLink考慮でContact一覧を取得
+	var contacts := _get_contacts_for_unit(shooter)
+
+	for contact in contacts:
+		# CONFIRMEDのみ射撃可能
+		if contact.state != GameEnums.ContactState.CONFIRMED:
+			continue
+
+		var target := _world_model.get_element_by_id(contact.element_id)
+		if not target:
+			continue
+		if target.state == GameEnums.UnitState.DESTROYED:
+			continue
+
+		# 今この瞬間見えているか確認
+		if is_visible_now(shooter, target):
+			result.append(target)
+
+	return result
+
+
+## 指定observerから見える敵の中で最も近い目標を返す
+func get_nearest_fireable_target(shooter: ElementData.ElementInstance) -> ElementData.ElementInstance:
+	var targets := get_fireable_targets(shooter)
+	if targets.size() == 0:
+		return null
+
+	var nearest: ElementData.ElementInstance = null
+	var nearest_dist := INF
+
+	for target in targets:
+		var dist := shooter.position.distance_to(target.position)
+		if dist < nearest_dist:
+			nearest_dist = dist
+			nearest = target
+
+	return nearest
+
+
+## 指定ユニットのContact一覧を取得（DataLink考慮）
+func _get_contacts_for_unit(unit: ElementData.ElementInstance) -> Array[ContactRecord]:
+	var result: Array[ContactRecord] = []
+
+	# ISOLATEDの場合は自分の視界のみ
+	if unit.comm_state == GameEnums.CommState.ISOLATED:
+		# 敵陣営を特定
+		var enemy_faction := GameEnums.Faction.RED if unit.faction == GameEnums.Faction.BLUE else GameEnums.Faction.BLUE
+		var enemies := _world_model.get_elements_for_faction(enemy_faction)
+
+		for enemy in enemies:
+			if enemy.state == GameEnums.UnitState.DESTROYED:
+				continue
+			# 自分から見えている敵のみ仮Contactを作成
+			if is_visible_now(unit, enemy):
+				var contact := ContactRecord.new(enemy.id)
+				contact.state = GameEnums.ContactState.CONFIRMED
+				contact.pos_est_m = enemy.position
+				contact.vel_est_mps = enemy.velocity
+				result.append(contact)
+		return result
+
+	# LINKED/DEGRADEDの場合は陣営全体のContact
+	return get_contacts_for_faction(unit.faction)
+
+
+## observerがtargetを見るための有効視界距離を取得（外部公開用）
+## TacticalOverlay等で視界円を描画するために使用
+func get_effective_range_for_target(observer: ElementData.ElementInstance, target: ElementData.ElementInstance) -> float:
+	return _calculate_effective_range(observer, target)
+
+
+## observerの実効視界範囲を取得（静止目標に対する、抑圧考慮済み）
+## TacticalOverlay等で視界円を描画するために使用
+func get_effective_view_range(observer: ElementData.ElementInstance) -> float:
+	if not observer or not observer.element_type:
+		return 0.0
+
+	var r_base := observer.element_type.spot_range_base
+	var m_observer := _get_observer_modifier(observer)
+
+	# 静止目標・隠蔽なし地形での実効視界
+	# (m_terrain=1.0, m_activity=1.0を仮定)
+	return r_base * m_observer
+
+
+## observerの基本視界範囲を取得（抑圧なし、静止目標に対する最大視界）
+func get_base_view_range(observer: ElementData.ElementInstance) -> float:
+	if not observer or not observer.element_type:
+		return 0.0
+	return observer.element_type.spot_range_base
+
+
+## observerの移動中視界範囲を取得（非推奨: 実際には使用されない）
+func get_moving_view_range(observer: ElementData.ElementInstance) -> float:
+	if not observer or not observer.element_type:
+		return 0.0
+	return observer.element_type.spot_range_moving

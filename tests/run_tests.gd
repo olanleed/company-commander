@@ -192,14 +192,14 @@ func test_combat_system() -> void:
 	_current_test = "suppression_recovery"
 	element.suppression = 0.50
 	var recovery: float = combat_system.calculate_suppression_recovery(
-		element, false, GameEnums.CommState.GOOD, true, 0.1
+		element, false, GameEnums.CommState.LINKED, true, 0.1
 	)
 	assert_gt(recovery, 0.0)
 	_pass()
 
 	_current_test = "suppression_no_recovery_under_fire"
 	recovery = combat_system.calculate_suppression_recovery(
-		element, true, GameEnums.CommState.GOOD, true, 0.1
+		element, true, GameEnums.CommState.LINKED, true, 0.1
 	)
 	assert_eq(recovery, 0.0)
 	_pass()

@@ -195,7 +195,7 @@ func test_suppression_recovery() -> void:
 
 	# 回復（被弾なし、通信Good、Defend姿勢）
 	var recovery: float = combat_system.calculate_suppression_recovery(
-		element, false, GameEnums.CommState.GOOD, true, 0.1
+		element, false, GameEnums.CommState.LINKED, true, 0.1
 	)
 
 	assert_gt(recovery, 0.0, "Should recover suppression")
@@ -207,7 +207,7 @@ func test_suppression_no_recovery_under_fire() -> void:
 
 	# 被弾中は回復なし
 	var recovery: float = combat_system.calculate_suppression_recovery(
-		element, true, GameEnums.CommState.GOOD, true, 0.1
+		element, true, GameEnums.CommState.LINKED, true, 0.1
 	)
 
 	assert_eq(recovery, 0.0, "No recovery under fire")
@@ -219,12 +219,12 @@ func test_suppression_recovery_reduced_comm_lost() -> void:
 
 	# 通信Goodでの回復
 	var recovery_good: float = combat_system.calculate_suppression_recovery(
-		element, false, GameEnums.CommState.GOOD, true, 0.1
+		element, false, GameEnums.CommState.LINKED, true, 0.1
 	)
 
 	# 通信Lostでの回復
 	var recovery_lost: float = combat_system.calculate_suppression_recovery(
-		element, false, GameEnums.CommState.LOST, true, 0.1
+		element, false, GameEnums.CommState.ISOLATED, true, 0.1
 	)
 
 	# 通信断は回復が遅い
