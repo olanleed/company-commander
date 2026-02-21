@@ -145,6 +145,7 @@ func _setup_systems() -> void:
 	# ProjectileManager
 	projectile_manager = ProjectileManager.new()
 	projectile_manager.name = "ProjectileManager"
+	projectile_manager.projectile_impact.connect(_on_projectile_impact)
 
 	# TacticalOverlay
 	tactical_overlay = TacticalOverlay.new()
@@ -360,6 +361,17 @@ func _on_element_removed(element: ElementData.ElementInstance) -> void:
 		var view: ElementView = _element_views[element.id]
 		view.queue_free()
 		_element_views.erase(element.id)
+
+
+## 砲弾着弾時のダメージ適用（遅延ダメージモデル）
+func _on_projectile_impact(target_id: String, damage_info: Dictionary) -> void:
+	var target := world_model.get_element_by_id(target_id)
+	if not target:
+		print("[Main] WARNING: Target %s not found for projectile impact" % target_id)
+		return
+
+	var current_tick: int = sim_runner.tick_index if sim_runner else 0
+	combat_system.apply_tank_damage_result(target, damage_info, current_tick)
 
 
 ## プレイヤー陣営に生存中のユニットがいるか確認
@@ -630,21 +642,34 @@ func _update_combat(tick: int, dt: float) -> void:
 			shooters_firing[shooter.id] = true
 
 			if tank_result.fired:
-				# 砲弾発射エフェクト
+				# 砲弾発射エフェクト（遅延ダメージ付き）
 				if projectile_manager and selected_weapon.projectile_speed_mps > 0:
-					projectile_manager.fire_projectile(
+					# ダメージ情報を構築（着弾時に適用される）
+					var damage_info := {
+						"hit": tank_result.hit,
+						"kill": tank_result.kill,
+						"mission_kill": tank_result.mission_kill,
+						"catastrophic": tank_result.catastrophic,
+						"aspect": tank_result.aspect,
+						"shooter_id": shooter.id,
+						"p_kill": tank_result.p_kill,
+						"threat_class": selected_weapon.threat_class
+					}
+					projectile_manager.fire_projectile_with_damage(
 						shooter.position,
 						target.position,
 						selected_weapon,
 						shooter.faction,
-						tank_result.hit
+						target.id,
+						damage_info
 					)
 
 				if tank_result.hit:
 					elements_under_fire[target.id] = true
 					is_valid = true
-					# 戦車戦では抑圧もヒット時に適用
+					# 戦車戦では抑圧もヒット時に適用（抑圧は即時、ダメージは着弾時）
 					d_supp = GameConstants.K_DF_SUPP
+					combat_system.apply_damage(target, d_supp, 0.0, tick, selected_weapon.threat_class)
 
 					# 戦闘可視化（ヒット）
 					if combat_visualizer:

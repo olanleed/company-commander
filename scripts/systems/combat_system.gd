@@ -1559,7 +1559,9 @@ func get_heat_kill_probability(
 
 
 ## v0.2: 戦車交戦を処理（離散発砲モデル）
-## 重装甲同士の交戦で呼ばれる。発砲→命中→撃破判定を1回で処理
+## 重装甲同士の交戦で呼ばれる。発砲→命中→撃破判定を行う
+## **注意**: この関数はダメージを適用しない。呼び出し側でapply_tank_damage_resultを使用すること。
+## 遅延ダメージモデル: ProjectileManagerで砲弾を飛ばし、着弾時にダメージを適用する。
 func process_tank_engagement(
 	shooter: ElementData.ElementInstance,
 	target: ElementData.ElementInstance,
@@ -1612,44 +1614,76 @@ func process_tank_engagement(
 
 	result.p_kill = kill_table.kill
 
-	# 撃破判定
+	# 撃破判定（ダメージ適用は行わない、結果のみ記録）
 	var damage_roll := randf()
 	if damage_roll < kill_table.kill:
 		# Kill
 		result.kill = true
-
 		# Catastrophic判定
 		if randf() < GameConstants.TANK_CATASTROPHIC_CHANCE:
 			result.catastrophic = true
 
-		# ダメージ適用
-		_apply_tank_kill(target, current_tick, result.catastrophic)
-
-		print("[TankCombat] %s HIT %s (%s, %.0fm): %s (p_kill=%.1f%%)" % [
-			shooter.id, target.id,
-			_aspect_to_string(result.aspect), distance_m,
-			"CATASTROPHIC KILL" if result.catastrophic else "KILL",
-			kill_table.kill * 100.0
-		])
-
 	elif damage_roll < kill_table.kill + kill_table.mission_kill:
 		# Mission Kill
 		result.mission_kill = true
-		_apply_mission_kill(target, weapon.threat_class)
 
-		print("[TankCombat] %s HIT %s (%s, %.0fm): MISSION KILL" % [
-			shooter.id, target.id,
-			_aspect_to_string(result.aspect), distance_m
+	# ログは着弾時に出力するため、ここでは発砲ログのみ
+	print("[TankCombat] %s FIRED at %s (%.0fm, %s, p_hit=%.1f%%)" % [
+		shooter.id, target.id, distance_m,
+		_aspect_to_string(result.aspect), p_hit * 100.0
+	])
+
+	return result
+
+
+## v0.2: 戦車ダメージ結果を適用（着弾時に呼ばれる）
+## Main.gdがprojectile_impactシグナルを受け取り、targetを解決してから呼び出す
+func apply_tank_damage_result(
+	target: ElementData.ElementInstance,
+	damage_info: Dictionary,
+	current_tick: int
+) -> void:
+	if not target:
+		print("[TankCombat] WARNING: Target is null for delayed damage")
+		return
+
+	var hit: bool = damage_info.get("hit", false)
+	var kill: bool = damage_info.get("kill", false)
+	var mission_kill: bool = damage_info.get("mission_kill", false)
+	var catastrophic: bool = damage_info.get("catastrophic", false)
+	var aspect: int = damage_info.get("aspect", GameEnums.ArmorAspect.FRONT)
+	var shooter_id: String = damage_info.get("shooter_id", "")
+	var p_kill: float = damage_info.get("p_kill", 0.0)
+	var threat_class: int = damage_info.get("threat_class", WeaponData.ThreatClass.AT)
+
+	if not hit:
+		# ミス（既にログは出力済み）
+		return
+
+	if kill:
+		# Kill
+		_apply_tank_kill(target, current_tick, catastrophic)
+		print("[TankCombat] %s -> %s IMPACT (%s): %s (p_kill=%.1f%%)" % [
+			shooter_id, target.id,
+			_aspect_to_string(aspect),
+			"CATASTROPHIC KILL" if catastrophic else "KILL",
+			p_kill * 100.0
+		])
+
+	elif mission_kill:
+		# Mission Kill
+		_apply_mission_kill(target, threat_class)
+		print("[TankCombat] %s -> %s IMPACT (%s): MISSION KILL" % [
+			shooter_id, target.id,
+			_aspect_to_string(aspect)
 		])
 
 	else:
 		# No Effect（貫通失敗）
-		print("[TankCombat] %s HIT %s (%s, %.0fm): NO EFFECT (armor held)" % [
-			shooter.id, target.id,
-			_aspect_to_string(result.aspect), distance_m
+		print("[TankCombat] %s -> %s IMPACT (%s): NO EFFECT (armor held)" % [
+			shooter_id, target.id,
+			_aspect_to_string(aspect)
 		])
-
-	return result
 
 
 ## v0.2: 砲発射可能かチェック

@@ -6,6 +6,10 @@ extends Node2D
 ## - 実際の弾速とファイアレートで砲弾を表示
 ## - REDチームは赤、BLUEチームは青の丸で表現
 ## - DISCRETE武器（戦車砲、RPG、LAW等）の発射時に砲弾を生成
+## - 着弾時にダメージを適用（遅延ダメージモデル）
+
+## 砲弾が着弾した時に発火（target_id, damage_info）
+signal projectile_impact(target_id: String, damage_info: Dictionary)
 
 # =============================================================================
 # 砲弾データ
@@ -23,6 +27,11 @@ class Projectile:
 	var flight_time: float = 0.0               ## 飛翔時間（秒）
 	var total_flight_time: float = 0.0         ## 総飛翔時間（秒）
 	var weapon_id: String = ""                 ## 武器ID（デバッグ用）
+
+	## 遅延ダメージ情報（着弾時に適用）
+	var has_damage_info: bool = false          ## ダメージ情報を持つか
+	var target_id: String = ""                 ## 目標ユニットID
+	var damage_info: Dictionary = {}           ## ダメージ情報（kill, mission_kill, catastrophic等）
 
 # =============================================================================
 # 状態
@@ -87,6 +96,48 @@ func fire_projectile(
 	_projectiles.append(proj)
 
 
+## 砲弾を発射（遅延ダメージ付き）
+## 着弾時にprojectile_impactシグナルでダメージ情報を通知
+func fire_projectile_with_damage(
+	shooter_pos: Vector2,
+	target_pos: Vector2,
+	weapon: WeaponData.WeaponType,
+	faction: GameEnums.Faction,
+	target_id: String,
+	damage_info: Dictionary
+) -> void:
+	# 弾速が0の場合は即着弾
+	if weapon.projectile_speed_mps <= 0:
+		# 即座にダメージを通知
+		projectile_impact.emit(target_id, damage_info)
+		return
+
+	var proj := Projectile.new()
+	proj.id = _next_id
+	_next_id += 1
+
+	proj.start_pos = shooter_pos
+	proj.target_pos = target_pos
+	proj.current_pos = shooter_pos
+	proj.speed_mps = weapon.projectile_speed_mps
+	proj.size = weapon.projectile_size
+	proj.faction = faction
+	proj.is_hit = damage_info.get("hit", false)
+	proj.weapon_id = weapon.id
+	proj.flight_time = 0.0
+
+	# 遅延ダメージ情報を設定
+	proj.has_damage_info = true
+	proj.target_id = target_id
+	proj.damage_info = damage_info
+
+	# 総飛翔時間を計算
+	var distance := shooter_pos.distance_to(target_pos)
+	proj.total_flight_time = distance / proj.speed_mps
+
+	_projectiles.append(proj)
+
+
 # =============================================================================
 # 更新
 # =============================================================================
@@ -94,6 +145,7 @@ func fire_projectile(
 ## 砲弾を更新（毎フレーム呼ばれる）
 func update_projectiles(delta: float) -> void:
 	var to_remove: Array[int] = []
+	var impacts: Array[Projectile] = []
 
 	for i in range(_projectiles.size()):
 		var proj := _projectiles[i]
@@ -104,6 +156,9 @@ func update_projectiles(delta: float) -> void:
 		# 到達判定
 		if proj.flight_time >= proj.total_flight_time:
 			to_remove.append(i)
+			# 遅延ダメージ情報があれば着弾処理へ
+			if proj.has_damage_info:
+				impacts.append(proj)
 			continue
 
 		# 位置を補間
@@ -113,6 +168,10 @@ func update_projectiles(delta: float) -> void:
 	# 到達した砲弾を削除（逆順で削除）
 	for i in range(to_remove.size() - 1, -1, -1):
 		_projectiles.remove_at(to_remove[i])
+
+	# 着弾したダメージを通知
+	for proj in impacts:
+		projectile_impact.emit(proj.target_id, proj.damage_info)
 
 	# 再描画
 	queue_redraw()
