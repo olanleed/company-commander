@@ -254,7 +254,7 @@ class ElementInstance:
 
 
 	## v0.1R: 表示用Strength
-	## 歩兵: 人数（例: 9人分隊 → Strength=9）
+	## 歩兵: 人数（例: 30人小隊 → Strength=30）
 	## 車両: 車両数（例: 4両小隊 → Strength=4）
 	func get_display_strength() -> int:
 		return current_strength
@@ -266,19 +266,20 @@ class ElementInstance:
 # =============================================================================
 
 class ElementArchetypes:
-	## INF_LINE: ライフル分隊（9人）
+	## INF_LINE: ライフル小隊（30人）
+	## 3分隊 + 小隊本部(PL, PSG, RTO)
 	static func create_inf_line() -> ElementType:
 		var t := ElementType.new()
 		t.id = "INF_LINE"
-		t.display_name = "Rifle Squad"
+		t.display_name = "Rifle Platoon"
 		t.category = Category.INF
 		t.symbol_type = SymbolType.INF_RIFLE
 		t.armor_class = 0  # Soft
 		t.mobility_class = GameEnums.MobilityType.FOOT
 		t.road_speed = 5.0   # m/s
 		t.cross_speed = 3.5  # m/s
-		t.base_strength = 9
-		t.max_strength = 9   # 9人分隊
+		t.base_strength = 30
+		t.max_strength = 30   # 30人小隊
 		t.spot_range_base = 300.0
 		t.spot_range_moving = 200.0
 		return t

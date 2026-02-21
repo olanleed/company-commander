@@ -246,21 +246,15 @@ func _spawn_test_units() -> void:
 	# ElementFactoryを使用してユニットを生成
 	ElementFactory.reset_id_counters()
 
-	# === BLUE陣営: 歩兵4分隊 ===
-	# 歩兵はライフル + 84mm無反動砲（対戦車）を装備
+	# === BLUE陣営: 歩兵2小隊 ===
+	# 歩兵小隊（30人）はライフル + 84mm無反動砲（対戦車）を装備
 	# 歩兵視界: 300m、無反動砲射程: 500m
 	# 距離250mに配置（視界内 + 無反動砲射程内）
-	var blue_inf1 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, Vector2(600, 800))
+	var blue_inf1 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, Vector2(600, 850))
 	world_model.add_element(blue_inf1)
 
-	var blue_inf2 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, Vector2(600, 900))
+	var blue_inf2 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, Vector2(600, 1050))
 	world_model.add_element(blue_inf2)
-
-	var blue_inf3 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, Vector2(600, 1000))
-	world_model.add_element(blue_inf3)
-
-	var blue_inf4 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, Vector2(600, 1100))
-	world_model.add_element(blue_inf4)
 
 	# === RED陣営: 戦車1小隊 ===
 	# 歩兵との距離: ~150m（歩兵視界300m内、無反動砲射程500m内）
@@ -272,8 +266,8 @@ func _spawn_test_units() -> void:
 		movement_system.resolve_hard_collisions(element)
 
 	print("テストユニット生成完了: ", world_model.elements.size(), " elements")
-	print("=== 歩兵4 vs 戦車1 ===")
-	print("  BLUE: 歩兵4分隊 @ x=600 (INF_LINE: ライフル + 84mm無反動砲)")
+	print("=== 歩兵小隊2 vs 戦車小隊1 ===")
+	print("  BLUE: 歩兵2小隊 @ x=600 (INF_LINE: 30人小隊, ライフル + 84mm無反動砲)")
 	print("  RED:  戦車1小隊 @ x=750 (TANK_PLT: 4両)")
 	print("  距離: ~150m（歩兵視界300m内、無反動砲射程500m内）")
 	print("  歩兵の84mm無反動砲: HEAT弾、射程500m、側面撃破率70%%")
