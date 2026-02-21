@@ -17,6 +17,7 @@ var _suppression_bar: ProgressBar
 var _suppression_label: Label
 var _order_label: Label
 var _state_label: Label
+var _comm_state_label: Label
 var _position_label: Label
 
 # 車両サブシステムHP
@@ -178,6 +179,20 @@ func _setup_layout() -> void:
 	_state_label.add_theme_font_size_override("font_size", 14)
 	state_section.add_child(_state_label)
 	_vbox.add_child(state_section)
+
+	# Data Link State
+	var comm_section := VBoxContainer.new()
+	var comm_header := Label.new()
+	comm_header.text = "DATA LINK"
+	comm_header.add_theme_font_size_override("font_size", 10)
+	comm_header.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	comm_section.add_child(comm_header)
+
+	_comm_state_label = Label.new()
+	_comm_state_label.text = "LINKED"
+	_comm_state_label.add_theme_font_size_override("font_size", 14)
+	comm_section.add_child(_comm_state_label)
+	_vbox.add_child(comm_section)
 
 	# Position
 	var pos_section := VBoxContainer.new()
@@ -361,6 +376,8 @@ func _show_empty() -> void:
 	_subsystem_section.visible = false
 	_order_label.text = "NONE"
 	_state_label.text = "---"
+	_comm_state_label.text = "---"
+	_comm_state_label.remove_theme_color_override("font_color")
 	_position_label.text = "---"
 	_clear_ai_info()
 
@@ -388,6 +405,9 @@ func _show_single(element: ElementData.ElementInstance) -> void:
 
 	# State
 	_state_label.text = _get_state_name(element.state)
+
+	# Data Link State
+	_update_comm_state_display(element)
 
 	# Position
 	_position_label.text = "(%d, %d)" % [int(element.position.x), int(element.position.y)]
@@ -424,6 +444,7 @@ func _show_multiple() -> void:
 
 	_order_label.text = "MULTIPLE"
 	_state_label.text = "---"
+	_update_comm_state_display_multiple()
 	_position_label.text = "---"
 
 	# 複数選択時はAI全体情報のみ表示
@@ -562,3 +583,57 @@ func _clear_ai_info() -> void:
 	_ai_combat_state_label.text = "Combat: ---"
 	_ai_role_label.text = "Role: ---"
 	_ai_weapon_label.text = "Weapon: ---"
+
+
+## データリンク状態を表示（単一ユニット）
+func _update_comm_state_display(element: ElementData.ElementInstance) -> void:
+	var comm_state := element.comm_state
+	_comm_state_label.text = _get_comm_state_name(comm_state)
+
+	# 色分け
+	_comm_state_label.remove_theme_color_override("font_color")
+	match comm_state:
+		GameEnums.CommState.LINKED:
+			_comm_state_label.add_theme_color_override("font_color", Color(0.3, 0.9, 0.3))
+		GameEnums.CommState.DEGRADED:
+			_comm_state_label.add_theme_color_override("font_color", Color(0.9, 0.8, 0.2))
+		GameEnums.CommState.ISOLATED:
+			_comm_state_label.add_theme_color_override("font_color", Color(0.9, 0.3, 0.3))
+
+	# ハブ接続先を表示（あれば）
+	if element.comm_hub_id != "" and element.comm_hub_id != element.id:
+		_comm_state_label.text += " -> %s" % element.comm_hub_id
+
+
+## データリンク状態を表示（複数ユニット）
+func _update_comm_state_display_multiple() -> void:
+	var linked_count := 0
+	var isolated_count := 0
+
+	for element in _selected_elements:
+		if element.comm_state == GameEnums.CommState.LINKED:
+			linked_count += 1
+		elif element.comm_state == GameEnums.CommState.ISOLATED:
+			isolated_count += 1
+
+	if isolated_count == 0:
+		_comm_state_label.text = "ALL LINKED"
+		_comm_state_label.add_theme_color_override("font_color", Color(0.3, 0.9, 0.3))
+	elif linked_count == 0:
+		_comm_state_label.text = "ALL ISOLATED"
+		_comm_state_label.add_theme_color_override("font_color", Color(0.9, 0.3, 0.3))
+	else:
+		_comm_state_label.text = "MIXED (%d/%d)" % [linked_count, _selected_elements.size()]
+		_comm_state_label.add_theme_color_override("font_color", Color(0.9, 0.8, 0.2))
+
+
+func _get_comm_state_name(state: GameEnums.CommState) -> String:
+	match state:
+		GameEnums.CommState.LINKED:
+			return "LINKED"
+		GameEnums.CommState.DEGRADED:
+			return "DEGRADED"
+		GameEnums.CommState.ISOLATED:
+			return "ISOLATED"
+		_:
+			return "UNKNOWN"

@@ -3,6 +3,7 @@ extends Node2D
 const CompanyControllerAIClass = preload("res://scripts/ai/company_controller_ai.gd")
 const InputControllerClass = preload("res://scripts/ui/input_controller.gd")
 const OrderPreviewClass = preload("res://scripts/ui/order_preview.gd")
+const DataLinkSystemClass = preload("res://scripts/systems/data_link_system.gd")
 
 ## Company Commander - メインシーン
 ## 2D現代戦リアルタイムストラテジー
@@ -43,6 +44,7 @@ var combat_visualizer: CombatVisualizer
 var capture_system: CaptureSystem
 var projectile_manager: ProjectileManager
 var tactical_overlay: TacticalOverlay
+var data_link_system  # DataLinkSystemClass
 
 ## 中隊AI（陣営別）
 var company_ais: Dictionary = {}  # faction -> CompanyControllerAI
@@ -148,6 +150,9 @@ func _setup_systems() -> void:
 	tactical_overlay = TacticalOverlay.new()
 	tactical_overlay.name = "TacticalOverlay"
 
+	# DataLinkSystem
+	data_link_system = DataLinkSystemClass.new()
+
 
 func _load_test_map_async() -> void:
 	var map_path := "res://maps/MVP_01_CROSSROADS/"
@@ -169,8 +174,8 @@ func _load_test_map_async() -> void:
 		# MovementSystem をセットアップ (nav_managerへの参照を先に設定)
 		movement_system.setup(nav_manager, map_data, world_model)
 
-		# VisionSystem をセットアップ
-		vision_system.setup(world_model, map_data)
+		# VisionSystem をセットアップ（DataLinkSystemと連携）
+		vision_system.setup(world_model, map_data, data_link_system)
 
 		# ナビゲーション構築 (完了を待機)
 		await nav_manager.build_from_map_data(map_data)
@@ -507,6 +512,10 @@ func _on_tick_advanced(tick: int) -> void:
 	# 全Elementの状態を保存
 	world_model.save_prev_states()
 
+	# データリンク状態を更新（ハブがない場合は全員LINKEDにフォールバック）
+	if data_link_system:
+		data_link_system.update_comm_states_no_hub_fallback(world_model.elements)
+
 	# ATTACK命令中のユニットの移動制御
 	_update_attack_movement()
 
@@ -709,7 +718,7 @@ func _update_combat(tick: int, dt: float) -> void:
 
 		var is_under_fire: bool = elements_under_fire.get(element.id, false)
 		var is_defending := element.current_order_type == GameEnums.OrderType.DEFEND
-		var comm_state := GameEnums.CommState.GOOD
+		var comm_state := element.comm_state
 
 		combat_system.apply_suppression_recovery(
 			element, is_under_fire, comm_state, is_defending, dt

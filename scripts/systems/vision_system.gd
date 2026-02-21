@@ -6,6 +6,8 @@ extends RefCounted
 ##
 ## 敵ユニットの発見・追跡・状態遷移（CONF/SUS/LOST）を管理
 
+const DataLinkSystemClass = preload("res://scripts/systems/data_link_system.gd")
+
 # =============================================================================
 # ContactRecord（接触情報）
 # =============================================================================
@@ -43,14 +45,17 @@ var _last_scan_tick: int = -1
 ## 依存
 var _world_model: WorldModel
 var _map_data: MapData
+var _data_link_system  # DataLinkSystemClass
 
 # =============================================================================
 # 初期化
 # =============================================================================
 
-func setup(world_model: WorldModel, map_data: MapData) -> void:
+func setup(world_model: WorldModel, map_data: MapData,
+		   data_link_system = null) -> void:
 	_world_model = world_model
 	_map_data = map_data
+	_data_link_system = data_link_system
 
 
 func mark_dirty() -> void:
@@ -382,3 +387,49 @@ func get_element_visibility_state(viewer_faction: GameEnums.Faction, element_id:
 	if contact:
 		return contact.state
 	return GameEnums.ContactState.UNKNOWN
+
+
+## 指定ユニットから見た敵のContact状態を取得（DataLink考慮）
+## ISOLATEDの場合は自分の視界のみ、LINKEDの場合は全LINKEDユニットの視界を共有
+func get_contact_for_unit(viewer: ElementData.ElementInstance, target_id: String) -> ContactRecord:
+	# DataLinkSystemがない場合は通常のContact取得
+	if not _data_link_system:
+		return get_contact(viewer.faction, target_id)
+
+	# ISOLATEDの場合は自分の視界のみ
+	if viewer.comm_state == GameEnums.CommState.ISOLATED:
+		return _get_contact_from_single_observer(viewer, target_id)
+
+	# LINKED（またはDEGRADED）の場合は陣営全体のContactを共有
+	return get_contact(viewer.faction, target_id)
+
+
+## 単一観測者からのContact情報を取得
+func _get_contact_from_single_observer(observer: ElementData.ElementInstance, target_id: String) -> ContactRecord:
+	if not _world_model:
+		return null
+
+	var target := _world_model.get_element_by_id(target_id)
+	if not target:
+		return null
+
+	# この観測者から目標が見えるかチェック
+	var result := _check_visibility(observer, target)
+	if not result.visible:
+		return null
+
+	# 見えている場合は仮のContactRecordを作成
+	var contact := ContactRecord.new(target_id)
+	contact.state = GameEnums.ContactState.CONFIRMED
+	contact.pos_est_m = target.position
+	contact.vel_est_mps = target.velocity
+	contact.pos_error_m = 0.0
+	return contact
+
+
+## 指定ユニットからターゲットが射撃可能か（視界+DataLink考慮）
+func can_engage_target(shooter: ElementData.ElementInstance, target_id: String) -> bool:
+	var contact := get_contact_for_unit(shooter, target_id)
+	if not contact:
+		return false
+	return contact.state == GameEnums.ContactState.CONFIRMED

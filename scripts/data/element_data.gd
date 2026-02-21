@@ -68,6 +68,10 @@ class ElementType:
 	## Protection
 	var armor_class: int = 0  # 0=ソフト, 1=軽装甲, 2=中装甲, 3=重装甲
 
+	## Communication (データリンク)
+	var is_comm_hub: bool = false        # 通信ハブ（指揮ユニット）か
+	var comm_range: float = 2000.0       # 通信距離 (m)
+
 	## v0.1R: ゾーン別装甲（0-100レーティング）
 	## 仕様書: docs/damage_model_v0.1.md
 	## ArmorZone.FRONT/SIDE/REAR/TOP → rating
@@ -135,6 +139,10 @@ class ElementInstance:
 	var is_destroyed: bool = false       ## 完全破壊フラグ（フェードアウト開始）
 	var destroy_tick: int = -1           ## 破壊開始tick
 	var catastrophic_kill: bool = false  ## 爆発・炎上による破壊か（車両用）
+
+	## 通信状態（データリンク）
+	var comm_state: GameEnums.CommState = GameEnums.CommState.LINKED  ## 現在の通信状態
+	var comm_hub_id: String = ""         ## 接続先ハブID（空の場合はハブなし）
 
 	## 初期化
 	func _init(p_type: ElementType = null) -> void:
@@ -436,6 +444,28 @@ class ElementArchetypes:
 		t.spot_range_moving = 100.0
 		return t
 
+	## CMD_HQ: 中隊本部（通信ハブ）
+	## データリンクの中心となる指揮ユニット
+	## comm_range内の全ユニットとLINK状態を維持
+	static func create_cmd_hq() -> ElementType:
+		var t := ElementType.new()
+		t.id = "CMD_HQ"
+		t.display_name = "Company HQ"
+		t.category = Category.HQ
+		t.symbol_type = SymbolType.CMD_HQ
+		t.armor_class = 0  # Soft（装甲車に搭乗なら別途設定）
+		t.mobility_class = GameEnums.MobilityType.WHEELED
+		t.road_speed = 12.0
+		t.cross_speed = 6.0
+		t.base_strength = 4   # HQ要員4名
+		t.max_strength = 4
+		t.spot_range_base = 300.0
+		t.spot_range_moving = 200.0
+		# 通信ハブ設定
+		t.is_comm_hub = true
+		t.comm_range = 3000.0  # 3km通信範囲
+		return t
+
 	## 全アーキタイプを取得
 	static func get_all_archetypes() -> Dictionary:
 		return {
@@ -447,6 +477,7 @@ class ElementArchetypes:
 			"RECON_TEAM": create_recon_team(),
 			"MORTAR_SEC": create_mortar_sec(),
 			"LOG_TRUCK": create_log_truck(),
+			"CMD_HQ": create_cmd_hq(),
 		}
 
 	## IDからアーキタイプを取得
@@ -460,4 +491,5 @@ class ElementArchetypes:
 			"RECON_TEAM": return create_recon_team()
 			"MORTAR_SEC": return create_mortar_sec()
 			"LOG_TRUCK": return create_log_truck()
+			"CMD_HQ": return create_cmd_hq()
 			_: return create_inf_line()  # デフォルト

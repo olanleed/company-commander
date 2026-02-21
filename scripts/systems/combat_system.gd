@@ -277,11 +277,11 @@ func calculate_suppression_recovery(
 	# 通信状態補正
 	var comm_mult := 1.0
 	match comm_state:
-		GameEnums.CommState.GOOD:
+		GameEnums.CommState.LINKED:
 			comm_mult = GameConstants.COMM_RECOVERY_GOOD
 		GameEnums.CommState.DEGRADED:
 			comm_mult = GameConstants.COMM_RECOVERY_DEGRADED
-		GameEnums.CommState.LOST:
+		GameEnums.CommState.ISOLATED:
 			comm_mult = GameConstants.COMM_RECOVERY_LOST
 
 	# 姿勢補正
