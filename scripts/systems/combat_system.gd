@@ -1660,6 +1660,10 @@ func _can_fire_tank_gun(shooter: ElementData.ElementInstance, current_tick: int)
 		if firepower_state == GameEnums.VehicleFirepowerState.WEAPON_DISABLED:
 			return false
 
+	# 初回射撃は即座に許可（last_fire_tick = -1）
+	if shooter.last_fire_tick < 0:
+		return true
+
 	# リロード時間チェック
 	var ticks_since_last_fire := current_tick - shooter.last_fire_tick
 	var reload_ticks := int(GameConstants.TANK_GUN_RELOAD_TIME * GameConstants.SIM_HZ)
