@@ -42,6 +42,7 @@ var event_bus: CombatEventBus
 var combat_visualizer: CombatVisualizer
 var capture_system: CaptureSystem
 var projectile_manager: ProjectileManager
+var tactical_overlay: TacticalOverlay
 
 ## 中隊AI（陣営別）
 var company_ais: Dictionary = {}  # faction -> CompanyControllerAI
@@ -78,6 +79,10 @@ func _ready() -> void:
 
 	# ProjectileManagerをユニットレイヤーに追加
 	units_layer.add_child(projectile_manager)
+
+	# TacticalOverlayをユニットレイヤーに追加（ユニットの上、UIの下に描画）
+	tactical_overlay.setup(world_model)
+	units_layer.add_child(tactical_overlay)
 
 	# HUDセットアップ
 	_setup_hud()
@@ -138,6 +143,10 @@ func _setup_systems() -> void:
 	# ProjectileManager
 	projectile_manager = ProjectileManager.new()
 	projectile_manager.name = "ProjectileManager"
+
+	# TacticalOverlay
+	tactical_overlay = TacticalOverlay.new()
+	tactical_overlay.name = "TacticalOverlay"
 
 
 func _load_test_map_async() -> void:
@@ -232,32 +241,33 @@ func _spawn_test_units() -> void:
 	# ElementFactoryを使用してユニットを生成
 	ElementFactory.reset_id_counters()
 
-	# === BLUE陣営: 歩兵2ユニット（LAW装備） ===
-	# 歩兵はLAW射程（10-250m）内に戦車を捉える位置に配置
-	var blue_inf1_pos := Vector2(600, 900)   # 歩兵1
-	var blue_inf1 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, blue_inf1_pos)
-	world_model.add_element(blue_inf1)
+	# === BLUE陣営: 戦車2小隊 ===
+	var blue_tank1_pos := Vector2(400, 900)
+	var blue_tank1 := ElementFactory.create_element("TANK_PLT", GameEnums.Faction.BLUE, blue_tank1_pos)
+	world_model.add_element(blue_tank1)
 
-	var blue_inf2_pos := Vector2(600, 1100)  # 歩兵2
-	var blue_inf2 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, blue_inf2_pos)
-	world_model.add_element(blue_inf2)
+	var blue_tank2_pos := Vector2(400, 1100)
+	var blue_tank2 := ElementFactory.create_element("TANK_PLT", GameEnums.Faction.BLUE, blue_tank2_pos)
+	world_model.add_element(blue_tank2)
 
-	# === RED陣営: 戦車1ユニット ===
-	# BLUE歩兵からLAW射程内（約200m）に配置
-	var red_tank_pos := Vector2(800, 1000)   # 歩兵から約200m
-	var red_tank := ElementFactory.create_element("TANK_PLT", GameEnums.Faction.RED, red_tank_pos)
-	world_model.add_element(red_tank)
+	# === RED陣営: 戦車2小隊 ===
+	var red_tank1_pos := Vector2(1600, 900)
+	var red_tank1 := ElementFactory.create_element("TANK_PLT", GameEnums.Faction.RED, red_tank1_pos)
+	world_model.add_element(red_tank1)
+
+	var red_tank2_pos := Vector2(1600, 1100)
+	var red_tank2 := ElementFactory.create_element("TANK_PLT", GameEnums.Faction.RED, red_tank2_pos)
+	world_model.add_element(red_tank2)
 
 	# スポーン後に衝突を解消
 	for element in world_model.elements:
 		movement_system.resolve_hard_collisions(element)
 
 	print("テストユニット生成完了: ", world_model.elements.size(), " elements")
-	print("=== LAW vs 戦車テスト ===")
-	print("  BLUE: 歩兵2分隊（LAW装備, pen=60 CE）")
-	print("  RED:  戦車1小隊（4両）")
-	print("  距離: ~200m（LAW射程: 10-250m）")
-	print("  戦車側面CE装甲: 24 → LAW貫徹確率~91%%")
+	print("=== 戦車 2vs2 ===")
+	print("  BLUE: 戦車2小隊 @ x=400")
+	print("  RED:  戦車2小隊 @ x=1600")
+	print("  距離: ~1200m（戦車砲射程: 50-2500m）")
 	print("  戦車正面CE装甲: 140 → LAW貫徹確率<1%%")
 	print("  期待: 側面攻撃でLAWが戦車を撃破可能")
 	print("==========================")
@@ -480,6 +490,8 @@ func _add_to_selection(element: ElementData.ElementInstance) -> void:
 func _update_selection_ui() -> void:
 	if hud_manager:
 		hud_manager.set_selected_elements(_selected_elements)
+	if tactical_overlay:
+		tactical_overlay.set_selected_elements(_selected_elements)
 
 # =============================================================================
 # Tick処理
@@ -565,6 +577,10 @@ func _update_combat(tick: int, dt: float) -> void:
 
 		# 現在使用中の武器を記録（HUD表示用）
 		shooter.current_weapon = selected_weapon
+
+		# ターゲットを選択した時点でロックオン表示用にIDをセット
+		shooter.current_target_id = target.id
+		shooters_firing[shooter.id] = true
 
 		# DISCRETE武器の発射レート制御
 		var can_fire := true
