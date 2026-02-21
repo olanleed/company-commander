@@ -234,23 +234,26 @@ func _spawn_test_units() -> void:
 	var blue_inf3 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, blue_pos + Vector2(0, -50))
 	world_model.add_element(blue_inf3)
 
-	# RED陣営 - 歩兵1ユニット（歩兵から200m離れた位置）
-	# 歩兵 vs 歩兵 テスト
+	# RED陣営 - 戦車1ユニット（歩兵から200m離れた位置）
+	# LAW vs 戦車の貫徹テスト（RHA換算ベース）
 	var red_pos := Vector2(1100, 1000)  # 距離約200m
 
-	# ライフル分隊 x1
-	var red_inf := ElementFactory.create_element("INF_LINE", GameEnums.Faction.RED, red_pos)
-	world_model.add_element(red_inf)
+	# 戦車小隊 x1
+	var red_tank := ElementFactory.create_element("TANK_PLT", GameEnums.Faction.RED, red_pos)
+	world_model.add_element(red_tank)
 
 	# スポーン後に衝突を解消
 	for element in world_model.elements:
 		movement_system.resolve_hard_collisions(element)
 
 	print("テストユニット生成完了: ", world_model.elements.size(), " elements")
-	print("=== 歩兵戦テスト構成 ===")
-	print("  BLUE: 歩兵3ユニット")
-	print("  RED:  歩兵1ユニット")
-	print("  期待: 小銃による通常の歩兵戦闘")
+	print("=== LAW vs 戦車テスト（RHA換算）===")
+	print("  BLUE: 歩兵3ユニット（LAW装備, pen=60=300mm RHA）")
+	print("  RED:  戦車1ユニット")
+	print("    - 正面CE装甲: 140 (700mm RHA) → LAW貫通不可")
+	print("    - 側面CE装甲: 24 (120mm RHA) → LAW ~91%貫通")
+	print("    - 後部CE装甲: 8 (40mm RHA) → LAW ~97%貫通")
+	print("  期待: 側面/後方からの攻撃は高確率で貫通")
 	print("========================")
 	for element in world_model.elements:
 		var weapons_str := ""
@@ -559,8 +562,20 @@ func _update_combat(tick: int, dt: float) -> void:
 			)
 			is_valid = result_armor.is_valid
 			d_supp = result_armor.d_supp
+
+			# デバッグ: アスペクトと貫徹確率を取得
+			var aspect := combat_system.calculate_aspect_v01r(
+				shooter.position, target.position, target.facing
+			)
+			var p_pen := combat_system.get_penetration_probability(
+				shooter, target, selected_weapon, distance, aspect
+			)
+			var aspect_name: String = str(WeaponData.ArmorZone.keys()[aspect])
+
 			# 離散ヒットモデル: p_hitでダメージ発生を判定
-			if result_armor.p_hit > 0 and randf() < result_armor.p_hit:
+			var roll := randf()
+			var did_hit := result_armor.p_hit > 0 and roll < result_armor.p_hit
+			if did_hit:
 				# ヒット時は車両ダメージ処理
 				combat_system.apply_vehicle_damage(
 					target,
@@ -568,6 +583,17 @@ func _update_combat(tick: int, dt: float) -> void:
 					result_armor.exposure,
 					tick
 				)
+				# ヒット時のデバッグログ
+				if tick % 10 == 0:
+					print("[Combat] %s -> %s [%s] %s: p_pen=%.2f p_hit=%.2f roll=%.2f -> HIT!" % [
+						shooter.id, target.id, selected_weapon.id, aspect_name, p_pen, result_armor.p_hit, roll
+					])
+			else:
+				# ミス時のデバッグログ（50tickごと）
+				if tick % 50 == 0:
+					print("[Combat] %s -> %s [%s] %s: p_pen=%.2f p_hit=%.4f E=%.4f roll=%.2f -> miss" % [
+						shooter.id, target.id, selected_weapon.id, aspect_name, p_pen, result_armor.p_hit, result_armor.exposure, roll
+					])
 		else:
 			# 非装甲目標: 従来の計算
 			var result := combat_system.calculate_direct_fire_effect(

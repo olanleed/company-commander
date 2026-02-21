@@ -245,10 +245,10 @@ class ElementInstance:
 		return element_type.armor_class >= 1
 
 
-	## v0.1R: 表示用Strength（車両はサブシステムHP平均）
+	## v0.1R: 表示用Strength
+	## 歩兵: 人数（例: 9人分隊 → Strength=9）
+	## 車両: 車両数（例: 4両小隊 → Strength=4）
 	func get_display_strength() -> int:
-		if is_vehicle():
-			return clampi((mobility_hp + firepower_hp + sensors_hp) / 3, 0, 100)
 		return current_strength
 
 
@@ -310,6 +310,10 @@ class ElementArchetypes:
 		return t
 
 	## TANK_PLT: 戦車小隊（4両=1ユニット）
+	## RHA換算装甲値（スケール: 100 = 500mm RHA）
+	## M1A2/レオパルト2相当の第3世代MBT
+	## 正面は複合装甲で非常に強固、側面/後部はLAWでも貫通可能
+	## Strength = 車両数（4両）- 1両撃破ごとに-1
 	static func create_tank_plt() -> ElementType:
 		var t := ElementType.new()
 		t.id = "TANK_PLT"
@@ -320,27 +324,34 @@ class ElementArchetypes:
 		t.mobility_class = GameEnums.MobilityType.TRACKED
 		t.road_speed = 12.0
 		t.cross_speed = 8.0
-		t.base_strength = 100  # 車両HP（サブシステム管理）
-		t.max_strength = 100
+		t.base_strength = 4   # 車両数（4両/小隊）
+		t.max_strength = 4
 		t.spot_range_base = 800.0
 		t.spot_range_moving = 600.0
-		# v0.1R: ゾーン別装甲（MBT相当）
-		# 正面は強固、側面は中程度、後方は弱い
+		# v0.1R: ゾーン別装甲（RHA換算, スケール: 100 = 500mm）
+		# KE（APFSDS等）に対する装甲
+		# 正面: 約700mm RHA = 140, 側面: 約200mm = 40, 後部: 約80mm = 16
 		t.armor_ke = {
-			WeaponData.ArmorZone.FRONT: 95,
-			WeaponData.ArmorZone.SIDE: 55,
-			WeaponData.ArmorZone.REAR: 25,
-			WeaponData.ArmorZone.TOP: 15,
+			WeaponData.ArmorZone.FRONT: 140,  # 700mm RHA - APFSDSでも貫通困難
+			WeaponData.ArmorZone.SIDE: 40,    # 200mm RHA - 機関砲で貫通可能
+			WeaponData.ArmorZone.REAR: 16,    # 80mm RHA - 脆弱
+			WeaponData.ArmorZone.TOP: 6,      # 30mm RHA - トップアタックに弱い
 		}
+		# CE（HEAT/RPG等）に対する装甲（ERAなしの場合）
+		# 正面: 約700mm RHA = 140, 側面: 約120mm = 24, 後部: 約40mm = 8
 		t.armor_ce = {
-			WeaponData.ArmorZone.FRONT: 90,
-			WeaponData.ArmorZone.SIDE: 50,
-			WeaponData.ArmorZone.REAR: 20,
-			WeaponData.ArmorZone.TOP: 10,
+			WeaponData.ArmorZone.FRONT: 140,  # 700mm RHA相当 - LAWは貫通不可
+			WeaponData.ArmorZone.SIDE: 24,    # 120mm RHA相当 - LAW(60)で確実に貫通
+			WeaponData.ArmorZone.REAR: 8,     # 40mm RHA相当 - LAWで確実に貫通
+			WeaponData.ArmorZone.TOP: 4,      # 20mm RHA相当 - 極めて脆弱
 		}
 		return t
 
 	## RECON_VEH: 偵察車両（軽装甲）
+	## RHA換算装甲値（スケール: 100 = 500mm RHA）
+	## BRDM/LAV相当の軽装甲偵察車両
+	## 小銃弾には耐えるが、AT火器には脆弱
+	## Strength = 車両数（2両）- 1両撃破ごとに-1
 	static func create_recon_veh() -> ElementType:
 		var t := ElementType.new()
 		t.id = "RECON_VEH"
@@ -351,23 +362,26 @@ class ElementArchetypes:
 		t.mobility_class = GameEnums.MobilityType.WHEELED
 		t.road_speed = 18.0
 		t.cross_speed = 10.0
-		t.base_strength = 100
-		t.max_strength = 100
+		t.base_strength = 2   # 車両数（2両/分隊）
+		t.max_strength = 2
 		t.spot_range_base = 1000.0
 		t.spot_range_moving = 800.0
-		# v0.1R: ゾーン別装甲（軽装甲車両相当）
-		# 小銃弾には耐えるが、AT火器には脆弱
+		# v0.1R: ゾーン別装甲（RHA換算, スケール: 100 = 500mm）
+		# 軽装甲: 7.62mmには耐えるが12.7mmで貫通、AT火器には無力
+		# KE（機関砲等）に対する装甲
 		t.armor_ke = {
-			WeaponData.ArmorZone.FRONT: 30,
-			WeaponData.ArmorZone.SIDE: 20,
-			WeaponData.ArmorZone.REAR: 10,
-			WeaponData.ArmorZone.TOP: 5,
+			WeaponData.ArmorZone.FRONT: 6,    # 30mm RHA - 12.7mm HMGで貫通
+			WeaponData.ArmorZone.SIDE: 3,     # 15mm RHA - 12.7mmで貫通
+			WeaponData.ArmorZone.REAR: 2,     # 10mm RHA - 7.62mmでも危険
+			WeaponData.ArmorZone.TOP: 1,      # 5mm RHA - 破片弾にも脆弱
 		}
+		# CE（HEAT/RPG等）に対する装甲
+		# LAW(60)でも全方位から確実に貫通
 		t.armor_ce = {
-			WeaponData.ArmorZone.FRONT: 25,
-			WeaponData.ArmorZone.SIDE: 15,
-			WeaponData.ArmorZone.REAR: 8,
-			WeaponData.ArmorZone.TOP: 5,
+			WeaponData.ArmorZone.FRONT: 5,    # 25mm RHA相当
+			WeaponData.ArmorZone.SIDE: 3,     # 15mm RHA相当
+			WeaponData.ArmorZone.REAR: 2,     # 10mm RHA相当
+			WeaponData.ArmorZone.TOP: 1,      # 5mm RHA相当
 		}
 		return t
 

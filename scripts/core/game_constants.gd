@@ -260,7 +260,7 @@ const RISK_DECAY_DOWN_PER_SEC: float = 20.0
 ##   d_supp = 0.12 × 0.70 × 0.1 = 0.0084/tick → 1秒で0.084 → 約4.8秒でSuppressed
 ##   d_dmg  = 3.0 × 0.80 × 0.1 = 0.24/tick → 1秒で2.4 → 約42秒で擃滅(100→0)
 const K_DF_SUPP: float = 0.12   ## 抑圧係数（約4-5秒でSuppressed）
-const K_DF_HIT: float = 0.25    ## ヒット確率係数（v0.1R新規）
+const K_DF_HIT: float = 0.50    ## ヒット確率係数（0.25→0.50: AT武器のヒット率改善）
 const K_DF_DMG: float = 3.0     ## ダメージ係数（約40秒で擃滅）
 
 ## 間接の基準係数（1発あたり）(v0.1R)
@@ -500,10 +500,14 @@ const DESTROY_FADE_DURATION_TICKS: int = 30
 # =============================================================================
 # v0.1R 貫徹判定
 # 仕様書: docs/damage_model_v0.1.md
+# RHA換算スケール: 100 = 500mm RHA
 # =============================================================================
 
 ## 貫徹確率計算: p_pen = sigmoid((P - A) / PENETRATION_SIGMOID_SCALE)
-const PENETRATION_SIGMOID_SCALE: float = 8.0
+## スケール15で: diff=+30→88%, diff=0→50%, diff=-30→12%
+## 例: LAW(60) vs MBT側面(24) = +36 → 約91%貫通
+## 例: LAW(60) vs MBT正面(140) = -80 → 約0.5%貫通
+const PENETRATION_SIGMOID_SCALE: float = 15.0
 
 ## 車両への小火器抑圧上限（仕様書: max 20%）
 const VEHICLE_SMALLARMS_SUPP_CAP: float = 0.20

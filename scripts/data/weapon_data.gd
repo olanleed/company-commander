@@ -422,17 +422,19 @@ static func create_cw_mg_std() -> WeaponType:
 	return w
 
 
-## CW_RPG_HEAT: 対戦車ロケット（RPG-7/AT4相当）
+## CW_RPG_HEAT: 対戦車ロケット（RPG-7 PG-7VL/AT4相当）
 ## 仕様書: docs/concrete_weapons_v0.1.md
+## RHA換算: RPG-7 PG-7VL = 約500mm CE貫徹力
+## スケール: 100 = 500mm RHA → RPG = 100
 static func create_cw_rpg_heat() -> WeaponType:
 	var w := WeaponType.new()
 	w.id = "CW_RPG_HEAT"
-	w.display_name = "AT Rocket"
+	w.display_name = "AT Rocket (Heavy)"
 	w.mechanism = Mechanism.SHAPED_CHARGE
 	w.fire_model = FireModel.DISCRETE
 	w.min_range_m = 20.0
-	w.max_range_m = 200.0
-	w.range_band_thresholds_m = [50.0, 150.0]
+	w.max_range_m = 300.0  # RPG-7の有効射程
+	w.range_band_thresholds_m = [100.0, 200.0]
 	w.threat_class = ThreatClass.AT
 	w.preferred_target = PreferredTarget.ARMOR
 	w.ammo_endurance_min = 5.0
@@ -444,34 +446,35 @@ static func create_cw_rpg_heat() -> WeaponType:
 	w.lethality = {
 		RangeBand.NEAR: {
 			TargetClass.SOFT: 70,
-			TargetClass.LIGHT: 95,
-			TargetClass.HEAVY: 80,
+			TargetClass.LIGHT: 100,  # 軽装甲は確実
+			TargetClass.HEAVY: 85,   # MBT側面/後部に有効
 			TargetClass.FORTIFIED: 75,
 		},
 		RangeBand.MID: {
 			TargetClass.SOFT: 50,
-			TargetClass.LIGHT: 90,
+			TargetClass.LIGHT: 95,
 			TargetClass.HEAVY: 75,
 			TargetClass.FORTIFIED: 65,
 		},
 		RangeBand.FAR: {
 			TargetClass.SOFT: 30,
-			TargetClass.LIGHT: 80,
-			TargetClass.HEAVY: 65,
+			TargetClass.LIGHT: 85,
+			TargetClass.HEAVY: 60,
 			TargetClass.FORTIFIED: 55,
 		},
 	}
 
 	w.suppression_power = {
-		RangeBand.NEAR: 60,
-		RangeBand.MID: 50,
-		RangeBand.FAR: 40,
+		RangeBand.NEAR: 65,
+		RangeBand.MID: 55,
+		RangeBand.FAR: 45,
 	}
 
+	# RHA換算貫徹力: 500mm = 100（スケール: 100 = 500mm RHA）
 	w.pen_ce = {
-		RangeBand.NEAR: 75,
-		RangeBand.MID: 70,
-		RangeBand.FAR: 60,
+		RangeBand.NEAR: 100,  # 500mm RHA相当
+		RangeBand.MID: 95,    # 475mm RHA相当
+		RangeBand.FAR: 85,    # 425mm RHA相当
 	}
 
 	return w
@@ -479,6 +482,8 @@ static func create_cw_rpg_heat() -> WeaponType:
 
 ## CW_TANK_KE: 戦車主砲APFSDS（120mm相当）
 ## 仕様書: docs/concrete_weapons_v0.1.md
+## RHA換算: 120mm L44 APFSDS = 約600mm KE貫徹力 @ 2km
+## スケール: 100 = 500mm RHA → APFSDS近距離 = 140, 遠距離 = 120
 static func create_cw_tank_ke() -> WeaponType:
 	var w := WeaponType.new()
 	w.id = "CW_TANK_KE"
@@ -486,7 +491,7 @@ static func create_cw_tank_ke() -> WeaponType:
 	w.mechanism = Mechanism.KINETIC
 	w.fire_model = FireModel.DISCRETE
 	w.min_range_m = 50.0
-	w.max_range_m = 2000.0
+	w.max_range_m = 2500.0  # 戦車砲の有効射程
 	w.range_band_thresholds_m = [500.0, 1500.0]
 	w.threat_class = ThreatClass.AT
 	w.preferred_target = PreferredTarget.ARMOR
@@ -500,19 +505,19 @@ static func create_cw_tank_ke() -> WeaponType:
 		RangeBand.NEAR: {
 			TargetClass.SOFT: 60,
 			TargetClass.LIGHT: 100,
-			TargetClass.HEAVY: 95,
+			TargetClass.HEAVY: 100,  # 他戦車に対しても高殺傷力
 			TargetClass.FORTIFIED: 85,
 		},
 		RangeBand.MID: {
 			TargetClass.SOFT: 50,
 			TargetClass.LIGHT: 100,
-			TargetClass.HEAVY: 90,
+			TargetClass.HEAVY: 95,
 			TargetClass.FORTIFIED: 80,
 		},
 		RangeBand.FAR: {
 			TargetClass.SOFT: 40,
 			TargetClass.LIGHT: 95,
-			TargetClass.HEAVY: 80,
+			TargetClass.HEAVY: 85,
 			TargetClass.FORTIFIED: 70,
 		},
 	}
@@ -523,10 +528,12 @@ static func create_cw_tank_ke() -> WeaponType:
 		RangeBand.FAR: 40,
 	}
 
+	# RHA換算貫徹力: 700mm近距離→500mm遠距離（KE弾は距離で減衰）
+	# スケール: 100 = 500mm RHA
 	w.pen_ke = {
-		RangeBand.NEAR: 100,
-		RangeBand.MID: 95,
-		RangeBand.FAR: 85,
+		RangeBand.NEAR: 140,  # 700mm RHA相当
+		RangeBand.MID: 130,   # 650mm RHA相当
+		RangeBand.FAR: 120,   # 600mm RHA相当
 	}
 
 	return w
@@ -534,6 +541,8 @@ static func create_cw_tank_ke() -> WeaponType:
 
 ## CW_TANK_HEATMP: 戦車主砲HEAT-MP + 同軸MG
 ## 仕様書: docs/concrete_weapons_v0.1.md
+## RHA換算: 120mm HEAT-MP = 約450mm CE貫徹力
+## スケール: 100 = 500mm RHA → HEAT-MP = 90
 static func create_cw_tank_heatmp() -> WeaponType:
 	var w := WeaponType.new()
 	w.id = "CW_TANK_HEATMP"
@@ -550,20 +559,20 @@ static func create_cw_tank_heatmp() -> WeaponType:
 	w.lethality = {
 		RangeBand.NEAR: {
 			TargetClass.SOFT: 85,
-			TargetClass.LIGHT: 90,
-			TargetClass.HEAVY: 70,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 75,
 			TargetClass.FORTIFIED: 80,
 		},
 		RangeBand.MID: {
 			TargetClass.SOFT: 70,
-			TargetClass.LIGHT: 85,
-			TargetClass.HEAVY: 60,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 65,
 			TargetClass.FORTIFIED: 70,
 		},
 		RangeBand.FAR: {
 			TargetClass.SOFT: 50,
-			TargetClass.LIGHT: 75,
-			TargetClass.HEAVY: 50,
+			TargetClass.LIGHT: 85,
+			TargetClass.HEAVY: 55,
 			TargetClass.FORTIFIED: 60,
 		},
 	}
@@ -574,10 +583,12 @@ static func create_cw_tank_heatmp() -> WeaponType:
 		RangeBand.FAR: 50,
 	}
 
+	# RHA換算貫徹力: 450mm（HEATは距離で減衰しない）
+	# スケール: 100 = 500mm RHA
 	w.pen_ce = {
-		RangeBand.NEAR: 85,
-		RangeBand.MID: 80,
-		RangeBand.FAR: 70,
+		RangeBand.NEAR: 90,   # 450mm RHA相当
+		RangeBand.MID: 90,    # 450mm RHA相当
+		RangeBand.FAR: 90,    # 450mm RHA相当
 	}
 
 	return w
@@ -732,10 +743,12 @@ static func create_cw_coax_mg() -> WeaponType:
 
 ## CW_LAW: 軽対戦車火器（M72 LAW/RPG-26相当）
 ## 歩兵分隊の対装甲自衛用
+## RHA換算: M72 LAW = 約300mm CE貫徹力
+## スケール: 100 = 500mm RHA → LAW = 60
 static func create_cw_law() -> WeaponType:
 	var w := WeaponType.new()
 	w.id = "CW_LAW"
-	w.display_name = "Light AT Weapon"
+	w.display_name = "Light AT Rocket"
 	w.mechanism = Mechanism.SHAPED_CHARGE
 	w.fire_model = FireModel.DISCRETE
 	w.min_range_m = 10.0
@@ -749,38 +762,42 @@ static func create_cw_law() -> WeaponType:
 	w.direct_hit_radius_m = 1.0
 	w.shock_radius_m = 8.0
 
+	# AT武器のlethalityは「当たった時の効果」を表す
+	# 距離による減衰は命中精度の低下として反映
+	# HEAVY目標への値を上げて、ヒット率を確保
 	w.lethality = {
 		RangeBand.NEAR: {
 			TargetClass.SOFT: 60,
-			TargetClass.LIGHT: 85,
-			TargetClass.HEAVY: 50,  # MBTには弱い
+			TargetClass.LIGHT: 90,   # 軽装甲に対しては有効
+			TargetClass.HEAVY: 75,   # MBT側面/後部なら有効（上方修正）
 			TargetClass.FORTIFIED: 60,
 		},
 		RangeBand.MID: {
 			TargetClass.SOFT: 45,
-			TargetClass.LIGHT: 75,
-			TargetClass.HEAVY: 40,
+			TargetClass.LIGHT: 80,
+			TargetClass.HEAVY: 65,   # 上方修正
 			TargetClass.FORTIFIED: 50,
 		},
 		RangeBand.FAR: {
 			TargetClass.SOFT: 30,
-			TargetClass.LIGHT: 60,
-			TargetClass.HEAVY: 30,
+			TargetClass.LIGHT: 65,
+			TargetClass.HEAVY: 55,   # 上方修正（35→55）
 			TargetClass.FORTIFIED: 40,
 		},
 	}
 
 	w.suppression_power = {
-		RangeBand.NEAR: 50,
-		RangeBand.MID: 40,
-		RangeBand.FAR: 30,
+		RangeBand.NEAR: 55,
+		RangeBand.MID: 45,
+		RangeBand.FAR: 35,
 	}
 
-	# 貫徹力はRPGより低い（軽量火器）
+	# RHA換算貫徹力: 300mm = 60（スケール: 100 = 500mm RHA）
+	# 距離による減衰はHEATでは小さい
 	w.pen_ce = {
-		RangeBand.NEAR: 55,
-		RangeBand.MID: 50,
-		RangeBand.FAR: 40,
+		RangeBand.NEAR: 60,   # 300mm RHA相当
+		RangeBand.MID: 58,    # 290mm RHA相当
+		RangeBand.FAR: 55,    # 275mm RHA相当
 	}
 
 	return w

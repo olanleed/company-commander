@@ -1055,7 +1055,8 @@ func _mark_destroyed(
 
 
 ## 車両にダメージを適用（AT/重火器用）
-## 被害カテゴリに基づいてサブシステムダメージまたはcatastrophic killを判定
+## HITイベント発生時に被害カテゴリに基づいて1両撃破を判定
+## Strength = 車両数（例: 4両小隊 → Strength=4）
 func apply_vehicle_damage(
 	element: ElementData.ElementInstance,
 	threat_class: WeaponData.ThreatClass,
@@ -1073,38 +1074,57 @@ func apply_vehicle_damage(
 	# 被害カテゴリをロール
 	var category := roll_damage_category(exposure)
 
+	# 1両撃破かどうかを判定
+	var vehicle_killed := false
+
 	match category:
 		GameEnums.DamageCategory.CRITICAL:
-			# CRITICAL: catastrophic or mission kill
+			# CRITICAL: 確実に1両撃破 + 追加でcatastrophic判定
 			var catastrophic_roll := randf()
 			if catastrophic_roll < GameConstants.VEHICLE_CRITICAL_CATASTROPHIC_CHANCE:
-				# Catastrophic Kill - 即時破壊
+				# Catastrophic Kill: ユニット全体が即時破壊（弾薬庫誘爆・燃料火災等）
+				print("[Combat] %s CATASTROPHIC KILL! Unit destroyed at tick %d" % [element.id, current_tick])
 				_mark_destroyed(element, current_tick, true)
+				return  # 即時破壊なので以降の処理をスキップ
 			else:
-				# Mission Kill - mobility/firepower破壊
-				element.mobility_hp = 0
-				element.firepower_hp = 0
-				print("[Combat] %s MISSION KILL at tick %d" % [element.id, current_tick])
+				# 通常のCRITICAL: 1両撃破
+				vehicle_killed = true
+				print("[Combat] %s CRITICAL HIT (1 vehicle destroyed) at tick %d" % [element.id, current_tick])
 
 		GameEnums.DamageCategory.MAJOR:
-			# MAJOR: 大ダメージをサブシステムに分配
-			var damage := randi_range(
-				GameConstants.VEHICLE_DAMAGE_MAJOR_MIN,
-				GameConstants.VEHICLE_DAMAGE_MAJOR_MAX
-			)
-			_distribute_subsystem_damage(element, damage, threat_class)
+			# MAJOR: 高確率で1両撃破（80%）
+			if randf() < 0.80:
+				vehicle_killed = true
+				print("[Combat] %s MAJOR HIT (1 vehicle destroyed) at tick %d" % [element.id, current_tick])
+			else:
+				# ダメージのみ（サブシステムにダメージ）
+				var damage := randi_range(
+					GameConstants.VEHICLE_DAMAGE_MAJOR_MIN,
+					GameConstants.VEHICLE_DAMAGE_MAJOR_MAX
+				)
+				_distribute_subsystem_damage(element, damage, threat_class)
+				print("[Combat] %s MAJOR HIT (subsystem damage) at tick %d" % [element.id, current_tick])
 
 		GameEnums.DamageCategory.MINOR:
-			# MINOR: 小ダメージをサブシステムに分配
-			var damage := randi_range(
-				GameConstants.VEHICLE_DAMAGE_MINOR_MIN,
-				GameConstants.VEHICLE_DAMAGE_MINOR_MAX
-			)
-			_distribute_subsystem_damage(element, damage, threat_class)
+			# MINOR: 低確率で1両撃破（30%）、それ以外はサブシステムダメージ
+			if randf() < 0.30:
+				vehicle_killed = true
+				print("[Combat] %s MINOR HIT (1 vehicle destroyed) at tick %d" % [element.id, current_tick])
+			else:
+				var damage := randi_range(
+					GameConstants.VEHICLE_DAMAGE_MINOR_MIN,
+					GameConstants.VEHICLE_DAMAGE_MINOR_MAX
+				)
+				_distribute_subsystem_damage(element, damage, threat_class)
 
-	# 全サブシステムが0になったらmission kill → destroyed
-	if element.mobility_hp <= 0 and element.firepower_hp <= 0 and element.sensors_hp <= 0:
-		_mark_destroyed(element, current_tick, false)
+	# 1両撃破時: Strength-1
+	if vehicle_killed:
+		element.current_strength = maxi(0, element.current_strength - 1)
+		print("[Combat] %s: %d vehicles remaining" % [element.id, element.current_strength])
+
+	# Strengthが0になったらユニット壊滅
+	if element.current_strength <= 0:
+		_mark_destroyed(element, current_tick, category == GameEnums.DamageCategory.CRITICAL)
 
 
 ## サブシステムにダメージを分配
