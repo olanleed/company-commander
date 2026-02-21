@@ -512,6 +512,14 @@ const PENETRATION_SIGMOID_SCALE: float = 15.0
 ## 車両への小火器抑圧上限（仕様書: max 20%）
 const VEHICLE_SMALLARMS_SUPP_CAP: float = 0.20
 
+## 装甲車両への抑圧上限（全脅威クラス共通）
+## 装甲車両は車内から照準器/センサーを使用するため、歩兵ほど抑圧の影響を受けない
+## 抑圧値がこの値を超えないようにする
+## Heavy armor (armor_class >= 3): 70% (PINNEDまで、BROKENにならない)
+## Light armor (armor_class 1-2): 85%
+const VEHICLE_HEAVY_ARMOR_SUPP_CAP: float = 0.70
+const VEHICLE_LIGHT_ARMOR_SUPP_CAP: float = 0.85
+
 ## ゾーン判定角度閾値（仕様書: ±60°=FRONT, ±150°〜=REAR）
 const ZONE_FRONT_ANGLE_RAD: float = 1.047  # PI/3 = 60°
 const ZONE_REAR_ANGLE_RAD: float = 2.618   # 5*PI/6 = 150°

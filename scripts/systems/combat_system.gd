@@ -457,13 +457,13 @@ func apply_damage(
 	if element.is_destroyed:
 		return
 
-	# v0.1R: 車両への小火器抑圧上限（仕様書: max 20%）
+	# 装甲車両への抑圧上限を適用
 	var effective_supp := d_supp
-	if element.is_vehicle() and threat_class == WeaponData.ThreatClass.SMALL_ARMS:
+	if element.is_vehicle():
+		var supp_cap := _get_vehicle_suppression_cap(element, threat_class)
 		var current := element.suppression
-		var new_supp := current + d_supp
 		# 上限を超えないようにクランプ
-		effective_supp = maxf(0.0, minf(d_supp, GameConstants.VEHICLE_SMALLARMS_SUPP_CAP - current))
+		effective_supp = maxf(0.0, minf(d_supp, supp_cap - current))
 
 	# 抑圧増加（d_suppは0-1範囲なのでそのまま加算）
 	element.suppression = clampf(element.suppression + effective_supp, 0.0, 1.0)
@@ -499,6 +499,40 @@ func apply_suppression_recovery(
 
 	# 状態更新
 	element.state = get_suppression_state(element)
+
+
+# =============================================================================
+# 装甲車両への抑圧上限
+# =============================================================================
+
+## 装甲車両への抑圧上限を取得
+## 装甲車両は車内から照準器/センサーを使用するため、歩兵ほど抑圧の影響を受けない
+## Heavy armor (armor_class >= 3): 70% (PINNEDまで、BROKENにならない)
+## Light armor (armor_class 1-2): 85%
+## 小火器からの抑圧は20%で別途制限
+func _get_vehicle_suppression_cap(
+	element: ElementData.ElementInstance,
+	threat_class: WeaponData.ThreatClass
+) -> float:
+	if not element.element_type:
+		return 1.0
+
+	var armor_class := element.element_type.armor_class
+
+	# 小火器は既存の20%上限を適用
+	if threat_class == WeaponData.ThreatClass.SMALL_ARMS:
+		return GameConstants.VEHICLE_SMALLARMS_SUPP_CAP
+
+	# 重装甲（戦車など）: 70%上限 - BROKENにならない
+	if armor_class >= 3:
+		return GameConstants.VEHICLE_HEAVY_ARMOR_SUPP_CAP
+
+	# 軽装甲（IFV、装甲車など）: 85%上限
+	if armor_class >= 1:
+		return GameConstants.VEHICLE_LIGHT_ARMOR_SUPP_CAP
+
+	# 非装甲（ソフトスキン車両）: 上限なし
+	return 1.0
 
 
 # =============================================================================
@@ -1727,17 +1761,29 @@ func _apply_tank_kill(
 
 
 ## v0.2: ミッションキルを適用
+## ミッションキルは1両の戦闘不能を意味し、current_strengthを1減少させる
+## （小隊全体のサブシステムHPを0にするのではない）
 func _apply_mission_kill(
 	target: ElementData.ElementInstance,
 	_threat_class: WeaponData.ThreatClass
 ) -> void:
-	# ランダムでmobilityかfirepowerを0に
+	# ミッションキル = 1両戦闘不能（Killと同様にStrengthを減少）
+	target.current_strength = maxi(0, target.current_strength - 1)
+
+	# 追加で軽微なサブシステムダメージ（小隊全体に影響）
+	# 1両分のダメージを小隊HPとして反映（4両なら25%）
+	var max_str := maxi(1, target.element_type.max_strength if target.element_type else 4)
+	var hp_per_vehicle := int(100.0 / float(max_str))
+
+	# 50%の確率でmobility、50%の確率でfirepowerにダメージ
 	if randf() < 0.5:
-		target.mobility_hp = 0
-		print("[TankCombat] %s: IMMOBILIZED (mobility_hp=0)" % target.id)
+		target.mobility_hp = maxi(0, target.mobility_hp - hp_per_vehicle)
+		print("[TankCombat] %s: M-KILL (1 vehicle disabled, mobility_hp=%d, %d vehicles remaining)" % [
+			target.id, target.mobility_hp, target.current_strength])
 	else:
-		target.firepower_hp = 0
-		print("[TankCombat] %s: WEAPON DISABLED (firepower_hp=0)" % target.id)
+		target.firepower_hp = maxi(0, target.firepower_hp - hp_per_vehicle)
+		print("[TankCombat] %s: M-KILL (1 vehicle disabled, firepower_hp=%d, %d vehicles remaining)" % [
+			target.id, target.firepower_hp, target.current_strength])
 
 
 ## v0.2: アスペクトを文字列に変換（ログ用）

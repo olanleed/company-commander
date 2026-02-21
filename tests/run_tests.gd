@@ -32,6 +32,9 @@ func run_all_tests() -> void:
 	print("\n[CombatSystem v0.1R Tests]")
 	test_combat_system_v01r()
 
+	print("\n[Mission Kill Tests]")
+	test_mission_kill()
+
 
 # =============================================================================
 # WeaponData Tests
@@ -376,6 +379,95 @@ func _create_heavy_element(ElementDataClass: GDScript) -> RefCounted:
 	element.is_moving = false
 
 	return element
+
+# =============================================================================
+# Mission Kill Tests
+# =============================================================================
+
+func test_mission_kill() -> void:
+	var CombatSystemClass: GDScript = load("res://scripts/systems/combat_system.gd")
+	var ElementDataClass: GDScript = load("res://scripts/data/element_data.gd")
+	var WeaponDataClass: GDScript = load("res://scripts/data/weapon_data.gd")
+
+	var combat_system: RefCounted = CombatSystemClass.new()
+
+	# Test: Mission kill reduces strength, not disables entire platoon
+	_current_test = "mission_kill_reduces_strength"
+	var tank: RefCounted = _create_tank_element(ElementDataClass)
+	var initial_strength: int = tank.current_strength  # 4
+
+	combat_system._apply_mission_kill(tank, WeaponDataClass.ThreatClass.AT)
+
+	# Strength should decrease by 1
+	assert_eq(tank.current_strength, initial_strength - 1)
+	# Firepower should NOT be 0
+	assert_gt(tank.firepower_hp, 0)
+	_pass()
+
+	# Test: Tank can still fire after one M-KILL
+	_current_test = "can_fire_after_mission_kill"
+	var can_fire: bool = combat_system._can_fire_tank_gun(tank, 100)
+	assert_true(can_fire)
+	_pass()
+
+	# Test: Multiple M-KILLs gradually degrade
+	_current_test = "multiple_mission_kills"
+	var tank2: RefCounted = _create_tank_element(ElementDataClass)
+	var fire_count: int = 0
+
+	for i in range(4):
+		if combat_system._can_fire_tank_gun(tank2, 100 + i * 10):
+			fire_count += 1
+		combat_system._apply_mission_kill(tank2, WeaponDataClass.ThreatClass.AT)
+
+	# After 4 M-KILLs, strength should be 0
+	assert_eq(tank2.current_strength, 0)
+	# Should have been able to fire at least 3 times before total loss
+	assert_gt(fire_count, 2)
+	_pass()
+
+	# Test: Proportional firepower reduction
+	_current_test = "proportional_firepower_reduction"
+	var tank3: RefCounted = _create_tank_element(ElementDataClass)
+	var hp_per_vehicle: int = int(100.0 / float(tank3.element_type.max_strength))  # 25
+
+	# Apply M-KILL that damages firepower (run multiple times to ensure at least one)
+	var firepower_damaged: bool = false
+	for trial in range(20):
+		var test_tank: RefCounted = _create_tank_element(ElementDataClass)
+		var orig_fp: int = test_tank.firepower_hp
+		combat_system._apply_mission_kill(test_tank, WeaponDataClass.ThreatClass.AT)
+		if test_tank.firepower_hp < orig_fp:
+			# Check that damage is proportional (25 per vehicle)
+			var damage: int = orig_fp - test_tank.firepower_hp
+			assert_eq(damage, hp_per_vehicle)
+			firepower_damaged = true
+			break
+
+	assert_true(firepower_damaged)
+	_pass()
+
+
+func _create_tank_element(ElementDataClass: GDScript) -> RefCounted:
+	var element_type: RefCounted = ElementDataClass.ElementType.new()
+	element_type.id = "tank_plt"
+	element_type.max_strength = 4
+	element_type.armor_class = 3  # Heavy armor
+
+	var element: RefCounted = ElementDataClass.ElementInstance.new(element_type)
+	element.id = "tank_element_" + str(randi())
+	element.faction = GameEnums.Faction.BLUE
+	element.position = Vector2(500, 500)
+	element.suppression = 0.0
+	element.current_strength = 4
+	element.is_moving = false
+	element.firepower_hp = 100
+	element.mobility_hp = 100
+	element.sensors_hp = 100
+	element.last_fire_tick = -1
+
+	return element
+
 
 func _create_test_element(ElementDataClass: GDScript) -> RefCounted:
 	var element_type: RefCounted = ElementDataClass.ElementType.new()

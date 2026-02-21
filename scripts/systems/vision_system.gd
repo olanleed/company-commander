@@ -250,6 +250,22 @@ func _get_activity_modifier(target: ElementData.ElementInstance) -> float:
 ## 観測側の状態による係数
 func _get_observer_modifier(observer: ElementData.ElementInstance) -> float:
 	var suppression := observer.suppression
+
+	# 装甲車両は抑圧による視界低下が緩和される
+	# 理由: 車内から照準器/センサーを使用するため、外部からの射撃に晒されても
+	# 歩兵ほど視界が低下しない
+	if observer.is_vehicle():
+		# 車両は抑圧による視界低下を半減（最低でも0.5を維持）
+		if suppression < 0.40:
+			return 1.00
+		elif suppression < 0.70:
+			return 0.90  # 歩兵: 0.75
+		elif suppression < 0.90:
+			return 0.70  # 歩兵: 0.40
+		else:
+			return 0.50  # 歩兵: 0.20
+
+	# 歩兵・非装甲ユニットは従来通り
 	if suppression < 0.40:
 		return 1.00
 	elif suppression < 0.70:
