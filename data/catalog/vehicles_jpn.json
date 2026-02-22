@@ -1,0 +1,766 @@
+{
+  "catalog_version": "0.3",
+  "nation": "JPN",
+  "nation_name": "Japan",
+  "vehicles": [
+    {
+      "id": "JPN_Type10",
+      "display_name": "10式戦車",
+      "display_name_en": "Type 10 MBT",
+      "base_archetype": "TANK_PLT",
+      "mobility_class": "TRACKED",
+      "era": "2010s",
+      "unit_count": 4,
+      "modifiers": {
+        "armor_ke_front": 1.05,
+        "armor_ke_side": 1.00,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 1.10,
+        "armor_ce_side": 1.00,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.05,
+        "spot_range_moving": 1.05,
+        "road_speed": 1.00,
+        "cross_speed": 0.95
+      },
+      "main_gun": {
+        "caliber_mm": 120,
+        "type": "smoothbore",
+        "autoloader": false,
+        "pen_ke_modifier": 1.10,
+        "pen_ce_modifier": 1.00,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 1.15
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false,
+        "composite_gen": 4
+      },
+      "specs": {
+        "weight_tons": 44,
+        "crew": 3,
+        "engine_hp": 1200,
+        "max_speed_kmh": 70
+      },
+      "notes": "世界最高クラスのFCS、C4I統合、軽量44t、モジュラー装甲"
+    },
+    {
+      "id": "JPN_Type90",
+      "display_name": "90式戦車",
+      "display_name_en": "Type 90 MBT",
+      "base_archetype": "TANK_PLT",
+      "mobility_class": "TRACKED",
+      "era": "1990s",
+      "unit_count": 4,
+      "modifiers": {
+        "armor_ke_front": 1.00,
+        "armor_ke_side": 0.95,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 1.00,
+        "armor_ce_side": 0.95,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.05,
+        "spot_range_moving": 1.05,
+        "road_speed": 1.05,
+        "cross_speed": 1.00
+      },
+      "main_gun": {
+        "caliber_mm": 120,
+        "type": "smoothbore",
+        "autoloader": true,
+        "pen_ke_modifier": 1.00,
+        "pen_ce_modifier": 1.00,
+        "rof_modifier": 1.20,
+        "accuracy_modifier": 1.05
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false,
+        "composite_gen": 3
+      },
+      "specs": {
+        "weight_tons": 50,
+        "crew": 3,
+        "engine_hp": 1500,
+        "max_speed_kmh": 70
+      },
+      "notes": "自動装填装置搭載、北海道配備、順次退役中だが2026年現役"
+    },
+    {
+      "id": "JPN_Type89",
+      "display_name": "89式装甲戦闘車",
+      "display_name_en": "Type 89 IFV",
+      "base_archetype": "IFV_PLT",
+      "mobility_class": "TRACKED",
+      "era": "1990s",
+      "unit_count": 4,
+      "modifiers": {
+        "armor_ke_front": 1.00,
+        "armor_ke_side": 0.90,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 1.00,
+        "armor_ce_side": 0.90,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.00,
+        "spot_range_moving": 1.00,
+        "road_speed": 1.00,
+        "cross_speed": 1.00
+      },
+      "main_gun": {
+        "caliber_mm": 35,
+        "type": "autocannon",
+        "dual_feed": true,
+        "pen_ke_modifier": 1.05,
+        "pen_ce_modifier": 1.00,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 1.00
+      },
+      "atgm": {
+        "type": "Type79",
+        "range_m": 4000,
+        "pen_ce": 85,
+        "count": 2
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 26.5,
+        "crew": 3,
+        "passengers": 7,
+        "engine_hp": 600,
+        "max_speed_kmh": 70
+      },
+      "notes": "35mm機関砲、79式対舟艇対戦車誘導弾搭載、履帯式IFV"
+    },
+    {
+      "id": "JPN_Type24_IFV",
+      "display_name": "24式装輪装甲戦闘車",
+      "display_name_en": "Type 24 Wheeled IFV",
+      "base_archetype": "IFV_PLT",
+      "mobility_class": "WHEELED",
+      "era": "2020s",
+      "unit_count": 4,
+      "modifiers": {
+        "armor_ke_front": 1.05,
+        "armor_ke_side": 0.95,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 1.00,
+        "armor_ce_side": 0.95,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.10,
+        "spot_range_moving": 1.10,
+        "road_speed": 1.15,
+        "cross_speed": 0.85
+      },
+      "main_gun": {
+        "caliber_mm": 30,
+        "type": "autocannon",
+        "dual_feed": true,
+        "pen_ke_modifier": 1.00,
+        "pen_ce_modifier": 1.00,
+        "rof_modifier": 1.10,
+        "accuracy_modifier": 1.10
+      },
+      "atgm": {
+        "type": "Type01_LMAT",
+        "range_m": 2000,
+        "pen_ce": 80,
+        "count": 2
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 26,
+        "crew": 3,
+        "passengers": 8,
+        "engine_hp": 600,
+        "max_speed_kmh": 100
+      },
+      "notes": "無人砲塔搭載、30mm機関砲、8輪装甲車、2024年制式化"
+    },
+    {
+      "id": "JPN_Type16",
+      "display_name": "16式機動戦闘車",
+      "display_name_en": "Type 16 MCV",
+      "base_archetype": "RECON_VEH",
+      "mobility_class": "WHEELED",
+      "era": "2010s",
+      "unit_count": 4,
+      "modifiers": {
+        "armor_ke_front": 1.20,
+        "armor_ke_side": 1.00,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 1.10,
+        "armor_ce_side": 1.00,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.10,
+        "spot_range_moving": 1.10,
+        "road_speed": 1.20,
+        "cross_speed": 0.90
+      },
+      "main_gun": {
+        "caliber_mm": 105,
+        "type": "rifled",
+        "autoloader": false,
+        "pen_ke_modifier": 0.85,
+        "pen_ce_modifier": 0.90,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 1.10
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 26,
+        "crew": 4,
+        "engine_hp": 570,
+        "max_speed_kmh": 100
+      },
+      "notes": "105mm砲搭載8輪装甲車、高い戦略機動性、即応機動連隊配備"
+    },
+    {
+      "id": "JPN_Type87_RCV",
+      "display_name": "87式偵察警戒車",
+      "display_name_en": "Type 87 RCV",
+      "base_archetype": "RECON_VEH",
+      "mobility_class": "WHEELED",
+      "era": "1980s",
+      "unit_count": 2,
+      "modifiers": {
+        "armor_ke_front": 0.80,
+        "armor_ke_side": 0.70,
+        "armor_ke_rear": 0.70,
+        "armor_ce_front": 0.80,
+        "armor_ce_side": 0.70,
+        "armor_ce_rear": 0.70,
+        "spot_range": 1.15,
+        "spot_range_moving": 1.10,
+        "road_speed": 1.10,
+        "cross_speed": 0.80
+      },
+      "main_gun": {
+        "caliber_mm": 25,
+        "type": "autocannon",
+        "dual_feed": false,
+        "pen_ke_modifier": 0.90,
+        "pen_ce_modifier": 0.90,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 1.00
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 15,
+        "crew": 5,
+        "engine_hp": 305,
+        "max_speed_kmh": 100
+      },
+      "notes": "25mm機関砲、6輪偵察車、順次25式に更新中"
+    },
+    {
+      "id": "JPN_Type25_RCV",
+      "display_name": "25式偵察戦闘車",
+      "display_name_en": "Type 25 RCV",
+      "base_archetype": "RECON_VEH",
+      "mobility_class": "WHEELED",
+      "era": "2020s",
+      "unit_count": 2,
+      "modifiers": {
+        "armor_ke_front": 1.00,
+        "armor_ke_side": 0.90,
+        "armor_ke_rear": 0.90,
+        "armor_ce_front": 1.00,
+        "armor_ce_side": 0.90,
+        "armor_ce_rear": 0.90,
+        "spot_range": 1.20,
+        "spot_range_moving": 1.15,
+        "road_speed": 1.15,
+        "cross_speed": 0.85
+      },
+      "main_gun": {
+        "caliber_mm": 30,
+        "type": "autocannon",
+        "dual_feed": true,
+        "pen_ke_modifier": 1.00,
+        "pen_ce_modifier": 1.00,
+        "rof_modifier": 1.10,
+        "accuracy_modifier": 1.10
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 20,
+        "crew": 4,
+        "engine_hp": 500,
+        "max_speed_kmh": 100
+      },
+      "notes": "87式の後継、30mm機関砲搭載、先進センサー、2025年制式化"
+    },
+    {
+      "id": "JPN_Type96_WAPC",
+      "display_name": "96式装輪装甲車",
+      "display_name_en": "Type 96 WAPC",
+      "base_archetype": "APC_PLT",
+      "mobility_class": "WHEELED",
+      "era": "1990s",
+      "unit_count": 4,
+      "modifiers": {
+        "armor_ke_front": 0.85,
+        "armor_ke_side": 0.75,
+        "armor_ke_rear": 0.75,
+        "armor_ce_front": 0.85,
+        "armor_ce_side": 0.75,
+        "armor_ce_rear": 0.75,
+        "spot_range": 0.95,
+        "spot_range_moving": 0.90,
+        "road_speed": 1.10,
+        "cross_speed": 0.75
+      },
+      "armament": {
+        "primary": "12.7mm_MG",
+        "secondary": null
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 14.5,
+        "crew": 2,
+        "passengers": 8,
+        "engine_hp": 360,
+        "max_speed_kmh": 100
+      },
+      "notes": "12.7mm重機関銃または40mm擲弾銃搭載、8輪APC"
+    },
+    {
+      "id": "JPN_Type73_APC",
+      "display_name": "73式装甲車",
+      "display_name_en": "Type 73 APC",
+      "base_archetype": "APC_PLT",
+      "mobility_class": "TRACKED",
+      "era": "1970s",
+      "unit_count": 4,
+      "modifiers": {
+        "armor_ke_front": 0.80,
+        "armor_ke_side": 0.70,
+        "armor_ke_rear": 0.70,
+        "armor_ce_front": 0.80,
+        "armor_ce_side": 0.70,
+        "armor_ce_rear": 0.70,
+        "spot_range": 0.90,
+        "spot_range_moving": 0.85,
+        "road_speed": 0.95,
+        "cross_speed": 0.95
+      },
+      "armament": {
+        "primary": "12.7mm_MG",
+        "secondary": "7.62mm_MG"
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 13.3,
+        "crew": 2,
+        "passengers": 9,
+        "engine_hp": 300,
+        "max_speed_kmh": 60
+      },
+      "notes": "履帯式APC、12.7mm+7.62mm機関銃、順次退役中だが2026年現役"
+    },
+    {
+      "id": "JPN_Patria_AMV",
+      "display_name": "パトリアAMV",
+      "display_name_en": "Patria AMV XP",
+      "base_archetype": "APC_PLT",
+      "mobility_class": "WHEELED",
+      "era": "2020s",
+      "unit_count": 4,
+      "modifiers": {
+        "armor_ke_front": 1.00,
+        "armor_ke_side": 0.90,
+        "armor_ke_rear": 0.85,
+        "armor_ce_front": 1.00,
+        "armor_ce_side": 0.90,
+        "armor_ce_rear": 0.85,
+        "spot_range": 1.00,
+        "spot_range_moving": 0.95,
+        "road_speed": 1.10,
+        "cross_speed": 0.80
+      },
+      "armament": {
+        "primary": "12.7mm_RWS",
+        "secondary": null
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 27,
+        "crew": 2,
+        "passengers": 10,
+        "engine_hp": 543,
+        "max_speed_kmh": 100
+      },
+      "notes": "フィンランド製8輪装甲車、RWS搭載、2025年から配備開始"
+    },
+    {
+      "id": "JPN_LAV",
+      "display_name": "軽装甲機動車",
+      "display_name_en": "LAV",
+      "base_archetype": "LIGHT_VEH",
+      "mobility_class": "WHEELED",
+      "era": "2000s",
+      "unit_count": 4,
+      "modifiers": {
+        "armor_ke_front": 0.60,
+        "armor_ke_side": 0.50,
+        "armor_ke_rear": 0.50,
+        "armor_ce_front": 0.60,
+        "armor_ce_side": 0.50,
+        "armor_ce_rear": 0.50,
+        "spot_range": 0.95,
+        "spot_range_moving": 0.95,
+        "road_speed": 1.15,
+        "cross_speed": 0.70
+      },
+      "armament": {
+        "primary": "5.56mm_MINIMI",
+        "secondary": null
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 4.5,
+        "crew": 1,
+        "passengers": 4,
+        "engine_hp": 160,
+        "max_speed_kmh": 100
+      },
+      "notes": "7.62mm弾耐弾、4輪軽装甲車、普通科向け"
+    },
+    {
+      "id": "JPN_AAV7",
+      "display_name": "水陸両用車AAV7",
+      "display_name_en": "AAV7A1",
+      "base_archetype": "APC_PLT",
+      "mobility_class": "TRACKED",
+      "era": "2010s",
+      "unit_count": 4,
+      "modifiers": {
+        "armor_ke_front": 0.85,
+        "armor_ke_side": 0.75,
+        "armor_ke_rear": 0.75,
+        "armor_ce_front": 0.85,
+        "armor_ce_side": 0.75,
+        "armor_ce_rear": 0.75,
+        "spot_range": 0.95,
+        "spot_range_moving": 0.90,
+        "road_speed": 0.90,
+        "cross_speed": 0.85
+      },
+      "armament": {
+        "primary": "12.7mm_MG",
+        "secondary": "40mm_GL"
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 29.1,
+        "crew": 3,
+        "passengers": 21,
+        "engine_hp": 525,
+        "max_speed_kmh": 72,
+        "water_speed_kmh": 13,
+        "amphibious": true
+      },
+      "notes": "米国製水陸両用車、14.5mm耐弾、水陸機動団配備"
+    },
+    {
+      "id": "JPN_Type82_CCV",
+      "display_name": "82式指揮通信車",
+      "display_name_en": "Type 82 CCV",
+      "base_archetype": "COMMAND_VEH",
+      "mobility_class": "WHEELED",
+      "era": "1980s",
+      "unit_count": 1,
+      "modifiers": {
+        "armor_ke_front": 0.70,
+        "armor_ke_side": 0.60,
+        "armor_ke_rear": 0.60,
+        "armor_ce_front": 0.70,
+        "armor_ce_side": 0.60,
+        "armor_ce_rear": 0.60,
+        "spot_range": 1.00,
+        "spot_range_moving": 0.95,
+        "road_speed": 1.10,
+        "cross_speed": 0.75
+      },
+      "armament": {
+        "primary": "12.7mm_MG",
+        "secondary": null
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 13.5,
+        "crew": 8,
+        "engine_hp": 305,
+        "max_speed_kmh": 100
+      },
+      "notes": "6輪指揮通信車、12.7mm耐弾、C4I能力"
+    },
+    {
+      "id": "JPN_Type24_Mortar",
+      "display_name": "24式機動120mm迫撃砲",
+      "display_name_en": "Type 24 Mobile 120mm Mortar",
+      "base_archetype": "SP_MORTAR",
+      "mobility_class": "WHEELED",
+      "era": "2020s",
+      "unit_count": 2,
+      "modifiers": {
+        "armor_ke_front": 0.85,
+        "armor_ke_side": 0.75,
+        "armor_ke_rear": 0.75,
+        "armor_ce_front": 0.85,
+        "armor_ce_side": 0.75,
+        "armor_ce_rear": 0.75,
+        "spot_range": 0.95,
+        "spot_range_moving": 0.90,
+        "road_speed": 1.10,
+        "cross_speed": 0.80
+      },
+      "main_gun": {
+        "caliber_mm": 120,
+        "type": "mortar",
+        "autoloader": false,
+        "rof_modifier": 1.10,
+        "accuracy_modifier": 1.05
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 20,
+        "crew": 4,
+        "engine_hp": 450,
+        "max_speed_kmh": 90,
+        "range_m": 8000
+      },
+      "notes": "120mm迫撃砲搭載装輪車、自走砲撃能力、2024年制式化"
+    },
+    {
+      "id": "JPN_Type99_SPH",
+      "display_name": "99式自走155mmりゅう弾砲",
+      "display_name_en": "Type 99 SPH",
+      "base_archetype": "SP_ARTILLERY",
+      "mobility_class": "TRACKED",
+      "era": "1990s",
+      "unit_count": 2,
+      "modifiers": {
+        "armor_ke_front": 0.90,
+        "armor_ke_side": 0.80,
+        "armor_ke_rear": 0.75,
+        "armor_ce_front": 0.90,
+        "armor_ce_side": 0.80,
+        "armor_ce_rear": 0.75,
+        "spot_range": 0.95,
+        "spot_range_moving": 0.85,
+        "road_speed": 0.95,
+        "cross_speed": 0.90
+      },
+      "main_gun": {
+        "caliber_mm": 155,
+        "type": "howitzer",
+        "autoloader": true,
+        "rof_modifier": 1.20,
+        "accuracy_modifier": 1.05
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 40,
+        "crew": 4,
+        "engine_hp": 600,
+        "max_speed_kmh": 50,
+        "range_m": 30000
+      },
+      "notes": "自動装填装置搭載、52口径155mm砲、履帯式自走砲"
+    },
+    {
+      "id": "JPN_Type19_SPH",
+      "display_name": "19式装輪自走155mmりゅう弾砲",
+      "display_name_en": "Type 19 Wheeled SPH",
+      "base_archetype": "SP_ARTILLERY",
+      "mobility_class": "WHEELED",
+      "era": "2010s",
+      "unit_count": 2,
+      "modifiers": {
+        "armor_ke_front": 0.85,
+        "armor_ke_side": 0.75,
+        "armor_ke_rear": 0.70,
+        "armor_ce_front": 0.85,
+        "armor_ce_side": 0.75,
+        "armor_ce_rear": 0.70,
+        "spot_range": 0.95,
+        "spot_range_moving": 0.85,
+        "road_speed": 1.15,
+        "cross_speed": 0.75
+      },
+      "main_gun": {
+        "caliber_mm": 155,
+        "type": "howitzer",
+        "autoloader": false,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 1.00
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 25,
+        "crew": 5,
+        "engine_hp": 400,
+        "max_speed_kmh": 90,
+        "range_m": 38000
+      },
+      "notes": "8輪装輪自走砲、52口径155mm砲、高い戦略機動性"
+    },
+    {
+      "id": "JPN_Type87_SPAAG",
+      "display_name": "87式自走高射機関砲",
+      "display_name_en": "Type 87 SPAAG",
+      "base_archetype": "SPAAG",
+      "mobility_class": "TRACKED",
+      "era": "1980s",
+      "unit_count": 2,
+      "modifiers": {
+        "armor_ke_front": 0.85,
+        "armor_ke_side": 0.75,
+        "armor_ke_rear": 0.75,
+        "armor_ce_front": 0.85,
+        "armor_ce_side": 0.75,
+        "armor_ce_rear": 0.75,
+        "spot_range": 1.10,
+        "spot_range_moving": 1.00,
+        "road_speed": 0.95,
+        "cross_speed": 0.90
+      },
+      "main_gun": {
+        "caliber_mm": 35,
+        "type": "autocannon_twin",
+        "dual_feed": true,
+        "pen_ke_modifier": 1.00,
+        "pen_ce_modifier": 1.00,
+        "rof_modifier": 1.50,
+        "accuracy_modifier": 1.10
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 38,
+        "crew": 3,
+        "engine_hp": 720,
+        "max_speed_kmh": 53
+      },
+      "notes": "エリコン35mm連装機関砲、対空射撃レーダー搭載"
+    },
+    {
+      "id": "JPN_Type93_SAM",
+      "display_name": "93式近距離地対空誘導弾",
+      "display_name_en": "Type 93 SAM",
+      "base_archetype": "SAM_VEH",
+      "mobility_class": "WHEELED",
+      "era": "1990s",
+      "unit_count": 1,
+      "modifiers": {
+        "armor_ke_front": 0.50,
+        "armor_ke_side": 0.40,
+        "armor_ke_rear": 0.40,
+        "armor_ce_front": 0.50,
+        "armor_ce_side": 0.40,
+        "armor_ce_rear": 0.40,
+        "spot_range": 1.20,
+        "spot_range_moving": 1.10,
+        "road_speed": 1.10,
+        "cross_speed": 0.70
+      },
+      "armament": {
+        "primary": "Type91_SAM",
+        "missile_count": 8
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 3.5,
+        "crew": 3,
+        "engine_hp": 150,
+        "max_speed_kmh": 100
+      },
+      "notes": "91式携帯地対空誘導弾8発搭載、高機動車ベース"
+    },
+    {
+      "id": "JPN_Type11_SAM",
+      "display_name": "11式短距離地対空誘導弾",
+      "display_name_en": "Type 11 Short-range SAM",
+      "base_archetype": "SAM_VEH",
+      "mobility_class": "WHEELED",
+      "era": "2010s",
+      "unit_count": 1,
+      "modifiers": {
+        "armor_ke_front": 0.50,
+        "armor_ke_side": 0.40,
+        "armor_ke_rear": 0.40,
+        "armor_ce_front": 0.50,
+        "armor_ce_side": 0.40,
+        "armor_ce_rear": 0.40,
+        "spot_range": 1.25,
+        "spot_range_moving": 1.15,
+        "road_speed": 1.05,
+        "cross_speed": 0.75
+      },
+      "armament": {
+        "primary": "Type11_SAM",
+        "missile_count": 4
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 12,
+        "crew": 3,
+        "engine_hp": 300,
+        "max_speed_kmh": 90
+      },
+      "notes": "81式短SAMの後継、アクティブレーダー誘導"
+    }
+  ]
+}

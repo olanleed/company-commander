@@ -550,6 +550,223 @@ class ElementArchetypes:
 		t.comm_range = 3000.0  # 3km通信範囲
 		return t
 
+	## APC_PLT: 装甲兵員輸送車小隊（4両=1ユニット）
+	## RHA換算装甲値（スケール: 100 = 500mm RHA）
+	## M113/BTR-80相当のAPC
+	## 輸送任務が主、軽火器のみ装備
+	## Strength = 車両数（4両）- 1両撃破ごとに-1
+	static func create_apc_plt() -> ElementType:
+		var t := ElementType.new()
+		t.id = "APC_PLT"
+		t.display_name = "APC Platoon"
+		t.category = Category.VEH
+		t.symbol_type = SymbolType.ARMOR_APC
+		t.armor_class = 1  # Light
+		t.mobility_class = GameEnums.MobilityType.TRACKED
+		t.road_speed = 13.0
+		t.cross_speed = 8.0
+		t.base_strength = 4
+		t.max_strength = 4
+		t.spot_range_base = 500.0
+		t.spot_range_moving = 350.0
+		# KE装甲（軽装甲: 7.62mm防護、14.5mm正面のみ）
+		t.armor_ke = {
+			WeaponData.ArmorZone.FRONT: 8,    # 40mm RHA - 14.5mm HMGに耐える
+			WeaponData.ArmorZone.SIDE: 4,     # 20mm RHA - 7.62mmに耐える
+			WeaponData.ArmorZone.REAR: 3,     # 15mm RHA - 小銃弾に耐える
+			WeaponData.ArmorZone.TOP: 2,      # 10mm RHA - 破片に脆弱
+		}
+		# CE装甲
+		t.armor_ce = {
+			WeaponData.ArmorZone.FRONT: 6,    # 30mm RHA相当
+			WeaponData.ArmorZone.SIDE: 4,     # 20mm RHA相当
+			WeaponData.ArmorZone.REAR: 3,     # 15mm RHA相当
+			WeaponData.ArmorZone.TOP: 2,      # 10mm RHA相当
+		}
+		return t
+
+	## LIGHT_VEH: 軽装甲車両（4両=1ユニット）
+	## ハンヴィー/軽装甲機動車相当
+	## 最低限の装甲（7.62mm防護）、高機動性
+	static func create_light_veh() -> ElementType:
+		var t := ElementType.new()
+		t.id = "LIGHT_VEH"
+		t.display_name = "Light Vehicle"
+		t.category = Category.VEH
+		t.symbol_type = SymbolType.INF_MECH
+		t.armor_class = 1  # Light（最低限の装甲）
+		t.mobility_class = GameEnums.MobilityType.WHEELED
+		t.road_speed = 20.0
+		t.cross_speed = 10.0
+		t.base_strength = 4
+		t.max_strength = 4
+		t.spot_range_base = 400.0
+		t.spot_range_moving = 300.0
+		# 軽装甲（7.62mm防護のみ）
+		t.armor_ke = {
+			WeaponData.ArmorZone.FRONT: 3,    # 15mm RHA - 7.62mmにかろうじて耐える
+			WeaponData.ArmorZone.SIDE: 2,     # 10mm RHA
+			WeaponData.ArmorZone.REAR: 2,     # 10mm RHA
+			WeaponData.ArmorZone.TOP: 1,      # 5mm RHA
+		}
+		t.armor_ce = {
+			WeaponData.ArmorZone.FRONT: 3,
+			WeaponData.ArmorZone.SIDE: 2,
+			WeaponData.ArmorZone.REAR: 2,
+			WeaponData.ArmorZone.TOP: 1,
+		}
+		return t
+
+	## COMMAND_VEH: 指揮通信車（1両=1ユニット）
+	## 82式指揮通信車相当
+	## 通信ハブ機能、軽装甲
+	static func create_command_veh() -> ElementType:
+		var t := ElementType.new()
+		t.id = "COMMAND_VEH"
+		t.display_name = "Command Vehicle"
+		t.category = Category.HQ
+		t.symbol_type = SymbolType.CMD_HQ
+		t.armor_class = 1  # Light
+		t.mobility_class = GameEnums.MobilityType.WHEELED
+		t.road_speed = 16.0
+		t.cross_speed = 8.0
+		t.base_strength = 1
+		t.max_strength = 1
+		t.spot_range_base = 600.0
+		t.spot_range_moving = 400.0
+		t.is_comm_hub = true
+		t.comm_range = 5000.0  # 5km通信範囲
+		# 軽装甲
+		t.armor_ke = {
+			WeaponData.ArmorZone.FRONT: 6,
+			WeaponData.ArmorZone.SIDE: 4,
+			WeaponData.ArmorZone.REAR: 3,
+			WeaponData.ArmorZone.TOP: 2,
+		}
+		t.armor_ce = {
+			WeaponData.ArmorZone.FRONT: 5,
+			WeaponData.ArmorZone.SIDE: 3,
+			WeaponData.ArmorZone.REAR: 2,
+			WeaponData.ArmorZone.TOP: 1,
+		}
+		return t
+
+	## SP_MORTAR: 自走迫撃砲（2両=1ユニット）
+	## 120mm自走迫撃砲相当
+	## 間接射撃能力、軽装甲
+	static func create_sp_mortar() -> ElementType:
+		var t := ElementType.new()
+		t.id = "SP_MORTAR"
+		t.display_name = "SP Mortar"
+		t.category = Category.WEAP
+		t.symbol_type = SymbolType.FS_MORTAR
+		t.armor_class = 1  # Light
+		t.mobility_class = GameEnums.MobilityType.WHEELED
+		t.road_speed = 14.0
+		t.cross_speed = 7.0
+		t.base_strength = 2
+		t.max_strength = 2
+		t.spot_range_base = 400.0
+		t.spot_range_moving = 250.0
+		# 軽装甲
+		t.armor_ke = {
+			WeaponData.ArmorZone.FRONT: 6,
+			WeaponData.ArmorZone.SIDE: 4,
+			WeaponData.ArmorZone.REAR: 3,
+			WeaponData.ArmorZone.TOP: 2,
+		}
+		t.armor_ce = {
+			WeaponData.ArmorZone.FRONT: 5,
+			WeaponData.ArmorZone.SIDE: 3,
+			WeaponData.ArmorZone.REAR: 2,
+			WeaponData.ArmorZone.TOP: 1,
+		}
+		return t
+
+	## SP_ARTILLERY: 自走砲（2両=1ユニット）
+	## 155mm自走榴弾砲相当
+	## 長距離間接射撃能力、中装甲
+	static func create_sp_artillery() -> ElementType:
+		var t := ElementType.new()
+		t.id = "SP_ARTILLERY"
+		t.display_name = "SP Artillery"
+		t.category = Category.WEAP
+		t.symbol_type = SymbolType.FS_ARTILLERY
+		t.armor_class = 2  # Medium
+		t.mobility_class = GameEnums.MobilityType.TRACKED
+		t.road_speed = 10.0
+		t.cross_speed = 6.0
+		t.base_strength = 2
+		t.max_strength = 2
+		t.spot_range_base = 500.0
+		t.spot_range_moving = 300.0
+		# 中装甲（破片防護）
+		t.armor_ke = {
+			WeaponData.ArmorZone.FRONT: 12,   # 60mm RHA
+			WeaponData.ArmorZone.SIDE: 8,     # 40mm RHA
+			WeaponData.ArmorZone.REAR: 6,     # 30mm RHA
+			WeaponData.ArmorZone.TOP: 4,      # 20mm RHA
+		}
+		t.armor_ce = {
+			WeaponData.ArmorZone.FRONT: 10,
+			WeaponData.ArmorZone.SIDE: 6,
+			WeaponData.ArmorZone.REAR: 4,
+			WeaponData.ArmorZone.TOP: 3,
+		}
+		return t
+
+	## SPAAG: 自走高射機関砲（2両=1ユニット）
+	## 87式/ゲパルト相当
+	## 対空射撃能力、地上目標にも有効
+	static func create_spaag() -> ElementType:
+		var t := ElementType.new()
+		t.id = "SPAAG"
+		t.display_name = "SPAAG"
+		t.category = Category.VEH
+		t.symbol_type = SymbolType.ARMOR_IFV  # 専用シンボルがないためIFVを流用
+		t.armor_class = 2  # Medium
+		t.mobility_class = GameEnums.MobilityType.TRACKED
+		t.road_speed = 10.0
+		t.cross_speed = 6.0
+		t.base_strength = 2
+		t.max_strength = 2
+		t.spot_range_base = 800.0  # レーダー搭載で長距離索敵
+		t.spot_range_moving = 600.0
+		# 中装甲
+		t.armor_ke = {
+			WeaponData.ArmorZone.FRONT: 14,
+			WeaponData.ArmorZone.SIDE: 8,
+			WeaponData.ArmorZone.REAR: 6,
+			WeaponData.ArmorZone.TOP: 4,
+		}
+		t.armor_ce = {
+			WeaponData.ArmorZone.FRONT: 12,
+			WeaponData.ArmorZone.SIDE: 6,
+			WeaponData.ArmorZone.REAR: 4,
+			WeaponData.ArmorZone.TOP: 3,
+		}
+		return t
+
+	## SAM_VEH: 地対空ミサイル車両（1両=1ユニット）
+	## 93式/11式短SAM相当
+	## 対空ミサイル装備、軽装甲
+	static func create_sam_veh() -> ElementType:
+		var t := ElementType.new()
+		t.id = "SAM_VEH"
+		t.display_name = "SAM Vehicle"
+		t.category = Category.VEH
+		t.symbol_type = SymbolType.FS_ATGM  # 専用シンボルがないためATGMを流用
+		t.armor_class = 0  # Soft（軽車両ベース）
+		t.mobility_class = GameEnums.MobilityType.WHEELED
+		t.road_speed = 16.0
+		t.cross_speed = 8.0
+		t.base_strength = 1
+		t.max_strength = 1
+		t.spot_range_base = 1000.0  # レーダー搭載
+		t.spot_range_moving = 800.0
+		# ソフトスキン（装甲なし）
+		return t
+
 	## 全アーキタイプを取得
 	static func get_all_archetypes() -> Dictionary:
 		return {
@@ -558,9 +775,16 @@ class ElementArchetypes:
 			"INF_MG": create_inf_mg(),
 			"TANK_PLT": create_tank_plt(),
 			"IFV_PLT": create_ifv_plt(),
+			"APC_PLT": create_apc_plt(),
+			"LIGHT_VEH": create_light_veh(),
+			"COMMAND_VEH": create_command_veh(),
 			"RECON_VEH": create_recon_veh(),
 			"RECON_TEAM": create_recon_team(),
 			"MORTAR_SEC": create_mortar_sec(),
+			"SP_MORTAR": create_sp_mortar(),
+			"SP_ARTILLERY": create_sp_artillery(),
+			"SPAAG": create_spaag(),
+			"SAM_VEH": create_sam_veh(),
 			"LOG_TRUCK": create_log_truck(),
 			"CMD_HQ": create_cmd_hq(),
 		}
@@ -573,9 +797,16 @@ class ElementArchetypes:
 			"INF_MG": return create_inf_mg()
 			"TANK_PLT": return create_tank_plt()
 			"IFV_PLT": return create_ifv_plt()
+			"APC_PLT": return create_apc_plt()
+			"LIGHT_VEH": return create_light_veh()
+			"COMMAND_VEH": return create_command_veh()
 			"RECON_VEH": return create_recon_veh()
 			"RECON_TEAM": return create_recon_team()
 			"MORTAR_SEC": return create_mortar_sec()
+			"SP_MORTAR": return create_sp_mortar()
+			"SP_ARTILLERY": return create_sp_artillery()
+			"SPAAG": return create_spaag()
+			"SAM_VEH": return create_sam_veh()
 			"LOG_TRUCK": return create_log_truck()
 			"CMD_HQ": return create_cmd_hq()
 			_: return create_inf_line()  # デフォルト

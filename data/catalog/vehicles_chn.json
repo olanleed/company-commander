@@ -1,0 +1,823 @@
+{
+  "catalog_version": "0.3",
+  "nation": "CHN",
+  "nation_name": "People's Republic of China",
+  "last_updated": "2026-02",
+  "vehicles": [
+    {
+      "id": "CHN_Type99A",
+      "display_name": "99A式",
+      "display_name_en": "Type 99A (ZTZ-99A)",
+      "base_archetype": "TANK_PLT",
+      "mobility_class": "TRACKED",
+      "era": "2010s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 55,
+        "crew": 3,
+        "engine": "150HB-2 diesel 1500hp",
+        "max_speed_kmh": 70
+      },
+      "modifiers": {
+        "armor_ke_front": 1.05,
+        "armor_ke_side": 0.90,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 1.15,
+        "armor_ce_side": 1.00,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.05,
+        "spot_range_moving": 0.95,
+        "road_speed": 1.10,
+        "cross_speed": 1.10
+      },
+      "main_gun": {
+        "caliber_mm": 125,
+        "type": "smoothbore",
+        "autoloader": true,
+        "pen_ke_modifier": 1.10,
+        "pen_ce_modifier": 1.10,
+        "rof_modifier": 1.10,
+        "accuracy_modifier": 1.00
+      },
+      "protection": {
+        "era_equipped": true,
+        "era_type": "FY-5",
+        "aps_equipped": true,
+        "aps_type": "GL-6",
+        "composite_gen": 3
+      },
+      "notes": "最新型MBT、JN1複合装甲+ERA、GL-6 APS、125mm ZPT98砲、APFSDS初速1780m/s"
+    },
+    {
+      "id": "CHN_Type99",
+      "display_name": "99式",
+      "display_name_en": "Type 99 (ZTZ-99)",
+      "base_archetype": "TANK_PLT",
+      "mobility_class": "TRACKED",
+      "era": "2000s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 52,
+        "crew": 3,
+        "engine": "150HB diesel 1200hp",
+        "max_speed_kmh": 65
+      },
+      "modifiers": {
+        "armor_ke_front": 1.00,
+        "armor_ke_side": 0.85,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 1.10,
+        "armor_ce_side": 0.95,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.00,
+        "spot_range_moving": 0.90,
+        "road_speed": 1.05,
+        "cross_speed": 1.05
+      },
+      "main_gun": {
+        "caliber_mm": 125,
+        "type": "smoothbore",
+        "autoloader": true,
+        "pen_ke_modifier": 1.05,
+        "pen_ce_modifier": 1.05,
+        "rof_modifier": 1.10,
+        "accuracy_modifier": 0.95
+      },
+      "protection": {
+        "era_equipped": true,
+        "era_type": "FY-4",
+        "aps_equipped": false,
+        "composite_gen": 3
+      },
+      "notes": "第三世代MBT、複合装甲+FY-4 ERA、125mm滑腔砲"
+    },
+    {
+      "id": "CHN_Type96A",
+      "display_name": "96A式",
+      "display_name_en": "Type 96A (ZTZ-96A)",
+      "base_archetype": "TANK_PLT",
+      "mobility_class": "TRACKED",
+      "era": "2000s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 43,
+        "crew": 3,
+        "engine": "12150ZLC diesel 800hp",
+        "max_speed_kmh": 57
+      },
+      "modifiers": {
+        "armor_ke_front": 0.90,
+        "armor_ke_side": 0.85,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 1.05,
+        "armor_ce_side": 0.95,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.95,
+        "spot_range_moving": 0.90,
+        "road_speed": 1.00,
+        "cross_speed": 1.00
+      },
+      "main_gun": {
+        "caliber_mm": 125,
+        "type": "smoothbore",
+        "autoloader": true,
+        "pen_ke_modifier": 0.95,
+        "pen_ce_modifier": 1.00,
+        "rof_modifier": 1.10,
+        "accuracy_modifier": 0.90
+      },
+      "protection": {
+        "era_equipped": true,
+        "era_type": "FY-4",
+        "aps_equipped": false,
+        "composite_gen": 2
+      },
+      "notes": "主力MBT、FY-4 ERA、TCS-2電子光学防護、1500両以上配備"
+    },
+    {
+      "id": "CHN_Type96",
+      "display_name": "96式",
+      "display_name_en": "Type 96 (ZTZ-96)",
+      "base_archetype": "TANK_PLT",
+      "mobility_class": "TRACKED",
+      "era": "1990s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 41,
+        "crew": 3,
+        "engine": "12150L diesel 730hp",
+        "max_speed_kmh": 57
+      },
+      "modifiers": {
+        "armor_ke_front": 0.85,
+        "armor_ke_side": 0.80,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.95,
+        "armor_ce_side": 0.85,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.90,
+        "spot_range_moving": 0.85,
+        "road_speed": 1.00,
+        "cross_speed": 0.95
+      },
+      "main_gun": {
+        "caliber_mm": 125,
+        "type": "smoothbore",
+        "autoloader": true,
+        "pen_ke_modifier": 0.90,
+        "pen_ce_modifier": 0.95,
+        "rof_modifier": 1.10,
+        "accuracy_modifier": 0.85
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false,
+        "composite_gen": 2
+      },
+      "notes": "第二世代MBT、大量配備、複合装甲"
+    },
+    {
+      "id": "CHN_Type15",
+      "display_name": "15式軽戦車",
+      "display_name_en": "Type 15 (ZTQ-15)",
+      "base_archetype": "TANK_PLT",
+      "mobility_class": "TRACKED",
+      "era": "2010s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 35,
+        "crew": 3,
+        "engine": "diesel 1000hp",
+        "max_speed_kmh": 70
+      },
+      "modifiers": {
+        "armor_ke_front": 0.80,
+        "armor_ke_side": 0.70,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.90,
+        "armor_ce_side": 0.80,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.05,
+        "spot_range_moving": 1.00,
+        "road_speed": 1.15,
+        "cross_speed": 1.10
+      },
+      "main_gun": {
+        "caliber_mm": 105,
+        "type": "rifled",
+        "autoloader": true,
+        "pen_ke_modifier": 0.95,
+        "pen_ce_modifier": 1.00,
+        "rof_modifier": 1.15,
+        "accuracy_modifier": 1.00
+      },
+      "protection": {
+        "era_equipped": true,
+        "aps_equipped": false,
+        "composite_gen": 3
+      },
+      "notes": "軽量MBT、高地・山岳向け、Y-20で2両空輸可、チベット配備"
+    },
+    {
+      "id": "CHN_ZBD04A",
+      "display_name": "04A式",
+      "display_name_en": "ZBD-04A",
+      "base_archetype": "IFV_PLT",
+      "mobility_class": "TRACKED",
+      "era": "2000s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 24,
+        "crew": 3,
+        "passengers": 7,
+        "engine": "diesel 670hp",
+        "max_speed_kmh": 75
+      },
+      "modifiers": {
+        "armor_ke_front": 0.90,
+        "armor_ke_side": 0.80,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.95,
+        "armor_ce_side": 0.85,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.00,
+        "spot_range_moving": 0.95,
+        "road_speed": 1.10,
+        "cross_speed": 1.05
+      },
+      "main_gun": {
+        "caliber_mm": 30,
+        "type": "autocannon",
+        "pen_ke_modifier": 1.00,
+        "pen_ce_modifier": 1.00,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 0.95
+      },
+      "atgm": {
+        "type": "HJ-73",
+        "range_m": 3000,
+        "pen_ce": 85,
+        "count": 2
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "主力IFV、30mm前面防護、.50cal側面防護、2400両以上配備"
+    },
+    {
+      "id": "CHN_ZBD04",
+      "display_name": "04式",
+      "display_name_en": "ZBD-04",
+      "base_archetype": "IFV_PLT",
+      "mobility_class": "TRACKED",
+      "era": "2000s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 20,
+        "crew": 3,
+        "passengers": 7,
+        "engine": "diesel 600hp",
+        "max_speed_kmh": 65
+      },
+      "modifiers": {
+        "armor_ke_front": 0.85,
+        "armor_ke_side": 0.75,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.85,
+        "armor_ce_side": 0.80,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.95,
+        "spot_range_moving": 0.90,
+        "road_speed": 1.05,
+        "cross_speed": 1.00
+      },
+      "main_gun": {
+        "caliber_mm": 100,
+        "type": "gun_launcher",
+        "secondary_caliber_mm": 30,
+        "pen_ke_modifier": 1.10,
+        "pen_ce_modifier": 1.05,
+        "rof_modifier": 0.90,
+        "accuracy_modifier": 0.90
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "BMP-3類似、100mm砲+30mm機関砲、水陸両用"
+    },
+    {
+      "id": "CHN_ZBD09",
+      "display_name": "09式",
+      "display_name_en": "ZBD-09 Snow Leopard",
+      "base_archetype": "IFV_PLT",
+      "mobility_class": "WHEELED",
+      "era": "2000s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 21,
+        "crew": 3,
+        "passengers": 7,
+        "engine": "Deutz BF6M1015C diesel 440hp",
+        "max_speed_kmh": 100
+      },
+      "modifiers": {
+        "armor_ke_front": 0.85,
+        "armor_ke_side": 0.75,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.85,
+        "armor_ce_side": 0.75,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.95,
+        "spot_range_moving": 0.90,
+        "road_speed": 1.30,
+        "cross_speed": 0.90
+      },
+      "main_gun": {
+        "caliber_mm": 30,
+        "type": "autocannon",
+        "pen_ke_modifier": 0.95,
+        "pen_ce_modifier": 1.00,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 0.90
+      },
+      "atgm": {
+        "type": "HJ-73",
+        "range_m": 3000,
+        "pen_ce": 85,
+        "count": 2
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "8輪IFV、30mm機関砲、水陸両用8km/h、中央タイヤ空気圧制御"
+    },
+    {
+      "id": "CHN_ZBL08",
+      "display_name": "08式APC",
+      "display_name_en": "ZBL-08",
+      "base_archetype": "RECON_VEH",
+      "mobility_class": "WHEELED",
+      "era": "2000s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 18,
+        "crew": 3,
+        "passengers": 8,
+        "engine": "Deutz BF6M1015C diesel 440hp",
+        "max_speed_kmh": 100
+      },
+      "modifiers": {
+        "armor_ke_front": 0.80,
+        "armor_ke_side": 0.70,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.80,
+        "armor_ce_side": 0.70,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.90,
+        "spot_range_moving": 0.85,
+        "road_speed": 1.30,
+        "cross_speed": 0.90
+      },
+      "main_gun": {
+        "caliber_mm": 12.7,
+        "type": "hmg",
+        "pen_ke_modifier": 0.75,
+        "pen_ce_modifier": 0.75,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 0.90
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "8輪APC、ZBD-09ファミリー基本型、12.7mm RWS"
+    },
+    {
+      "id": "CHN_ZTL11",
+      "display_name": "11式突撃砲",
+      "display_name_en": "ZTL-11",
+      "base_archetype": "RECON_VEH",
+      "mobility_class": "WHEELED",
+      "era": "2010s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 23,
+        "crew": 4,
+        "engine": "Deutz BF6M1015C diesel 440hp",
+        "max_speed_kmh": 100
+      },
+      "modifiers": {
+        "armor_ke_front": 0.85,
+        "armor_ke_side": 0.75,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.90,
+        "armor_ce_side": 0.80,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.00,
+        "spot_range_moving": 0.95,
+        "road_speed": 1.30,
+        "cross_speed": 0.85
+      },
+      "main_gun": {
+        "caliber_mm": 105,
+        "type": "rifled",
+        "pen_ke_modifier": 1.00,
+        "pen_ce_modifier": 1.05,
+        "rof_modifier": 0.80,
+        "accuracy_modifier": 0.95
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "8輪突撃砲、105mm ZPL-98A砲、GP105砲発射ATGM対応、水陸両用"
+    },
+    {
+      "id": "CHN_CSK181",
+      "display_name": "猛士181",
+      "display_name_en": "CSK-181 Mengshi",
+      "base_archetype": "RECON_VEH",
+      "mobility_class": "WHEELED",
+      "era": "2010s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 8,
+        "crew": 2,
+        "passengers": 8,
+        "engine": "diesel",
+        "max_speed_kmh": 110
+      },
+      "modifiers": {
+        "armor_ke_front": 0.75,
+        "armor_ke_side": 0.65,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.75,
+        "armor_ce_side": 0.65,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.90,
+        "spot_range_moving": 0.85,
+        "road_speed": 1.40,
+        "cross_speed": 0.80
+      },
+      "main_gun": {
+        "caliber_mm": 12.7,
+        "type": "hmg",
+        "pen_ke_modifier": 0.75,
+        "pen_ce_modifier": 0.75,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 0.85
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "4輪軽装甲車、MRAP能力、RWS標準装備、JLTV相当"
+    },
+    {
+      "id": "CHN_PLZ05",
+      "display_name": "05式自走砲",
+      "display_name_en": "PLZ-05",
+      "base_archetype": "MORTAR_SEC",
+      "mobility_class": "TRACKED",
+      "era": "2000s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 35,
+        "crew": 5,
+        "engine": "ZZ8V-150HB diesel 540kW",
+        "max_speed_kmh": 65
+      },
+      "modifiers": {
+        "armor_ke_front": 0.85,
+        "armor_ke_side": 0.75,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.85,
+        "armor_ce_side": 0.75,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.85,
+        "spot_range_moving": 0.80,
+        "road_speed": 1.05,
+        "cross_speed": 0.95
+      },
+      "main_gun": {
+        "caliber_mm": 155,
+        "type": "howitzer",
+        "range_km": 39,
+        "range_km_rap": 50,
+        "range_km_pgm": 100,
+        "rof_rpm": 10,
+        "pen_ke_modifier": 1.00,
+        "pen_ce_modifier": 1.20,
+        "rof_modifier": 1.20,
+        "accuracy_modifier": 1.05
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "155mm/52口径自走榴弾砲、射程50km（RAP）、WS-35誘導弾100km、毎分10発"
+    },
+    {
+      "id": "CHN_PLZ07",
+      "display_name": "07式自走砲",
+      "display_name_en": "PLZ-07",
+      "base_archetype": "MORTAR_SEC",
+      "mobility_class": "TRACKED",
+      "era": "2000s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 25,
+        "crew": 4,
+        "engine": "diesel 520hp",
+        "max_speed_kmh": 65
+      },
+      "modifiers": {
+        "armor_ke_front": 0.80,
+        "armor_ke_side": 0.70,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.80,
+        "armor_ce_side": 0.70,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.85,
+        "spot_range_moving": 0.80,
+        "road_speed": 1.05,
+        "cross_speed": 0.95
+      },
+      "main_gun": {
+        "caliber_mm": 122,
+        "type": "howitzer",
+        "range_km": 18,
+        "range_km_rap": 27,
+        "rof_rpm": 8,
+        "pen_ke_modifier": 1.00,
+        "pen_ce_modifier": 1.10,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 0.95
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "122mm自走榴弾砲、ZBD-04シャーシ、毎分8発"
+    },
+    {
+      "id": "CHN_HQ17",
+      "display_name": "紅旗17",
+      "display_name_en": "HQ-17",
+      "base_archetype": "RECON_VEH",
+      "mobility_class": "TRACKED",
+      "era": "2000s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 32,
+        "crew": 3,
+        "engine": "diesel 750-800hp",
+        "max_speed_kmh": 65
+      },
+      "modifiers": {
+        "armor_ke_front": 0.80,
+        "armor_ke_side": 0.70,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.80,
+        "armor_ce_side": 0.70,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.50,
+        "spot_range_moving": 1.20,
+        "road_speed": 1.05,
+        "cross_speed": 0.95
+      },
+      "main_gun": {
+        "caliber_mm": 0,
+        "type": "sam",
+        "missiles": 8,
+        "range_km": 15,
+        "altitude_km": 10,
+        "pen_ke_modifier": 0.00,
+        "pen_ce_modifier": 1.50,
+        "rof_modifier": 0.60,
+        "accuracy_modifier": 1.10
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "短距離SAM、Tor-M1類似、射程15km、高度10km、8発搭載"
+    },
+    {
+      "id": "CHN_HQ17A",
+      "display_name": "紅旗17A",
+      "display_name_en": "HQ-17A",
+      "base_archetype": "RECON_VEH",
+      "mobility_class": "WHEELED",
+      "era": "2010s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 30,
+        "crew": 3,
+        "engine": "diesel 400hp",
+        "max_speed_kmh": 80
+      },
+      "modifiers": {
+        "armor_ke_front": 0.75,
+        "armor_ke_side": 0.65,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.75,
+        "armor_ce_side": 0.65,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.50,
+        "spot_range_moving": 1.20,
+        "road_speed": 1.20,
+        "cross_speed": 0.85
+      },
+      "main_gun": {
+        "caliber_mm": 0,
+        "type": "sam",
+        "missiles": 8,
+        "range_km": 15,
+        "altitude_km": 10,
+        "pen_ke_modifier": 0.00,
+        "pen_ce_modifier": 1.50,
+        "rof_modifier": 0.60,
+        "accuracy_modifier": 1.10
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "6輪SAM、MZKT-6922類似シャーシ、射程15km、輸出型FM-2000"
+    },
+    {
+      "id": "CHN_PGZ09",
+      "display_name": "09式対空砲",
+      "display_name_en": "PGZ-09",
+      "base_archetype": "RECON_VEH",
+      "mobility_class": "TRACKED",
+      "era": "2000s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 38,
+        "crew": 3,
+        "engine": "diesel 800hp",
+        "max_speed_kmh": 65
+      },
+      "modifiers": {
+        "armor_ke_front": 0.85,
+        "armor_ke_side": 0.75,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.85,
+        "armor_ce_side": 0.75,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.40,
+        "spot_range_moving": 1.10,
+        "road_speed": 1.05,
+        "cross_speed": 0.95
+      },
+      "main_gun": {
+        "caliber_mm": 35,
+        "type": "autocannon_dual",
+        "rof_rpm": 1100,
+        "range_m": 4000,
+        "pen_ke_modifier": 1.00,
+        "pen_ce_modifier": 1.00,
+        "rof_modifier": 1.50,
+        "accuracy_modifier": 1.00
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "35mm連装SPAAG、Oerlikon KDA類似、捜索レーダー20km、追尾レーダー搭載"
+    },
+    {
+      "id": "CHN_ZBD03",
+      "display_name": "03式空挺IFV",
+      "display_name_en": "ZBD-03",
+      "base_archetype": "IFV_PLT",
+      "mobility_class": "TRACKED",
+      "era": "2000s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 8,
+        "crew": 2,
+        "passengers": 4,
+        "engine": "diesel 160hp",
+        "max_speed_kmh": 72
+      },
+      "modifiers": {
+        "armor_ke_front": 0.70,
+        "armor_ke_side": 0.60,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.70,
+        "armor_ce_side": 0.60,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.90,
+        "spot_range_moving": 0.85,
+        "road_speed": 1.10,
+        "cross_speed": 1.00
+      },
+      "main_gun": {
+        "caliber_mm": 30,
+        "type": "autocannon",
+        "pen_ke_modifier": 0.90,
+        "pen_ce_modifier": 0.95,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 0.90
+      },
+      "atgm": {
+        "type": "HJ-73D",
+        "range_m": 3000,
+        "pen_ce": 85,
+        "count": 2
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "空挺IFV、超軽量8t、空中投下可、30mm機関砲"
+    },
+    {
+      "id": "CHN_Type63A",
+      "display_name": "63A式",
+      "display_name_en": "Type 63A",
+      "base_archetype": "RECON_VEH",
+      "mobility_class": "TRACKED",
+      "era": "1990s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 22,
+        "crew": 4,
+        "engine": "diesel 580hp",
+        "max_speed_kmh": 64
+      },
+      "modifiers": {
+        "armor_ke_front": 0.75,
+        "armor_ke_side": 0.65,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.80,
+        "armor_ce_side": 0.70,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.90,
+        "spot_range_moving": 0.85,
+        "road_speed": 1.05,
+        "cross_speed": 1.00
+      },
+      "main_gun": {
+        "caliber_mm": 105,
+        "type": "rifled",
+        "pen_ke_modifier": 0.90,
+        "pen_ce_modifier": 0.95,
+        "rof_modifier": 0.75,
+        "accuracy_modifier": 0.85
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "水陸両用軽戦車、台湾海峡上陸用、水上速度14km/h"
+    },
+    {
+      "id": "CHN_ZSD89",
+      "display_name": "89式APC",
+      "display_name_en": "ZSD-89 (Type 89)",
+      "base_archetype": "LOG_TRUCK",
+      "mobility_class": "TRACKED",
+      "era": "1980s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 13.5,
+        "crew": 2,
+        "passengers": 13,
+        "engine": "BF8L413F diesel 320hp",
+        "max_speed_kmh": 65
+      },
+      "modifiers": {
+        "armor_ke_front": 0.75,
+        "armor_ke_side": 0.65,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.75,
+        "armor_ce_side": 0.65,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.85,
+        "spot_range_moving": 0.80,
+        "road_speed": 1.05,
+        "cross_speed": 1.00
+      },
+      "main_gun": {
+        "caliber_mm": 12.7,
+        "type": "hmg",
+        "pen_ke_modifier": 0.75,
+        "pen_ce_modifier": 0.75,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 0.85
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "標準APC、13名搭載、水陸両用"
+    }
+  ]
+}

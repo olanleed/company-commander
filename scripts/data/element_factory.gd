@@ -24,10 +24,18 @@ const ARCHETYPE_WEAPONS: Dictionary = {
 	"INF_MG": ["CW_MG_STD"],
 	"TANK_PLT": ["CW_TANK_KE", "CW_TANK_HEATMP", "CW_COAX_MG"],  # 主砲AP/HE + 同軸MG
 	"IFV_PLT": ["CW_AUTOCANNON_30", "CW_ATGM", "CW_COAX_MG"],  # 機関砲 + ATGM + 同軸MG
+	"APC_PLT": ["CW_HMG"],  # 12.7mm重機関銃
+	"LIGHT_VEH": ["CW_RIFLE_STD"],  # 軽火器のみ
+	"COMMAND_VEH": ["CW_HMG"],  # 12.7mm重機関銃
 	"RECON_VEH": ["CW_RIFLE_STD"],  # 軽火器のみ
 	"RECON_TEAM": ["CW_RIFLE_STD"],
 	"MORTAR_SEC": ["CW_MORTAR_HE", "CW_MORTAR_SMOKE"],
+	"SP_MORTAR": ["CW_MORTAR_120"],  # 120mm自走迫撃砲
+	"SP_ARTILLERY": ["CW_HOWITZER_155"],  # 155mm榴弾砲
+	"SPAAG": ["CW_AUTOCANNON_35"],  # 35mm連装機関砲
+	"SAM_VEH": [],  # 対空ミサイル（未実装）
 	"LOG_TRUCK": [],  # 武装なし
+	"CMD_HQ": ["CW_RIFLE_STD"],  # 軽火器のみ
 }
 
 # =============================================================================
@@ -334,8 +342,17 @@ static func get_all_archetype_ids() -> Array[String]:
 		"INF_AT",
 		"INF_MG",
 		"TANK_PLT",
+		"IFV_PLT",
+		"APC_PLT",
+		"LIGHT_VEH",
+		"COMMAND_VEH",
 		"RECON_VEH",
 		"RECON_TEAM",
 		"MORTAR_SEC",
+		"SP_MORTAR",
+		"SP_ARTILLERY",
+		"SPAAG",
+		"SAM_VEH",
 		"LOG_TRUCK",
+		"CMD_HQ",
 	]

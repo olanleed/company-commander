@@ -1,0 +1,867 @@
+{
+  "catalog_version": "0.3",
+  "nation": "RUS",
+  "nation_name": "Russian Federation",
+  "last_updated": "2026-02",
+  "vehicles": [
+    {
+      "id": "RUS_T90M",
+      "display_name": "T-90M",
+      "display_name_en": "T-90M Proryv",
+      "base_archetype": "TANK_PLT",
+      "mobility_class": "TRACKED",
+      "era": "2020s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 50,
+        "crew": 3,
+        "engine": "V-92S2F diesel 1130hp",
+        "max_speed_kmh": 70
+      },
+      "modifiers": {
+        "armor_ke_front": 1.05,
+        "armor_ke_side": 0.90,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 1.15,
+        "armor_ce_side": 1.00,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.05,
+        "spot_range_moving": 0.95,
+        "road_speed": 1.10,
+        "cross_speed": 1.10
+      },
+      "main_gun": {
+        "caliber_mm": 125,
+        "type": "smoothbore",
+        "autoloader": true,
+        "pen_ke_modifier": 1.05,
+        "pen_ce_modifier": 1.10,
+        "rof_modifier": 1.10,
+        "accuracy_modifier": 1.00
+      },
+      "protection": {
+        "era_equipped": true,
+        "era_type": "Relikt",
+        "aps_equipped": true,
+        "aps_type": "Arena-M",
+        "composite_gen": 3
+      },
+      "notes": "最新型T-90、Relikt ERA、Arena-M APS、新型2A46M-5主砲、対KE防護1100-1300mm RHS相当"
+    },
+    {
+      "id": "RUS_T90A",
+      "display_name": "T-90A",
+      "display_name_en": "T-90A Vladimir",
+      "base_archetype": "TANK_PLT",
+      "mobility_class": "TRACKED",
+      "era": "2000s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 46.5,
+        "crew": 3,
+        "engine": "V-92S2 diesel 1000hp",
+        "max_speed_kmh": 60
+      },
+      "modifiers": {
+        "armor_ke_front": 0.95,
+        "armor_ke_side": 0.85,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 1.05,
+        "armor_ce_side": 0.95,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.95,
+        "spot_range_moving": 0.90,
+        "road_speed": 1.00,
+        "cross_speed": 1.00
+      },
+      "main_gun": {
+        "caliber_mm": 125,
+        "type": "smoothbore",
+        "autoloader": true,
+        "pen_ke_modifier": 1.00,
+        "pen_ce_modifier": 1.05,
+        "rof_modifier": 1.10,
+        "accuracy_modifier": 0.95
+      },
+      "protection": {
+        "era_equipped": true,
+        "era_type": "Kontakt-5",
+        "aps_equipped": true,
+        "aps_type": "Shtora-1",
+        "composite_gen": 3
+      },
+      "notes": "標準T-90A、溶接砲塔、Kontakt-5 ERA、Shtora-1 APS"
+    },
+    {
+      "id": "RUS_T80BVM",
+      "display_name": "T-80BVM",
+      "display_name_en": "T-80BVM",
+      "base_archetype": "TANK_PLT",
+      "mobility_class": "TRACKED",
+      "era": "2010s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 45.7,
+        "crew": 3,
+        "engine": "GTD-1250 gas turbine 1250hp",
+        "max_speed_kmh": 70
+      },
+      "modifiers": {
+        "armor_ke_front": 1.00,
+        "armor_ke_side": 0.90,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 1.10,
+        "armor_ce_side": 1.00,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.00,
+        "spot_range_moving": 1.00,
+        "road_speed": 1.15,
+        "cross_speed": 1.10
+      },
+      "main_gun": {
+        "caliber_mm": 125,
+        "type": "smoothbore",
+        "autoloader": true,
+        "pen_ke_modifier": 1.05,
+        "pen_ce_modifier": 1.05,
+        "rof_modifier": 1.10,
+        "accuracy_modifier": 1.00
+      },
+      "protection": {
+        "era_equipped": true,
+        "era_type": "Relikt",
+        "aps_equipped": false,
+        "composite_gen": 3
+      },
+      "notes": "ガスタービンエンジン搭載、高機動性、Relikt ERA、2A46M-4主砲、Svinets APFSDS対応"
+    },
+    {
+      "id": "RUS_T72B3M",
+      "display_name": "T-72B3M",
+      "display_name_en": "T-72B3 Obr. 2016",
+      "base_archetype": "TANK_PLT",
+      "mobility_class": "TRACKED",
+      "era": "2010s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 45,
+        "crew": 3,
+        "engine": "V-92S2F diesel 1130hp",
+        "max_speed_kmh": 70
+      },
+      "modifiers": {
+        "armor_ke_front": 0.90,
+        "armor_ke_side": 0.85,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 1.05,
+        "armor_ce_side": 0.95,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.95,
+        "spot_range_moving": 0.90,
+        "road_speed": 1.10,
+        "cross_speed": 1.05
+      },
+      "main_gun": {
+        "caliber_mm": 125,
+        "type": "smoothbore",
+        "autoloader": true,
+        "pen_ke_modifier": 1.00,
+        "pen_ce_modifier": 1.00,
+        "rof_modifier": 1.10,
+        "accuracy_modifier": 0.95
+      },
+      "protection": {
+        "era_equipped": true,
+        "era_type": "Kontakt-5/Relikt",
+        "aps_equipped": false,
+        "composite_gen": 2
+      },
+      "notes": "近代化T-72B3、Svinets APFSDS対応、前面Kontakt-5/側面Relikt ERA"
+    },
+    {
+      "id": "RUS_T72B3",
+      "display_name": "T-72B3",
+      "display_name_en": "T-72B3",
+      "base_archetype": "TANK_PLT",
+      "mobility_class": "TRACKED",
+      "era": "2010s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 46,
+        "crew": 3,
+        "engine": "V-92S2 diesel 1000hp",
+        "max_speed_kmh": 60
+      },
+      "modifiers": {
+        "armor_ke_front": 0.85,
+        "armor_ke_side": 0.80,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 1.00,
+        "armor_ce_side": 0.90,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.90,
+        "spot_range_moving": 0.85,
+        "road_speed": 1.00,
+        "cross_speed": 1.00
+      },
+      "main_gun": {
+        "caliber_mm": 125,
+        "type": "smoothbore",
+        "autoloader": true,
+        "pen_ke_modifier": 0.95,
+        "pen_ce_modifier": 1.00,
+        "rof_modifier": 1.10,
+        "accuracy_modifier": 0.90
+      },
+      "protection": {
+        "era_equipped": true,
+        "era_type": "Kontakt-5",
+        "aps_equipped": false,
+        "composite_gen": 2
+      },
+      "notes": "T-72B近代化型、Kontakt-5 ERA装備、多数配備"
+    },
+    {
+      "id": "RUS_BMP3",
+      "display_name": "BMP-3",
+      "display_name_en": "BMP-3",
+      "base_archetype": "IFV_PLT",
+      "mobility_class": "TRACKED",
+      "era": "1990s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 18.7,
+        "crew": 3,
+        "passengers": 7,
+        "engine": "UTD-29M diesel 500hp",
+        "max_speed_kmh": 70
+      },
+      "modifiers": {
+        "armor_ke_front": 0.85,
+        "armor_ke_side": 0.80,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.90,
+        "armor_ce_side": 0.85,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.00,
+        "spot_range_moving": 0.95,
+        "road_speed": 1.10,
+        "cross_speed": 1.05
+      },
+      "main_gun": {
+        "caliber_mm": 100,
+        "type": "gun_launcher",
+        "secondary_caliber_mm": 30,
+        "pen_ke_modifier": 1.15,
+        "pen_ce_modifier": 1.10,
+        "rof_modifier": 0.90,
+        "accuracy_modifier": 0.90
+      },
+      "atgm": {
+        "type": "9M117 Bastion",
+        "range_m": 4000,
+        "pen_ce": 90,
+        "count": 8
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "100mm砲+30mm機関砲+ATGM、高火力だが装甲薄、水陸両用"
+    },
+    {
+      "id": "RUS_BMP3M",
+      "display_name": "BMP-3M",
+      "display_name_en": "BMP-3M Dragun",
+      "base_archetype": "IFV_PLT",
+      "mobility_class": "TRACKED",
+      "era": "2020s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 21,
+        "crew": 3,
+        "passengers": 7,
+        "engine": "UTD-32T diesel 660hp",
+        "max_speed_kmh": 70
+      },
+      "modifiers": {
+        "armor_ke_front": 0.90,
+        "armor_ke_side": 0.85,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 1.05,
+        "armor_ce_side": 0.95,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.05,
+        "spot_range_moving": 1.00,
+        "road_speed": 1.10,
+        "cross_speed": 1.05
+      },
+      "main_gun": {
+        "caliber_mm": 100,
+        "type": "gun_launcher",
+        "secondary_caliber_mm": 30,
+        "pen_ke_modifier": 1.15,
+        "pen_ce_modifier": 1.10,
+        "rof_modifier": 0.95,
+        "accuracy_modifier": 0.95
+      },
+      "atgm": {
+        "type": "9M117M1 Arkan",
+        "range_m": 5500,
+        "pen_ce": 95,
+        "count": 8
+      },
+      "protection": {
+        "era_equipped": true,
+        "aps_equipped": false
+      },
+      "notes": "BMP-3近代化型、ERA追加、新型エンジン、改良型射撃統制装置"
+    },
+    {
+      "id": "RUS_BMP2",
+      "display_name": "BMP-2",
+      "display_name_en": "BMP-2",
+      "base_archetype": "IFV_PLT",
+      "mobility_class": "TRACKED",
+      "era": "1980s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 14.3,
+        "crew": 3,
+        "passengers": 7,
+        "engine": "UTD-20 diesel 300hp",
+        "max_speed_kmh": 65
+      },
+      "modifiers": {
+        "armor_ke_front": 0.80,
+        "armor_ke_side": 0.75,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.80,
+        "armor_ce_side": 0.75,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.90,
+        "spot_range_moving": 0.85,
+        "road_speed": 1.05,
+        "cross_speed": 1.00
+      },
+      "main_gun": {
+        "caliber_mm": 30,
+        "type": "autocannon",
+        "pen_ke_modifier": 0.95,
+        "pen_ce_modifier": 1.00,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 0.90
+      },
+      "atgm": {
+        "type": "9M113 Konkurs",
+        "range_m": 4000,
+        "pen_ce": 80,
+        "count": 4
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "30mm機関砲、Konkurs ATGM搭載、軽量だが脆弱、大量配備"
+    },
+    {
+      "id": "RUS_BRM3K",
+      "display_name": "BRM-3K",
+      "display_name_en": "BRM-3K Rys",
+      "base_archetype": "RECON_VEH",
+      "mobility_class": "TRACKED",
+      "era": "1990s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 19,
+        "crew": 6,
+        "engine": "UTD-29M diesel 500hp",
+        "max_speed_kmh": 70
+      },
+      "modifiers": {
+        "armor_ke_front": 0.85,
+        "armor_ke_side": 0.80,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.85,
+        "armor_ce_side": 0.80,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.30,
+        "spot_range_moving": 1.20,
+        "road_speed": 1.10,
+        "cross_speed": 1.05
+      },
+      "main_gun": {
+        "caliber_mm": 30,
+        "type": "autocannon",
+        "pen_ke_modifier": 0.95,
+        "pen_ce_modifier": 1.00,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 0.95
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "BMP-3ベース偵察車、高性能センサー、熱画像装置、レーダー搭載、水陸両用"
+    },
+    {
+      "id": "RUS_BTR82A",
+      "display_name": "BTR-82A",
+      "display_name_en": "BTR-82A",
+      "base_archetype": "RECON_VEH",
+      "mobility_class": "WHEELED",
+      "era": "2010s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 16,
+        "crew": 3,
+        "passengers": 7,
+        "engine": "KamAZ-740.14 diesel 300hp",
+        "max_speed_kmh": 80
+      },
+      "modifiers": {
+        "armor_ke_front": 0.90,
+        "armor_ke_side": 0.80,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.90,
+        "armor_ce_side": 0.80,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.95,
+        "spot_range_moving": 0.90,
+        "road_speed": 1.25,
+        "cross_speed": 0.95
+      },
+      "main_gun": {
+        "caliber_mm": 30,
+        "type": "autocannon",
+        "pen_ke_modifier": 0.95,
+        "pen_ce_modifier": 1.00,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 0.95
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "8輪装甲車、30mm 2A72機関砲、高い路上速度、水陸両用"
+    },
+    {
+      "id": "RUS_BTR80",
+      "display_name": "BTR-80",
+      "display_name_en": "BTR-80",
+      "base_archetype": "RECON_VEH",
+      "mobility_class": "WHEELED",
+      "era": "1980s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 13.6,
+        "crew": 3,
+        "passengers": 7,
+        "engine": "KamAZ-7403 diesel 260hp",
+        "max_speed_kmh": 80
+      },
+      "modifiers": {
+        "armor_ke_front": 0.80,
+        "armor_ke_side": 0.75,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.80,
+        "armor_ce_side": 0.75,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.90,
+        "spot_range_moving": 0.85,
+        "road_speed": 1.25,
+        "cross_speed": 0.90
+      },
+      "main_gun": {
+        "caliber_mm": 14.5,
+        "type": "hmg",
+        "pen_ke_modifier": 0.80,
+        "pen_ce_modifier": 0.80,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 0.90
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "8輪装甲車、KPVT 14.5mm重機関銃、大量配備、水陸両用"
+    },
+    {
+      "id": "RUS_MTLB",
+      "display_name": "MT-LB",
+      "display_name_en": "MT-LB",
+      "base_archetype": "LOG_TRUCK",
+      "mobility_class": "TRACKED",
+      "era": "1970s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 11.9,
+        "crew": 2,
+        "passengers": 11,
+        "engine": "YaMZ-238 diesel 240hp",
+        "max_speed_kmh": 60
+      },
+      "modifiers": {
+        "armor_ke_front": 0.70,
+        "armor_ke_side": 0.65,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.70,
+        "armor_ce_side": 0.65,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.80,
+        "spot_range_moving": 0.75,
+        "road_speed": 1.00,
+        "cross_speed": 1.10
+      },
+      "main_gun": {
+        "caliber_mm": 7.62,
+        "type": "mmg",
+        "pen_ke_modifier": 0.60,
+        "pen_ce_modifier": 0.60,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 0.85
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "多目的装軌車、軽装甲、水陸両用、広幅履帯で湿地帯適応"
+    },
+    {
+      "id": "RUS_BRDM2",
+      "display_name": "BRDM-2",
+      "display_name_en": "BRDM-2",
+      "base_archetype": "RECON_VEH",
+      "mobility_class": "WHEELED",
+      "era": "1960s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 7,
+        "crew": 4,
+        "engine": "GAZ-41 gasoline 140hp",
+        "max_speed_kmh": 100
+      },
+      "modifiers": {
+        "armor_ke_front": 0.70,
+        "armor_ke_side": 0.60,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.70,
+        "armor_ce_side": 0.60,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.95,
+        "spot_range_moving": 0.90,
+        "road_speed": 1.30,
+        "cross_speed": 0.85
+      },
+      "main_gun": {
+        "caliber_mm": 14.5,
+        "type": "hmg",
+        "pen_ke_modifier": 0.80,
+        "pen_ce_modifier": 0.80,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 0.85
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "4輪偵察車、KPVT 14.5mm、水陸両用、補助腹部車輪で壕通過可"
+    },
+    {
+      "id": "RUS_TigrM",
+      "display_name": "ティーグルM",
+      "display_name_en": "Tigr-M GAZ-233114",
+      "base_archetype": "RECON_VEH",
+      "mobility_class": "WHEELED",
+      "era": "2010s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 5.3,
+        "crew": 2,
+        "passengers": 8,
+        "engine": "YaMZ-534 diesel 215hp",
+        "max_speed_kmh": 125
+      },
+      "modifiers": {
+        "armor_ke_front": 0.75,
+        "armor_ke_side": 0.65,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.75,
+        "armor_ce_side": 0.65,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.90,
+        "spot_range_moving": 0.85,
+        "road_speed": 1.40,
+        "cross_speed": 0.80
+      },
+      "main_gun": {
+        "caliber_mm": 7.62,
+        "type": "mmg",
+        "pen_ke_modifier": 0.60,
+        "pen_ce_modifier": 0.60,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 0.85
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "4輪軽装甲車、7.62mm対応防護、STANAG Level 1相当"
+    },
+    {
+      "id": "RUS_2S19",
+      "display_name": "2S19",
+      "display_name_en": "2S19 Msta-S",
+      "base_archetype": "MORTAR_SEC",
+      "mobility_class": "TRACKED",
+      "era": "1990s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 42,
+        "crew": 5,
+        "engine": "V-84A diesel 780hp",
+        "max_speed_kmh": 60
+      },
+      "modifiers": {
+        "armor_ke_front": 0.85,
+        "armor_ke_side": 0.75,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.85,
+        "armor_ce_side": 0.75,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.85,
+        "spot_range_moving": 0.80,
+        "road_speed": 1.00,
+        "cross_speed": 0.95
+      },
+      "main_gun": {
+        "caliber_mm": 152,
+        "type": "howitzer",
+        "range_km": 24.7,
+        "range_km_bb": 29,
+        "range_km_rap": 36,
+        "rof_rpm": 8,
+        "pen_ke_modifier": 1.00,
+        "pen_ce_modifier": 1.20,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 1.00
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "152mm自走榴弾砲、T-80/T-72シャーシ、射程29km（BB弾）、毎分8発"
+    },
+    {
+      "id": "RUS_2S35",
+      "display_name": "2S35",
+      "display_name_en": "2S35 Koalitsiya-SV",
+      "base_archetype": "MORTAR_SEC",
+      "mobility_class": "TRACKED",
+      "era": "2020s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 55,
+        "crew": 3,
+        "engine": "diesel 1000hp",
+        "max_speed_kmh": 60
+      },
+      "modifiers": {
+        "armor_ke_front": 0.90,
+        "armor_ke_side": 0.80,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.90,
+        "armor_ce_side": 0.80,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.90,
+        "spot_range_moving": 0.85,
+        "road_speed": 1.00,
+        "cross_speed": 0.95
+      },
+      "main_gun": {
+        "caliber_mm": 152,
+        "type": "howitzer",
+        "range_km": 40,
+        "range_km_pgm": 80,
+        "rof_rpm": 16,
+        "pen_ke_modifier": 1.00,
+        "pen_ce_modifier": 1.25,
+        "rof_modifier": 1.50,
+        "accuracy_modifier": 1.10
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "最新型152mm自走砲、T-90シャーシ、射程80km（誘導弾）、毎分16発、全自動"
+    },
+    {
+      "id": "RUS_BukM2",
+      "display_name": "ブークM2",
+      "display_name_en": "9K317 Buk-M2",
+      "base_archetype": "RECON_VEH",
+      "mobility_class": "TRACKED",
+      "era": "2000s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 35,
+        "crew": 4,
+        "engine": "diesel 710hp",
+        "max_speed_kmh": 65
+      },
+      "modifiers": {
+        "armor_ke_front": 0.80,
+        "armor_ke_side": 0.70,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.80,
+        "armor_ce_side": 0.70,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.50,
+        "spot_range_moving": 1.20,
+        "road_speed": 1.05,
+        "cross_speed": 0.95
+      },
+      "main_gun": {
+        "caliber_mm": 0,
+        "type": "sam",
+        "missiles": 4,
+        "range_km": 45,
+        "altitude_km": 25,
+        "pen_ke_modifier": 0.00,
+        "pen_ce_modifier": 1.50,
+        "rof_modifier": 0.50,
+        "accuracy_modifier": 1.10
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "中距離SAM、9M317ミサイル×4、射程45km、高度25km"
+    },
+    {
+      "id": "RUS_BukM3",
+      "display_name": "ブークM3",
+      "display_name_en": "9K317M Buk-M3 Viking",
+      "base_archetype": "RECON_VEH",
+      "mobility_class": "TRACKED",
+      "era": "2020s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 38,
+        "crew": 3,
+        "engine": "diesel 800hp",
+        "max_speed_kmh": 65
+      },
+      "modifiers": {
+        "armor_ke_front": 0.85,
+        "armor_ke_side": 0.75,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.85,
+        "armor_ce_side": 0.75,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.60,
+        "spot_range_moving": 1.30,
+        "road_speed": 1.05,
+        "cross_speed": 0.95
+      },
+      "main_gun": {
+        "caliber_mm": 0,
+        "type": "sam",
+        "missiles": 6,
+        "range_km": 70,
+        "altitude_km": 35,
+        "pen_ke_modifier": 0.00,
+        "pen_ce_modifier": 1.60,
+        "rof_modifier": 0.60,
+        "accuracy_modifier": 1.15
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "最新中距離SAM、9M317MAミサイル×6、射程70km、36目標同時追尾"
+    },
+    {
+      "id": "RUS_PantsirS1",
+      "display_name": "パーンツィリS1",
+      "display_name_en": "96K6 Pantsir-S1",
+      "base_archetype": "RECON_VEH",
+      "mobility_class": "WHEELED",
+      "era": "2010s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 20,
+        "crew": 3,
+        "engine": "KamAZ-740.35 diesel 400hp",
+        "max_speed_kmh": 90
+      },
+      "modifiers": {
+        "armor_ke_front": 0.75,
+        "armor_ke_side": 0.65,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.75,
+        "armor_ce_side": 0.65,
+        "armor_ce_rear": 1.00,
+        "spot_range": 1.40,
+        "spot_range_moving": 1.10,
+        "road_speed": 1.20,
+        "cross_speed": 0.85
+      },
+      "main_gun": {
+        "caliber_mm": 30,
+        "type": "autocannon_dual",
+        "missiles": 12,
+        "range_km": 20,
+        "pen_ke_modifier": 0.95,
+        "pen_ce_modifier": 1.40,
+        "rof_modifier": 1.50,
+        "accuracy_modifier": 1.05
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "複合防空システム、30mm機関砲×2+57E6ミサイル×12、KamAZ 8×8シャーシ"
+    },
+    {
+      "id": "RUS_BREM1M",
+      "display_name": "BREM-1M",
+      "display_name_en": "BREM-1M",
+      "base_archetype": "LOG_TRUCK",
+      "mobility_class": "TRACKED",
+      "era": "2010s",
+      "unit_count": 2,
+      "specs": {
+        "weight_tons": 45,
+        "crew": 3,
+        "engine": "V-92S2 diesel 1000hp",
+        "max_speed_kmh": 60
+      },
+      "modifiers": {
+        "armor_ke_front": 0.90,
+        "armor_ke_side": 0.80,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.90,
+        "armor_ce_side": 0.80,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.80,
+        "spot_range_moving": 0.75,
+        "road_speed": 1.00,
+        "cross_speed": 1.00
+      },
+      "main_gun": {
+        "caliber_mm": 12.7,
+        "type": "hmg",
+        "pen_ke_modifier": 0.75,
+        "pen_ce_modifier": 0.75,
+        "rof_modifier": 1.00,
+        "accuracy_modifier": 0.85
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "T-90ベース回収車、20tクレーン、35t主ウインチ（140tプーリー使用時）"
+    }
+  ]
+}
