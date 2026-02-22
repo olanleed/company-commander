@@ -770,7 +770,7 @@
       "id": "USA_M88A2_Hercules",
       "display_name": "M88A2 Hercules",
       "display_name_en": "M88A2 HERCULES ARV",
-      "base_archetype": "RECOVERY_VEH",
+      "base_archetype": "LOG_TRUCK",
       "mobility_class": "TRACKED",
       "era": "1990s",
       "unit_count": 1,
