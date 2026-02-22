@@ -434,10 +434,21 @@ const VULN_LIGHT_HEFRAG_SUPP: float = 0.70
 const VULN_LIGHT_AT_DMG: float = 1.00
 const VULN_LIGHT_AT_SUPP: float = 1.00
 
-## Heavy（戦車）の脆弱性
+## Medium（IFV/APC, armor_class = 2）の脆弱性
+## IFVは機関砲に対してMBTより脆弱
+const VULN_MEDIUM_SMALLARMS_DMG: float = 0.00
+const VULN_MEDIUM_SMALLARMS_SUPP: float = 0.20
+const VULN_MEDIUM_AUTOCANNON_DMG: float = 0.70  # 30mm機関砲はIFVに有効
+const VULN_MEDIUM_AUTOCANNON_SUPP: float = 0.80
+const VULN_MEDIUM_HEFRAG_DMG: float = 0.25
+const VULN_MEDIUM_HEFRAG_SUPP: float = 0.70
+const VULN_MEDIUM_AT_DMG: float = 1.00
+const VULN_MEDIUM_AT_SUPP: float = 0.50
+
+## Heavy（戦車, armor_class >= 3）の脆弱性
 const VULN_HEAVY_SMALLARMS_DMG: float = 0.00
 const VULN_HEAVY_SMALLARMS_SUPP: float = 0.10
-const VULN_HEAVY_AUTOCANNON_DMG: float = 0.15
+const VULN_HEAVY_AUTOCANNON_DMG: float = 0.15  # MBTは機関砲にほぼ耐える
 const VULN_HEAVY_AUTOCANNON_SUPP: float = 0.35
 const VULN_HEAVY_HEFRAG_DMG: float = 0.10
 const VULN_HEAVY_HEFRAG_SUPP: float = 0.50

@@ -6,10 +6,16 @@ extends RefCounted
 ##
 ## アーキタイプIDからElementInstanceを生成し、
 ## 適切な武装を自動的に装備する。
+## VehicleCatalogと連携して各国兵器の特性を反映する。
+
+const VehicleCatalogClass = preload("res://scripts/data/vehicle_catalog.gd")
 
 # =============================================================================
 # 定数
 # =============================================================================
+
+## 共有VehicleCatalogインスタンス
+static var _vehicle_catalog = null  # VehicleCatalogClass
 
 ## アーキタイプ別のデフォルト武装マッピング
 const ARCHETYPE_WEAPONS: Dictionary = {
@@ -17,6 +23,7 @@ const ARCHETYPE_WEAPONS: Dictionary = {
 	"INF_AT": ["CW_RIFLE_STD", "CW_RPG_HEAT"],
 	"INF_MG": ["CW_MG_STD"],
 	"TANK_PLT": ["CW_TANK_KE", "CW_TANK_HEATMP", "CW_COAX_MG"],  # 主砲AP/HE + 同軸MG
+	"IFV_PLT": ["CW_AUTOCANNON_30", "CW_ATGM", "CW_COAX_MG"],  # 機関砲 + ATGM + 同軸MG
 	"RECON_VEH": ["CW_RIFLE_STD"],  # 軽火器のみ
 	"RECON_TEAM": ["CW_RIFLE_STD"],
 	"MORTAR_SEC": ["CW_MORTAR_HE", "CW_MORTAR_SMOKE"],
@@ -88,6 +95,129 @@ static func _equip_weapons(element: ElementData.ElementInstance, archetype_id: S
 	# 主武装を設定（後方互換）
 	if element.weapons.size() > 0:
 		element.primary_weapon = element.weapons[0]
+
+
+# =============================================================================
+# VehicleCatalog連携
+# =============================================================================
+
+## VehicleCatalogを初期化してロード
+static func init_vehicle_catalog() -> void:
+	if _vehicle_catalog == null:
+		_vehicle_catalog = VehicleCatalogClass.new()
+		_vehicle_catalog.load_all()
+
+
+## VehicleCatalogを取得
+static func get_vehicle_catalog():
+	if _vehicle_catalog == null:
+		init_vehicle_catalog()
+	return _vehicle_catalog
+
+
+## 車両カタログを使用してElementInstanceを生成
+## vehicle_id: カタログ内の車両ID (例: "JPN_Type10", "USA_M1A2")
+static func create_element_with_vehicle(
+	vehicle_id: String,
+	faction: GameEnums.Faction,
+	position: Vector2,
+	facing: float = 0.0
+) -> ElementData.ElementInstance:
+	# カタログを初期化
+	if _vehicle_catalog == null:
+		init_vehicle_catalog()
+
+	# 車両設定を取得
+	var vehicle_config = _vehicle_catalog.get_vehicle(vehicle_id)
+	if not vehicle_config:
+		push_warning("[ElementFactory] Vehicle not found: %s, using base archetype" % vehicle_id)
+		return create_element("TANK_PLT", faction, position, facing)
+
+	# ベースアーキタイプを取得
+	var archetype_id: String = vehicle_config.base_archetype
+	var element_type := ElementData.ElementArchetypes.get_archetype(archetype_id)
+
+	# VehicleConfigのmodifierを適用
+	_vehicle_catalog.apply_to_element_type(element_type, vehicle_config)
+
+	# インスタンス生成
+	var element := ElementData.ElementInstance.new(element_type)
+	element.id = _generate_unique_id(archetype_id)
+	element.faction = faction
+	element.position = position
+	element.prev_position = position
+	element.facing = facing
+	element.prev_facing = facing
+
+	# 車両IDを記録（将来の参照用）
+	element.vehicle_id = vehicle_id
+
+	# 武装を装備（modifierを適用）
+	_equip_weapons_with_vehicle(element, archetype_id, vehicle_config)
+
+	return element
+
+
+## 武装を装備（VehicleConfig適用）
+static func _equip_weapons_with_vehicle(
+	element: ElementData.ElementInstance,
+	archetype_id: String,
+	vehicle_config
+) -> void:
+	if archetype_id not in ARCHETYPE_WEAPONS:
+		return
+
+	var weapon_ids: Array = ARCHETYPE_WEAPONS[archetype_id]
+	var all_weapons := WeaponData.get_all_concrete_weapons()
+
+	for weapon_id in weapon_ids:
+		if weapon_id in all_weapons:
+			# 武器をコピーしてmodifierを適用
+			var base_weapon: WeaponData.WeaponType = all_weapons[weapon_id]
+			var weapon := _copy_weapon(base_weapon)
+
+			# 主砲系武器にはmain_gun modifierを適用
+			if weapon_id in ["CW_TANK_KE", "CW_TANK_HEATMP"]:
+				_vehicle_catalog.apply_to_weapon(weapon, vehicle_config)
+
+			element.weapons.append(weapon)
+
+	# 主武装を設定
+	if element.weapons.size() > 0:
+		element.primary_weapon = element.weapons[0]
+
+
+## WeaponTypeをコピー（独立したインスタンスを作成）
+static func _copy_weapon(original: WeaponData.WeaponType) -> WeaponData.WeaponType:
+	var copy := WeaponData.WeaponType.new()
+	copy.id = original.id
+	copy.display_name = original.display_name
+	copy.mechanism = original.mechanism
+	copy.fire_model = original.fire_model
+	copy.min_range_m = original.min_range_m
+	copy.max_range_m = original.max_range_m
+	copy.range_band_thresholds_m = original.range_band_thresholds_m.duplicate()
+	copy.threat_class = original.threat_class
+	copy.preferred_target = original.preferred_target
+	copy.ammo_endurance_min = original.ammo_endurance_min
+	copy.rof_rpm = original.rof_rpm
+	copy.sigma_hit_m = original.sigma_hit_m
+	copy.direct_hit_radius_m = original.direct_hit_radius_m
+	copy.shock_radius_m = original.shock_radius_m
+	copy.setup_time_sec = original.setup_time_sec
+	copy.displace_time_sec = original.displace_time_sec
+	copy.requires_observer = original.requires_observer
+	copy.blast_radius_m = original.blast_radius_m
+	copy.projectile_speed_mps = original.projectile_speed_mps
+	copy.projectile_size = original.projectile_size
+
+	# Dictionaryは深いコピー
+	copy.lethality = original.lethality.duplicate(true)
+	copy.suppression_power = original.suppression_power.duplicate(true)
+	copy.pen_ke = original.pen_ke.duplicate(true)
+	copy.pen_ce = original.pen_ce.duplicate(true)
+
+	return copy
 
 
 # =============================================================================

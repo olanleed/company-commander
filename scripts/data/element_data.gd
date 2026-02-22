@@ -65,8 +65,12 @@ class ElementType:
 	var spot_range_base: float = 300.0  # m
 	var spot_range_moving: float = 200.0  # m
 
-	## Protection
-	var armor_class: int = 0  # 0=ソフト, 1=軽装甲, 2=中装甲, 3=重装甲
+	## Protection - armor_class
+	## 0 = Soft (ソフトスキン) - 小銃弾で貫通可能 (トラック、ジープ、歩兵)
+	## 1 = Light Armor (軽装甲) - 小銃弾耐性、12.7mm/機関砲で貫通 (装甲偵察車、APC)
+	## 2 = Medium Armor (中装甲) - 機関砲耐性、ATで貫通 (IFV、旧式戦車)
+	## 3 = Heavy Armor (重装甲) - AT以外は無効 (MBT)
+	var armor_class: int = 0
 
 	## Communication (データリンク)
 	var is_comm_hub: bool = false        # 通信ハブ（指揮ユニット）か
@@ -129,6 +133,7 @@ class ElementInstance:
 	var last_fire_tick: int = -1  ## 最後に射撃したtick
 	var sop_mode: GameEnums.SOPMode = GameEnums.SOPMode.FIRE_AT_WILL  ## 射撃ルール
 	var accumulated_damage: float = 0.0  ## 蓄積ダメージ（1.0超過でstrength-1）
+	var accumulated_armor_damage: float = 0.0  ## 連続射撃の装甲ダメージ蓄積（1.0超過で車両ダメージ判定）
 
 	## v0.1R: 車両サブシステムHP（armor_class >= 1 の場合のみ使用）
 	var mobility_hp: int = 100      ## 機動力HP (0-100)
@@ -143,6 +148,9 @@ class ElementInstance:
 	## 通信状態（データリンク）
 	var comm_state: GameEnums.CommState = GameEnums.CommState.LINKED  ## 現在の通信状態
 	var comm_hub_id: String = ""         ## 接続先ハブID（空の場合はハブなし）
+
+	## 兵器カタログ
+	var vehicle_id: String = ""          ## カタログ車両ID（例: "JPN_Type10"）
 
 	## 初期化
 	func _init(p_type: ElementType = null) -> void:
@@ -246,11 +254,48 @@ class ElementInstance:
 		return lerp_angle(prev_facing, facing, alpha)
 
 
-	## v0.1R: 車両かどうか
+	## 車両かどうか（装甲の有無に関係なく、WHEELED/TRACKED = 車両）
+	## LOG_TRUCK（ソフトスキン）も車両として扱う
 	func is_vehicle() -> bool:
 		if not element_type:
 			return false
-		return element_type.armor_class >= 1
+		return element_type.mobility_class == GameEnums.MobilityType.WHEELED or \
+			   element_type.mobility_class == GameEnums.MobilityType.TRACKED
+
+
+	## ソフトスキン車両かどうか（armor_class = 0 の車両）
+	## トラック、ジープ、非装甲HQ車両など
+	## 小銃弾で貫通可能、破壊しやすい
+	func is_soft_skin_vehicle() -> bool:
+		if not element_type:
+			return false
+		return is_vehicle() and element_type.armor_class == 0
+
+
+	## 装甲車両かどうか（armor_class >= 1）
+	## 戦車、IFV、装甲偵察車両など
+	## ソフトスキン車両（トラック等）は含まない
+	func is_armored_vehicle() -> bool:
+		if not element_type:
+			return false
+		return is_vehicle() and element_type.armor_class >= 1
+
+
+	## 軽装甲車両かどうか（armor_class = 1-2）
+	## 装甲偵察車、IFV、APC等
+	## 小銃弾に耐えるが、12.7mm/機関砲で貫通可能
+	func is_light_armor() -> bool:
+		if not element_type:
+			return false
+		return element_type.armor_class >= 1 and element_type.armor_class <= 2
+
+
+	## 重装甲車両かどうか（armor_class >= 3）
+	## 戦車のみ - 抑圧耐性が高く、小火器/機関砲では貫通困難
+	func is_heavy_armor() -> bool:
+		if not element_type:
+			return false
+		return element_type.armor_class >= 3
 
 
 	## v0.1R: 表示用Strength
@@ -353,6 +398,44 @@ class ElementArchetypes:
 			WeaponData.ArmorZone.SIDE: 24,    # 120mm RHA相当 - LAW(60)で確実に貫通
 			WeaponData.ArmorZone.REAR: 8,     # 40mm RHA相当 - LAWで確実に貫通
 			WeaponData.ArmorZone.TOP: 4,      # 20mm RHA相当 - 極めて脆弱
+		}
+		return t
+
+	## IFV_PLT: 歩兵戦闘車小隊（4両=1ユニット）
+	## RHA換算装甲値（スケール: 100 = 500mm RHA）
+	## BMP-3/89式/Bradley相当のIFV
+	## 機関砲+ATGMを装備、中装甲
+	## Strength = 車両数（4両）- 1両撃破ごとに-1
+	static func create_ifv_plt() -> ElementType:
+		var t := ElementType.new()
+		t.id = "IFV_PLT"
+		t.display_name = "IFV Platoon"
+		t.category = Category.VEH
+		t.symbol_type = SymbolType.ARMOR_IFV
+		t.armor_class = 2  # Medium
+		t.mobility_class = GameEnums.MobilityType.TRACKED
+		t.road_speed = 14.0
+		t.cross_speed = 9.0
+		t.base_strength = 4   # 車両数（4両/小隊）
+		t.max_strength = 4
+		t.spot_range_base = 700.0
+		t.spot_range_moving = 500.0
+		# v0.1R: ゾーン別装甲（RHA換算, スケール: 100 = 500mm）
+		# KE（機関砲等）に対する装甲
+		# 正面: 約150mm RHA = 30, 側面: 約50mm = 10, 後部: 約30mm = 6
+		t.armor_ke = {
+			WeaponData.ArmorZone.FRONT: 30,   # 150mm RHA - 30mm機関砲に耐える
+			WeaponData.ArmorZone.SIDE: 10,    # 50mm RHA - 14.5mmHMGに耐える
+			WeaponData.ArmorZone.REAR: 6,     # 30mm RHA - 12.7mmで危険
+			WeaponData.ArmorZone.TOP: 3,      # 15mm RHA - 砲弾破片に脆弱
+		}
+		# CE（HEAT/RPG等）に対する装甲
+		# 正面: 約200mm RHA = 40, 側面: 約60mm = 12, 後部: 約30mm = 6
+		t.armor_ce = {
+			WeaponData.ArmorZone.FRONT: 40,   # 200mm RHA相当 - LAW(60)で貫通
+			WeaponData.ArmorZone.SIDE: 12,    # 60mm RHA相当 - LAW(60)で確実貫通
+			WeaponData.ArmorZone.REAR: 6,     # 30mm RHA相当 - RPG-7で確実貫通
+			WeaponData.ArmorZone.TOP: 3,      # 15mm RHA相当 - トップアタックに脆弱
 		}
 		return t
 
@@ -474,6 +557,7 @@ class ElementArchetypes:
 			"INF_AT": create_inf_at(),
 			"INF_MG": create_inf_mg(),
 			"TANK_PLT": create_tank_plt(),
+			"IFV_PLT": create_ifv_plt(),
 			"RECON_VEH": create_recon_veh(),
 			"RECON_TEAM": create_recon_team(),
 			"MORTAR_SEC": create_mortar_sec(),
@@ -488,6 +572,7 @@ class ElementArchetypes:
 			"INF_AT": return create_inf_at()
 			"INF_MG": return create_inf_mg()
 			"TANK_PLT": return create_tank_plt()
+			"IFV_PLT": return create_ifv_plt()
 			"RECON_VEH": return create_recon_veh()
 			"RECON_TEAM": return create_recon_team()
 			"MORTAR_SEC": return create_mortar_sec()

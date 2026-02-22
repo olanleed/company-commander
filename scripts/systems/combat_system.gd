@@ -35,6 +35,8 @@ class DirectFireResultV01R:
 	var p_hit: float = 0.0     ## ヒット確率（1秒あたり）
 	var exposure: float = 0.0  ## 期待危険度 E
 	var is_valid: bool = false ## 射撃が成立したか
+	var d_dmg: float = 0.0     ## 累積ダメージ（連続火力用）
+	var is_continuous: bool = false  ## 連続火力かどうか
 
 
 # =============================================================================
@@ -457,9 +459,9 @@ func apply_damage(
 	if element.is_destroyed:
 		return
 
-	# 装甲車両への抑圧上限を適用
+	# 装甲車両への抑圧上限を適用（ソフトスキン車両は対象外）
 	var effective_supp := d_supp
-	if element.is_vehicle():
+	if element.is_armored_vehicle():
 		var supp_cap := _get_vehicle_suppression_cap(element, threat_class)
 		var current := element.suppression
 		# 上限を超えないようにクランプ
@@ -577,7 +579,21 @@ func get_vulnerability_dmg(
 			_:
 				return 1.0
 
-	# Heavy (armor_class >= 2)
+	# Medium (armor_class = 2) - IFV/APC
+	if armor_class == 2:
+		match threat_class:
+			WeaponData.ThreatClass.SMALL_ARMS:
+				return GameConstants.VULN_MEDIUM_SMALLARMS_DMG
+			WeaponData.ThreatClass.AUTOCANNON:
+				return GameConstants.VULN_MEDIUM_AUTOCANNON_DMG
+			WeaponData.ThreatClass.HE_FRAG:
+				return GameConstants.VULN_MEDIUM_HEFRAG_DMG
+			WeaponData.ThreatClass.AT:
+				return GameConstants.VULN_MEDIUM_AT_DMG
+			_:
+				return 1.0
+
+	# Heavy (armor_class >= 3) - MBT
 	match threat_class:
 		WeaponData.ThreatClass.SMALL_ARMS:
 			return GameConstants.VULN_HEAVY_SMALLARMS_DMG
@@ -629,7 +645,21 @@ func get_vulnerability_supp(
 			_:
 				return 1.0
 
-	# Heavy (armor_class >= 2)
+	# Medium (armor_class = 2) - IFV/APC
+	if armor_class == 2:
+		match threat_class:
+			WeaponData.ThreatClass.SMALL_ARMS:
+				return GameConstants.VULN_MEDIUM_SMALLARMS_SUPP
+			WeaponData.ThreatClass.AUTOCANNON:
+				return GameConstants.VULN_MEDIUM_AUTOCANNON_SUPP
+			WeaponData.ThreatClass.HE_FRAG:
+				return GameConstants.VULN_MEDIUM_HEFRAG_SUPP
+			WeaponData.ThreatClass.AT:
+				return GameConstants.VULN_MEDIUM_AT_SUPP
+			_:
+				return 1.0
+
+	# Heavy (armor_class >= 3) - MBT
 	match threat_class:
 		WeaponData.ThreatClass.SMALL_ARMS:
 			return GameConstants.VULN_HEAVY_SMALLARMS_SUPP
@@ -743,6 +773,7 @@ func calculate_direct_fire_effect_v01r(
 
 ## v0.1R: 装甲目標への直射効果を計算（ゾーン別装甲・貫徹判定含む）
 ## 仕様書: docs/damage_model_v0.1.md
+## v0.3: CONTINUOUS武器（機関砲等）は累積ダメージモデルを使用
 func calculate_direct_fire_vs_armor(
 	shooter: ElementData.ElementInstance,
 	target: ElementData.ElementInstance,
@@ -764,6 +795,7 @@ func calculate_direct_fire_vs_armor(
 		return result
 
 	result.is_valid = true
+	result.is_continuous = (weapon.fire_model == WeaponData.FireModel.CONTINUOUS)
 
 	# アスペクト（命中部位）を計算
 	var aspect := calculate_aspect_v01r(
@@ -795,9 +827,30 @@ func calculate_direct_fire_vs_armor(
 	)
 	result.exposure = base_exposure * p_pen * m_aspect
 
-	# ヒット確率（1秒あたり）→ dt秒あたりに調整
-	var p_hit_1s := calculate_hit_probability(result.exposure)
-	result.p_hit = 1.0 - pow(1.0 - p_hit_1s, dt)
+	# ========================================
+	# CONTINUOUS武器: 累積ダメージモデル
+	# 機関砲等は毎tick連続的にダメージを与える
+	# ========================================
+	if result.is_continuous:
+		# 殺傷力レーティング
+		var target_class := _get_target_class(target)
+		var lethality := weapon.get_lethality(distance_m, target_class)
+		var m_vuln_dmg := get_vulnerability_dmg(target, weapon.threat_class)
+
+		# 累積ダメージ = K × L × p_pen × m_aspect × 各種係数 × dt
+		# 貫徹確率を加味して期待ダメージを計算
+		result.d_dmg = GameConstants.K_DF_DMG * (float(lethality) / 100.0) * p_pen * m_aspect * m_shooter * m_strength * m_visibility * m_evasion * m_cover * m_entrench * m_vuln_dmg * dt
+
+		# 連続火力はp_hitを使わない（常にダメージ発生）
+		result.p_hit = 1.0 if result.d_dmg > 0 else 0.0
+
+	# ========================================
+	# DISCRETE武器: ヒット/ミス判定モデル
+	# ========================================
+	else:
+		# ヒット確率（1秒あたり）→ dt秒あたりに調整
+		var p_hit_1s := calculate_hit_probability(result.exposure)
+		result.p_hit = 1.0 - pow(1.0 - p_hit_1s, dt)
 
 	return result
 
@@ -1226,7 +1279,7 @@ func select_best_weapon(
 		return shooter.primary_weapon  # フォールバック
 
 	var target_class := get_target_class(target)
-	var is_armored := target.is_vehicle()
+	var is_armored := target.is_armored_vehicle()
 
 	var best_weapon: WeaponData.WeaponType = null
 	var best_score: float = -INF  # 負のスコアも考慮
@@ -1279,6 +1332,9 @@ func select_best_weapon(
 
 
 ## 武器のスコアを計算（目標に対する有効性）
+## v0.3: 現実的な弾種選択ロジック
+## - 戦車: 重装甲→APFSDS、それ以外→HEAT/同軸MG
+## - IFV: 戦車/IFV/APC→ATGM、歩兵→機関砲/MG
 func _calculate_weapon_score(
 	weapon: WeaponData.WeaponType,
 	target: ElementData.ElementInstance,
@@ -1292,16 +1348,48 @@ func _calculate_weapon_score(
 	var lethality := weapon.get_lethality(distance_m, target_class)
 	score += float(lethality)
 
-	# 装甲目標に対する特別判定
+	# 目標の装甲クラスを取得
+	var target_armor_class := target.element_type.armor_class if target.element_type else 0
+
+	# ========================================
+	# 装甲目標に対する判定
+	# ========================================
 	if is_armored:
 		# 小火器は装甲目標に効果なし → 使用不可
 		if weapon.mechanism == WeaponData.Mechanism.SMALL_ARMS:
-			if target.element_type and target.element_type.armor_class >= 1:
+			if target_armor_class >= 1:
 				return -1000.0  # 絶対使わない
 
-		# 対装甲武器なら大きなボーナス
-		if weapon.preferred_target == WeaponData.PreferredTarget.ARMOR:
-			score += 100.0  # 強いボーナス
+		# --- 重装甲目標（戦車, armor_class >= 3）---
+		if target_armor_class >= 3:
+			# 重装甲にはAPFSDSが最適
+			if weapon.id == "CW_TANK_KE":
+				score += 300.0  # 最優先
+			elif weapon.id == "CW_ATGM":
+				score += 250.0  # ATGMも有効
+			elif weapon.mechanism == WeaponData.Mechanism.SHAPED_CHARGE:
+				# HEATは重装甲正面には効果が薄い
+				score += 50.0
+			elif weapon.threat_class == WeaponData.ThreatClass.AUTOCANNON:
+				# 機関砲は重装甲には効果がほぼない
+				return -500.0
+
+		# --- 中装甲目標（IFV/APC, armor_class 1-2）---
+		elif target_armor_class >= 1:
+			# ATGMは過剰だが確実
+			if weapon.id == "CW_ATGM":
+				score += 150.0
+			# HEATは中装甲に有効
+			elif weapon.mechanism == WeaponData.Mechanism.SHAPED_CHARGE:
+				score += 200.0
+			# 機関砲は中装甲に有効（近距離で特に）
+			elif weapon.threat_class == WeaponData.ThreatClass.AUTOCANNON:
+				score += 180.0  # 近距離では機関砲が効率的
+				if distance_m <= 800.0:
+					score += 50.0  # 近距離ボーナス
+			# APFSDSは軽装甲にはオーバーキル（使えるが優先度下げ）
+			elif weapon.id == "CW_TANK_KE":
+				score += 100.0
 
 		# 貫徹力を考慮
 		var pen := 0
@@ -1311,24 +1399,29 @@ func _calculate_weapon_score(
 			pen = weapon.get_pen_ce(distance_m)
 
 		if pen > 0:
-			score += float(pen) * 0.5
-	else:
-		# ソフトターゲット（歩兵など）への判定
-		# 対装甲専用武器は歩兵には使わない（弾薬節約＆オーバーキル）
-		if weapon.preferred_target == WeaponData.PreferredTarget.ARMOR:
-			# AT専用武器は対歩兵に大きなペナルティ
-			score -= 200.0
-		elif weapon.preferred_target == WeaponData.PreferredTarget.SOFT:
-			# 対歩兵優先武器にはボーナス
-			score += 100.0
-		elif weapon.preferred_target == WeaponData.PreferredTarget.ANY:
-			# 汎用武器は対歩兵では避ける（主砲弾薬は貴重）
-			# 特にATカテゴリの汎用武器は主砲なので使わない
-			if weapon.threat_class == WeaponData.ThreatClass.AT:
-				score -= 50.0
+			score += float(pen) * 0.3
 
-	# 抑圧力も考慮（対歩兵では重要）
-	if not is_armored:
+	# ========================================
+	# 非装甲目標（歩兵など）に対する判定
+	# ========================================
+	else:
+		# AT武器は歩兵には使わない（弾薬節約＆オーバーキル）
+		if weapon.id == "CW_ATGM":
+			return -1000.0  # ATGMは歩兵に使わない
+		if weapon.id == "CW_TANK_KE":
+			return -500.0  # APFSDSは歩兵に使わない
+
+		# HEAT-MPは対歩兵に使える（HE効果あり）
+		if weapon.id == "CW_TANK_HEATMP":
+			score += 80.0
+
+		# 同軸MGや機関砲は対歩兵に最適
+		if weapon.threat_class == WeaponData.ThreatClass.SMALL_ARMS:
+			score += 150.0
+		elif weapon.threat_class == WeaponData.ThreatClass.AUTOCANNON:
+			score += 120.0  # 機関砲も対歩兵に有効
+
+		# 抑圧力を考慮（対歩兵では重要）
 		var supp := weapon.get_suppression_power(distance_m)
 		score += float(supp) * 0.3
 
@@ -1348,8 +1441,8 @@ func log_weapon_switch(
 		return
 
 	var target_type := "SOFT"
-	if target.is_vehicle():
-		if target.element_type and target.element_type.armor_class >= 3:
+	if target.is_armored_vehicle():
+		if target.is_heavy_armor():
 			target_type = "HEAVY"
 		else:
 			target_type = "LIGHT"
@@ -1635,8 +1728,10 @@ func process_tank_engagement(
 
 	result.hit = true
 
-	# 撃破確率テーブルを取得
+	# 撃破確率テーブルを取得（目標の装甲クラスに応じて調整）
 	var kill_table: Dictionary
+	var target_armor_class := target.element_type.armor_class if target.element_type else 3
+
 	match weapon.mechanism:
 		WeaponData.Mechanism.KINETIC:
 			kill_table = get_apfsds_kill_probability(result.aspect, range_band)
@@ -1645,6 +1740,13 @@ func process_tank_engagement(
 		_:
 			# その他の武器は旧モデルにフォールバック
 			return result
+
+	# IFV/APC (armor_class = 2) に対しては撃破確率が高い
+	# 重装甲 (armor_class >= 3) に対してはテーブル値をそのまま使用
+	if target_armor_class == 2:
+		# IFVはMBTより脆弱: 撃破確率+30%, ミッションキル確率+20%
+		kill_table.kill = minf(1.0, kill_table.kill + 0.30)
+		kill_table.mission_kill = minf(1.0 - kill_table.kill, kill_table.mission_kill + 0.20)
 
 	result.p_kill = kill_table.kill
 
@@ -1806,15 +1908,19 @@ func is_heavy_armor(element: ElementData.ElementInstance) -> bool:
 	return element.element_type.armor_class >= 3
 
 
-## v0.2: 戦車戦で処理すべきかを判定
-## 目標が重装甲、武器がAT（KINETIC or SHAPED_CHARGE）
+## v0.3: 戦車戦モデルを使用するか判定
+## 装甲車両（IFV含む）に対するAT武器攻撃は戦車戦モデルを使用
+## - 目標: armor_class >= 2（IFV以上）
+## - 武器: AT脅威クラス（KINETIC or SHAPED_CHARGE）
 func should_use_tank_combat(
 	_shooter: ElementData.ElementInstance,
 	target: ElementData.ElementInstance,
 	weapon: WeaponData.WeaponType
 ) -> bool:
-	# 目標が重装甲でなければ通常モデル
-	if not is_heavy_armor(target):
+	# 目標が装甲車両（armor_class >= 2）でなければ通常モデル
+	if not target.element_type:
+		return false
+	if target.element_type.armor_class < 2:
 		return false
 
 	# 武器がAT系でなければ通常モデル

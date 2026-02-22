@@ -606,6 +606,10 @@ static func create_cw_tank_heatmp() -> WeaponType:
 		RangeBand.FAR: 90,    # 450mm RHA相当
 	}
 
+	# 弾速: HEAT = 約1000m/s（APFSDSより遅い）
+	w.projectile_speed_mps = 1000.0
+	w.projectile_size = 4.0
+
 	return w
 
 
@@ -821,6 +825,130 @@ static func create_cw_carl_gustaf() -> WeaponType:
 	return w
 
 
+## CW_AUTOCANNON_30: 30mm機関砲（2A42/Mk44相当）
+## IFVの主武装、軽装甲車両に有効
+## RHA換算: 30mm APDS = 約120-150mm KE貫徹力 @ 500m
+## 近距離ではIFV正面装甲を貫通可能
+## スケール: 100 = 500mm RHA
+static func create_cw_autocannon_30() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_AUTOCANNON_30"
+	w.display_name = "30mm Autocannon"
+	w.mechanism = Mechanism.KINETIC
+	w.fire_model = FireModel.CONTINUOUS
+	w.min_range_m = 0.0
+	w.max_range_m = 1500.0
+	w.range_band_thresholds_m = [300.0, 1000.0]
+	w.threat_class = ThreatClass.AUTOCANNON
+	w.preferred_target = PreferredTarget.ANY
+	w.ammo_endurance_min = 15.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 85,
+			TargetClass.LIGHT: 95,   # 軽装甲に非常に有効
+			TargetClass.HEAVY: 25,   # MBT側面に若干有効
+			TargetClass.FORTIFIED: 50,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 70,
+			TargetClass.LIGHT: 85,
+			TargetClass.HEAVY: 15,
+			TargetClass.FORTIFIED: 40,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 50,
+			TargetClass.LIGHT: 70,
+			TargetClass.HEAVY: 5,
+			TargetClass.FORTIFIED: 30,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 90,
+		RangeBand.MID: 75,
+		RangeBand.FAR: 55,
+	}
+
+	# RHA換算貫徹力: 150mm近距離→80mm遠距離
+	# 近距離ではIFV正面(30=150mm)を50%以上の確率で貫通
+	# スケール: 100 = 500mm RHA
+	w.pen_ke = {
+		RangeBand.NEAR: 32,   # 160mm RHA相当 - IFV正面を貫通可能
+		RangeBand.MID: 24,    # 120mm RHA相当 - IFV側面を確実貫通
+		RangeBand.FAR: 16,    # 80mm RHA相当 - 軽装甲のみ有効
+	}
+
+	# 弾速: 30mm APDS = 約1100m/s
+	w.projectile_speed_mps = 1100.0
+	w.projectile_size = 2.0
+
+	return w
+
+
+## CW_ATGM: 対戦車ミサイル（TOW/Konkurs/96式相当）
+## IFVの対戦車火力、MBTにも有効
+## RHA換算: TOW2 = 約900mm CE貫徹力
+## スケール: 100 = 500mm RHA → ATGM = 180
+static func create_cw_atgm() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_ATGM"
+	w.display_name = "ATGM"
+	w.mechanism = Mechanism.SHAPED_CHARGE
+	w.fire_model = FireModel.DISCRETE
+	w.min_range_m = 65.0   # 最小射程（安全装置）
+	w.max_range_m = 3750.0 # TOW2の最大射程
+	w.range_band_thresholds_m = [500.0, 2000.0]
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.ammo_endurance_min = 3.0  # ミサイル数が限られる
+	w.rof_rpm = 2.0  # 約30秒に1発（再装填込み）
+	w.sigma_hit_m = 1.5  # ワイヤー誘導で精度が高い
+	w.direct_hit_radius_m = 1.5
+	w.shock_radius_m = 8.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 60,
+			TargetClass.LIGHT: 100,  # 軽装甲は確実
+			TargetClass.HEAVY: 95,   # MBT正面にも有効
+			TargetClass.FORTIFIED: 80,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 50,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 90,
+			TargetClass.FORTIFIED: 75,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 40,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 85,
+			TargetClass.FORTIFIED: 70,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 55,
+		RangeBand.MID: 50,
+		RangeBand.FAR: 45,
+	}
+
+	# RHA換算貫徹力: 900mm（HEATは距離で減衰しない）
+	# スケール: 100 = 500mm RHA
+	w.pen_ce = {
+		RangeBand.NEAR: 180,  # 900mm RHA相当
+		RangeBand.MID: 180,   # 900mm RHA相当
+		RangeBand.FAR: 180,   # 900mm RHA相当
+	}
+
+	# 弾速: TOW = 約300m/s
+	w.projectile_speed_mps = 300.0
+	w.projectile_size = 6.0
+
+	return w
+
+
 ## 全ConcreteWeaponSetを取得
 static func get_all_concrete_weapons() -> Dictionary:
 	return {
@@ -829,6 +957,8 @@ static func get_all_concrete_weapons() -> Dictionary:
 		"CW_RPG_HEAT": create_cw_rpg_heat(),
 		"CW_CARL_GUSTAF": create_cw_carl_gustaf(),
 		"CW_COAX_MG": create_cw_coax_mg(),
+		"CW_AUTOCANNON_30": create_cw_autocannon_30(),
+		"CW_ATGM": create_cw_atgm(),
 		"CW_TANK_KE": create_cw_tank_ke(),
 		"CW_TANK_HEATMP": create_cw_tank_heatmp(),
 		"CW_MORTAR_HE": create_cw_mortar_he(),
