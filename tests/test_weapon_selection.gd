@@ -229,18 +229,19 @@ func _test_projectile_speed_mps() -> void:
 
 	print("")
 
-	# CONTINUOUS武器でもAT効果があるものはspeedが必要
-	print("Additional check: CONTINUOUS weapons with AT capability")
-	var continuous_at := ["CW_TANK_HEATMP", "CW_AUTOCANNON_30"]
-	for weapon_id in continuous_at:
+	# 戦車砲はDISCRETEであるべき
+	print("Tank Gun fire_model check (should be DISCRETE):")
+	var tank_guns := ["CW_TANK_KE", "CW_TANK_HEATMP"]
+	for weapon_id in tank_guns:
 		var weapon: WeaponData.WeaponType = all_weapons[weapon_id]
-		var has_speed: bool = weapon.projectile_speed_mps > 0.0
-		var result: String = "OK" if has_speed else "NG (speed=0 causes no damage!)"
-		all_pass = all_pass and has_speed
-		print("  %s: fire_model=%s, speed=%.1f - %s" % [
+		var is_discrete: bool = weapon.fire_model == WeaponData.FireModel.DISCRETE
+		var has_rof: bool = weapon.rof_rpm > 0.0
+		var result: String = "OK" if (is_discrete and has_rof) else "NG"
+		all_pass = all_pass and is_discrete and has_rof
+		print("  %s: fire_model=%s, rof_rpm=%.1f - %s" % [
 			weapon_id,
-			"CONTINUOUS" if weapon.fire_model == WeaponData.FireModel.CONTINUOUS else "DISCRETE",
-			weapon.projectile_speed_mps,
+			"DISCRETE" if is_discrete else "CONTINUOUS",
+			weapon.rof_rpm,
 			result
 		])
 

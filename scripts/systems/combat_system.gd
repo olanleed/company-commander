@@ -1808,7 +1808,7 @@ func apply_tank_damage_result(
 
 	elif mission_kill:
 		# Mission Kill
-		_apply_mission_kill(target, threat_class)
+		_apply_mission_kill(target, threat_class, current_tick)
 		print("[TankCombat] %s -> %s IMPACT (%s): MISSION KILL" % [
 			shooter_id, target.id,
 			_aspect_to_string(aspect)
@@ -1867,7 +1867,8 @@ func _apply_tank_kill(
 ## （小隊全体のサブシステムHPを0にするのではない）
 func _apply_mission_kill(
 	target: ElementData.ElementInstance,
-	_threat_class: WeaponData.ThreatClass
+	_threat_class: WeaponData.ThreatClass,
+	current_tick: int = -1
 ) -> void:
 	# ミッションキル = 1両戦闘不能（Killと同様にStrengthを減少）
 	target.current_strength = maxi(0, target.current_strength - 1)
@@ -1886,6 +1887,10 @@ func _apply_mission_kill(
 		target.firepower_hp = maxi(0, target.firepower_hp - hp_per_vehicle)
 		print("[TankCombat] %s: M-KILL (1 vehicle disabled, firepower_hp=%d, %d vehicles remaining)" % [
 			target.id, target.firepower_hp, target.current_strength])
+
+	# Strengthが0になったらユニット壊滅
+	if target.current_strength <= 0:
+		_mark_destroyed(target, current_tick, false)
 
 
 ## v0.2: アスペクトを文字列に変換（ログ用）

@@ -554,22 +554,28 @@ static func create_cw_tank_ke() -> WeaponType:
 	return w
 
 
-## CW_TANK_HEATMP: 戦車主砲HEAT-MP + 同軸MG
+## CW_TANK_HEATMP: 戦車主砲HEAT-MP（多目的榴弾）
 ## 仕様書: docs/concrete_weapons_v0.1.md
 ## RHA換算: 120mm HEAT-MP = 約450mm CE貫徹力
 ## スケール: 100 = 500mm RHA → HEAT-MP = 90
+## 用途: 軽装甲車両、建物、歩兵（HE効果）
+## 注意: 同軸MGは別武器(CW_COAX_MG)として分離
 static func create_cw_tank_heatmp() -> WeaponType:
 	var w := WeaponType.new()
 	w.id = "CW_TANK_HEATMP"
 	w.display_name = "Tank Gun HEAT-MP"
 	w.mechanism = Mechanism.SHAPED_CHARGE
-	w.fire_model = FireModel.CONTINUOUS  # 同軸MGを含む連続火力
+	w.fire_model = FireModel.DISCRETE  # 戦車砲は離散射撃
 	w.min_range_m = 0.0
 	w.max_range_m = 1500.0
 	w.range_band_thresholds_m = [300.0, 1000.0]
 	w.threat_class = ThreatClass.AT
-	w.preferred_target = PreferredTarget.ANY  # HEATは対装甲、同軸MGは対歩兵
+	w.preferred_target = PreferredTarget.ANY  # 多目的弾
 	w.ammo_endurance_min = 15.0
+	w.rof_rpm = 10.0  # 6秒に1発（APFSDSより遅い：弾頭交換時間を考慮）
+	w.sigma_hit_m = 2.0  # APFSDSより精度が低い
+	w.direct_hit_radius_m = 3.0  # HE効果の範囲
+	w.shock_radius_m = 8.0  # 破片効果の範囲
 
 	w.lethality = {
 		RangeBand.NEAR: {
@@ -949,18 +955,199 @@ static func create_cw_atgm() -> WeaponType:
 	return w
 
 
+## CW_HMG: 12.7mm重機関銃
+## M2/NSV相当
+## 軽装甲車両の主武装、対歩兵・軽車両に有効
+static func create_cw_hmg() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_HMG"
+	w.display_name = "12.7mm HMG"
+	w.mechanism = Mechanism.SMALL_ARMS
+	w.fire_model = FireModel.CONTINUOUS
+	w.min_range_m = 0.0
+	w.max_range_m = 1500.0
+	w.range_band_thresholds_m = [300.0, 800.0]  # NEAR < 300m, MID < 800m, FAR >= 800m
+	w.threat_class = ThreatClass.AUTOCANNON  # 機関砲扱い
+	w.preferred_target = PreferredTarget.SOFT
+	w.ammo_endurance_min = 10.0
+	w.rof_rpm = 450.0
+	w.sigma_hit_m = 3.0
+	w.direct_hit_radius_m = 0.5
+	w.shock_radius_m = 3.0
+
+	# 対歩兵
+	w.lethality = {
+		TargetClass.SOFT: { RangeBand.NEAR: 0.8, RangeBand.MID: 0.6, RangeBand.FAR: 0.4 },
+		TargetClass.LIGHT: { RangeBand.NEAR: 0.5, RangeBand.MID: 0.3, RangeBand.FAR: 0.1 },
+		TargetClass.HEAVY: { RangeBand.NEAR: 0.0, RangeBand.MID: 0.0, RangeBand.FAR: 0.0 },
+		TargetClass.FORTIFIED: { RangeBand.NEAR: 0.2, RangeBand.MID: 0.1, RangeBand.FAR: 0.05 },
+	}
+	w.suppression_power = {
+		TargetClass.SOFT: { RangeBand.NEAR: 0.9, RangeBand.MID: 0.7, RangeBand.FAR: 0.5 },
+		TargetClass.LIGHT: { RangeBand.NEAR: 0.6, RangeBand.MID: 0.4, RangeBand.FAR: 0.2 },
+		TargetClass.HEAVY: { RangeBand.NEAR: 0.2, RangeBand.MID: 0.1, RangeBand.FAR: 0.05 },
+		TargetClass.FORTIFIED: { RangeBand.NEAR: 0.4, RangeBand.MID: 0.2, RangeBand.FAR: 0.1 },
+	}
+
+	# KE貫徹力（12.7mm AP弾）
+	# RHA換算: 約20mm（近距離）- 軽装甲車の側面を貫通可能
+	w.pen_ke = {
+		RangeBand.NEAR: 4,    # 20mm RHA相当
+		RangeBand.MID: 3,     # 15mm RHA相当
+		RangeBand.FAR: 2,     # 10mm RHA相当
+	}
+
+	w.projectile_speed_mps = 900.0
+	w.projectile_size = 2.0
+
+	return w
+
+
+## CW_AUTOCANNON_35: 35mm機関砲（連装）
+## エリコン35mm/87式SPAAG相当
+## 対空・対地両用、高発射レート
+static func create_cw_autocannon_35() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_AUTOCANNON_35"
+	w.display_name = "35mm Twin Autocannon"
+	w.mechanism = Mechanism.KINETIC
+	w.fire_model = FireModel.CONTINUOUS
+	w.min_range_m = 0.0
+	w.max_range_m = 4000.0
+	w.range_band_thresholds_m = [500.0, 2000.0]  # NEAR < 500m, MID < 2000m, FAR >= 2000m
+	w.threat_class = ThreatClass.AUTOCANNON
+	w.preferred_target = PreferredTarget.ANY
+	w.ammo_endurance_min = 5.0
+	w.rof_rpm = 1100.0  # 連装で高発射レート
+	w.sigma_hit_m = 2.0
+	w.direct_hit_radius_m = 1.0
+	w.shock_radius_m = 5.0
+
+	w.lethality = {
+		TargetClass.SOFT: { RangeBand.NEAR: 0.95, RangeBand.MID: 0.8, RangeBand.FAR: 0.6 },
+		TargetClass.LIGHT: { RangeBand.NEAR: 0.8, RangeBand.MID: 0.6, RangeBand.FAR: 0.4 },
+		TargetClass.HEAVY: { RangeBand.NEAR: 0.3, RangeBand.MID: 0.2, RangeBand.FAR: 0.1 },
+		TargetClass.FORTIFIED: { RangeBand.NEAR: 0.5, RangeBand.MID: 0.3, RangeBand.FAR: 0.2 },
+	}
+	w.suppression_power = {
+		TargetClass.SOFT: { RangeBand.NEAR: 0.95, RangeBand.MID: 0.85, RangeBand.FAR: 0.7 },
+		TargetClass.LIGHT: { RangeBand.NEAR: 0.8, RangeBand.MID: 0.6, RangeBand.FAR: 0.4 },
+		TargetClass.HEAVY: { RangeBand.NEAR: 0.4, RangeBand.MID: 0.25, RangeBand.FAR: 0.15 },
+		TargetClass.FORTIFIED: { RangeBand.NEAR: 0.6, RangeBand.MID: 0.4, RangeBand.FAR: 0.25 },
+	}
+
+	# 35mm APDS - 30mmより高貫徹
+	# RHA換算貫徹力
+	w.pen_ke = {
+		RangeBand.NEAR: 40,   # 200mm RHA相当 - IFV正面を貫通可能
+		RangeBand.MID: 30,    # 150mm RHA相当
+		RangeBand.FAR: 20,    # 100mm RHA相当
+	}
+
+	w.projectile_speed_mps = 1175.0
+	w.projectile_size = 3.5
+
+	return w
+
+
+## CW_HOWITZER_155: 155mm榴弾砲
+## 自走砲用、長距離間接射撃
+static func create_cw_howitzer_155() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_HOWITZER_155"
+	w.display_name = "155mm Howitzer"
+	w.mechanism = Mechanism.BLAST_FRAG
+	w.fire_model = FireModel.INDIRECT
+	w.min_range_m = 2000.0  # 最小射程2km
+	w.max_range_m = 30000.0  # 最大射程30km
+	w.range_band_thresholds_m = [5000.0, 15000.0]  # NEAR < 5km, MID < 15km, FAR >= 15km
+	w.threat_class = ThreatClass.HE_FRAG
+	w.preferred_target = PreferredTarget.SOFT
+	w.ammo_endurance_min = 15.0
+	w.rof_rpm = 6.0  # 6発/分
+	w.sigma_hit_m = 30.0  # 命中精度（CEP）
+	w.direct_hit_radius_m = 5.0
+	w.shock_radius_m = 50.0
+	w.blast_radius_m = 30.0
+	w.requires_observer = true  # 前進観測員が必要
+
+	# 155mm HE - 大威力
+	w.lethality = {
+		TargetClass.SOFT: { RangeBand.NEAR: 0.95, RangeBand.MID: 0.9, RangeBand.FAR: 0.85 },
+		TargetClass.LIGHT: { RangeBand.NEAR: 0.7, RangeBand.MID: 0.65, RangeBand.FAR: 0.6 },
+		TargetClass.HEAVY: { RangeBand.NEAR: 0.2, RangeBand.MID: 0.15, RangeBand.FAR: 0.1 },
+		TargetClass.FORTIFIED: { RangeBand.NEAR: 0.8, RangeBand.MID: 0.75, RangeBand.FAR: 0.7 },
+	}
+	w.suppression_power = {
+		TargetClass.SOFT: { RangeBand.NEAR: 1.0, RangeBand.MID: 0.95, RangeBand.FAR: 0.9 },
+		TargetClass.LIGHT: { RangeBand.NEAR: 0.9, RangeBand.MID: 0.85, RangeBand.FAR: 0.8 },
+		TargetClass.HEAVY: { RangeBand.NEAR: 0.5, RangeBand.MID: 0.4, RangeBand.FAR: 0.3 },
+		TargetClass.FORTIFIED: { RangeBand.NEAR: 0.95, RangeBand.MID: 0.9, RangeBand.FAR: 0.85 },
+	}
+
+	# 砲弾速度（高角射撃）
+	w.projectile_speed_mps = 800.0
+	w.projectile_size = 8.0
+
+	return w
+
+
+## CW_MORTAR_120: 120mm迫撃砲（自走）
+## 自走迫撃砲用、中距離間接射撃
+static func create_cw_mortar_120() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_MORTAR_120"
+	w.display_name = "120mm Mortar"
+	w.mechanism = Mechanism.BLAST_FRAG
+	w.fire_model = FireModel.INDIRECT
+	w.min_range_m = 200.0
+	w.max_range_m = 8000.0
+	w.range_band_thresholds_m = [1500.0, 4000.0]  # NEAR < 1.5km, MID < 4km, FAR >= 4km
+	w.threat_class = ThreatClass.HE_FRAG
+	w.preferred_target = PreferredTarget.SOFT
+	w.ammo_endurance_min = 10.0
+	w.rof_rpm = 10.0  # 10発/分
+	w.sigma_hit_m = 20.0
+	w.direct_hit_radius_m = 3.0
+	w.shock_radius_m = 30.0
+	w.blast_radius_m = 20.0
+	w.requires_observer = true
+
+	w.lethality = {
+		TargetClass.SOFT: { RangeBand.NEAR: 0.85, RangeBand.MID: 0.8, RangeBand.FAR: 0.75 },
+		TargetClass.LIGHT: { RangeBand.NEAR: 0.5, RangeBand.MID: 0.45, RangeBand.FAR: 0.4 },
+		TargetClass.HEAVY: { RangeBand.NEAR: 0.1, RangeBand.MID: 0.08, RangeBand.FAR: 0.05 },
+		TargetClass.FORTIFIED: { RangeBand.NEAR: 0.6, RangeBand.MID: 0.55, RangeBand.FAR: 0.5 },
+	}
+	w.suppression_power = {
+		TargetClass.SOFT: { RangeBand.NEAR: 0.95, RangeBand.MID: 0.9, RangeBand.FAR: 0.85 },
+		TargetClass.LIGHT: { RangeBand.NEAR: 0.7, RangeBand.MID: 0.65, RangeBand.FAR: 0.6 },
+		TargetClass.HEAVY: { RangeBand.NEAR: 0.3, RangeBand.MID: 0.25, RangeBand.FAR: 0.2 },
+		TargetClass.FORTIFIED: { RangeBand.NEAR: 0.8, RangeBand.MID: 0.75, RangeBand.FAR: 0.7 },
+	}
+
+	w.projectile_speed_mps = 300.0
+	w.projectile_size = 6.0
+
+	return w
+
+
 ## 全ConcreteWeaponSetを取得
 static func get_all_concrete_weapons() -> Dictionary:
 	return {
 		"CW_RIFLE_STD": create_cw_rifle_std(),
 		"CW_MG_STD": create_cw_mg_std(),
+		"CW_HMG": create_cw_hmg(),
 		"CW_RPG_HEAT": create_cw_rpg_heat(),
 		"CW_CARL_GUSTAF": create_cw_carl_gustaf(),
 		"CW_COAX_MG": create_cw_coax_mg(),
 		"CW_AUTOCANNON_30": create_cw_autocannon_30(),
+		"CW_AUTOCANNON_35": create_cw_autocannon_35(),
 		"CW_ATGM": create_cw_atgm(),
 		"CW_TANK_KE": create_cw_tank_ke(),
 		"CW_TANK_HEATMP": create_cw_tank_heatmp(),
 		"CW_MORTAR_HE": create_cw_mortar_he(),
 		"CW_MORTAR_SMOKE": create_cw_mortar_smoke(),
+		"CW_MORTAR_120": create_cw_mortar_120(),
+		"CW_HOWITZER_155": create_cw_howitzer_155(),
 	}

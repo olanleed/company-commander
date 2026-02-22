@@ -29,6 +29,11 @@ var _firepower_label: Label
 var _sensors_bar: ProgressBar
 var _sensors_label: Label
 
+# 装備情報
+var _equipment_section: VBoxContainer
+var _vehicle_label: Label
+var _weapons_label: Label
+
 # AI思考情報
 var _ai_section: VBoxContainer
 var _ai_template_label: Label
@@ -212,6 +217,38 @@ func _setup_layout() -> void:
 	var sep3 := HSeparator.new()
 	_vbox.add_child(sep3)
 
+	# 装備情報セクション
+	_equipment_section = VBoxContainer.new()
+	_equipment_section.add_theme_constant_override("separation", 4)
+
+	var equip_header := Label.new()
+	equip_header.text = "EQUIPMENT"
+	equip_header.add_theme_font_size_override("font_size", 12)
+	equip_header.add_theme_color_override("font_color", Color(0.9, 0.7, 0.4))
+	equip_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_equipment_section.add_child(equip_header)
+
+	# 車両名
+	_vehicle_label = Label.new()
+	_vehicle_label.text = "Vehicle: ---"
+	_vehicle_label.add_theme_font_size_override("font_size", 11)
+	_vehicle_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+	_equipment_section.add_child(_vehicle_label)
+
+	# 武装リスト
+	_weapons_label = Label.new()
+	_weapons_label.text = "Weapons: ---"
+	_weapons_label.add_theme_font_size_override("font_size", 11)
+	_weapons_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+	_weapons_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_equipment_section.add_child(_weapons_label)
+
+	_vbox.add_child(_equipment_section)
+
+	# セパレータ
+	var sep4 := HSeparator.new()
+	_vbox.add_child(sep4)
+
 	# AI思考情報セクション
 	_ai_section = VBoxContainer.new()
 	_ai_section.add_theme_constant_override("separation", 4)
@@ -379,6 +416,7 @@ func _show_empty() -> void:
 	_comm_state_label.text = "---"
 	_comm_state_label.remove_theme_color_override("font_color")
 	_position_label.text = "---"
+	_clear_equipment_info()
 	_clear_ai_info()
 
 
@@ -411,6 +449,9 @@ func _show_single(element: ElementData.ElementInstance) -> void:
 
 	# Position
 	_position_label.text = "(%d, %d)" % [int(element.position.x), int(element.position.y)]
+
+	# 装備情報を更新
+	_update_equipment_info(element)
 
 	# AI情報を更新
 	_update_ai_info(element)
@@ -446,6 +487,9 @@ func _show_multiple() -> void:
 	_state_label.text = "---"
 	_update_comm_state_display_multiple()
 	_position_label.text = "---"
+
+	# 装備情報（複数選択時はクリア）
+	_clear_equipment_info()
 
 	# 複数選択時はAI全体情報のみ表示
 	if _company_ai:
@@ -583,6 +627,42 @@ func _clear_ai_info() -> void:
 	_ai_combat_state_label.text = "Combat: ---"
 	_ai_role_label.text = "Role: ---"
 	_ai_weapon_label.text = "Weapon: ---"
+
+
+## 装備情報を更新
+func _update_equipment_info(element: ElementData.ElementInstance) -> void:
+	# 車両名（vehicle_idがあればカタログから表示名を取得）
+	if element.vehicle_id != "":
+		var catalog = ElementFactory.get_vehicle_catalog()
+		if catalog:
+			var vehicle_config = catalog.get_vehicle(element.vehicle_id)
+			if vehicle_config:
+				_vehicle_label.text = "Vehicle: %s" % vehicle_config.display_name
+			else:
+				_vehicle_label.text = "Vehicle: %s" % element.vehicle_id
+		else:
+			_vehicle_label.text = "Vehicle: %s" % element.vehicle_id
+	else:
+		# vehicle_idがない場合はアーキタイプ名を表示
+		if element.element_type:
+			_vehicle_label.text = "Type: %s" % element.element_type.display_name
+		else:
+			_vehicle_label.text = "Type: ---"
+
+	# 武装リスト
+	if element.weapons.size() > 0:
+		var weapon_names: Array[String] = []
+		for weapon in element.weapons:
+			weapon_names.append(weapon.display_name)
+		_weapons_label.text = "Weapons:\n  " + "\n  ".join(weapon_names)
+	else:
+		_weapons_label.text = "Weapons: (none)"
+
+
+## 装備情報をクリア
+func _clear_equipment_info() -> void:
+	_vehicle_label.text = "Vehicle: ---"
+	_weapons_label.text = "Weapons: ---"
 
 
 ## データリンク状態を表示（単一ユニット）

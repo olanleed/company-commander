@@ -8,7 +8,7 @@ extends Control
 ## - 上部: チケット、RP、拠点状況、時間
 ## - 左: OB部隊一覧
 ## - 右: 選択詳細（Str/Sup/Order）
-## - 下部: コマンドバー（8コマンド）+ ミニマップ + アラート
+## - 下部: コマンドバー（8コマンド）+ ミニマップ
 
 # =============================================================================
 # シグナル
@@ -28,7 +28,6 @@ var left_panel: LeftPanel
 var right_panel: RightPanel
 var bottom_bar: BottomBar
 var minimap: Minimap
-var alert_log: AlertLog
 var pie_menu: PieMenu
 
 # =============================================================================
@@ -111,12 +110,6 @@ func _setup_layout() -> void:
 	minimap.clicked.connect(_on_minimap_clicked)
 	_apply_minimap_layout()
 
-	# アラートログ
-	alert_log = AlertLog.new()
-	alert_log.name = "AlertLog"
-	add_child(alert_log)
-	_apply_alert_log_layout()
-
 	# 放射状メニュー（非表示で待機）
 	pie_menu = PieMenu.new()
 	pie_menu.name = "PieMenu"
@@ -189,17 +182,6 @@ func _apply_minimap_layout() -> void:
 	minimap.offset_bottom = -10
 
 
-func _apply_alert_log_layout() -> void:
-	# ミニマップの上に配置
-	alert_log.anchor_left = 1.0
-	alert_log.anchor_top = 1.0
-	alert_log.anchor_right = 1.0
-	alert_log.anchor_bottom = 1.0
-	alert_log.offset_left = -310  # 幅300px + マージン
-	alert_log.offset_top = -290  # ミニマップの上
-	alert_log.offset_right = -10
-	alert_log.offset_bottom = -170  # ミニマップの高さ分上
-
 # =============================================================================
 # 更新
 # =============================================================================
@@ -243,20 +225,6 @@ func hide_pie_menu() -> void:
 
 func is_pie_menu_visible() -> bool:
 	return pie_menu and pie_menu.visible
-
-# =============================================================================
-# アラート
-# =============================================================================
-
-func add_alert(
-	alert_type: AlertLog.AlertType,
-	message: String,
-	priority: AlertLog.AlertPriority = AlertLog.AlertPriority.MEDIUM,
-	element_id: String = "",
-	world_pos: Vector2 = Vector2.ZERO
-) -> void:
-	if alert_log:
-		alert_log.add_alert(alert_type, message, priority, element_id, world_pos)
 
 # =============================================================================
 # シグナルハンドラ
