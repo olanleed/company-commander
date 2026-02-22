@@ -1,6 +1,7 @@
 extends Node2D
 
 const CompanyControllerAIClass = preload("res://scripts/ai/company_controller_ai.gd")
+const CommanderAIClass = preload("res://scripts/ai/commander_ai.gd")
 const InputControllerClass = preload("res://scripts/ui/input_controller.gd")
 const OrderPreviewClass = preload("res://scripts/ui/order_preview.gd")
 const DataLinkSystemClass = preload("res://scripts/systems/data_link_system.gd")
@@ -41,13 +42,16 @@ var vision_system: VisionSystem
 var combat_system: CombatSystem
 var event_bus: CombatEventBus
 var combat_visualizer: CombatVisualizer
-var capture_system: CaptureSystem
+var capture_system: CaptureSystem  # コンクエストモード用（現在未使用）
 var projectile_manager: ProjectileManager
 var tactical_overlay: TacticalOverlay
 var data_link_system  # DataLinkSystemClass
 
 ## 中隊AI（陣営別）
 var company_ais: Dictionary = {}  # faction -> CompanyControllerAI
+
+## コマンダーAI（陣営別）- 簡易版
+var commander_ais: Dictionary = {}  # faction -> CommanderAI
 
 var background_sprite: Sprite2D
 var _element_views: Dictionary = {}  # element_id -> ElementView
@@ -247,52 +251,99 @@ func _spawn_test_units() -> void:
 	# ElementFactoryを使用してユニットを生成
 	ElementFactory.reset_id_counters()
 
-	# === BLUE陣営: 歩兵2小隊 ===
-	# 歩兵小隊（30人）はライフル + 84mm無反動砲（対戦車）を装備
-	# 歩兵視界: 300m、無反動砲射程: 500m
-	# 距離250mに配置（視界内 + 無反動砲射程内）
-	var blue_inf1 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, Vector2(600, 850))
-	world_model.add_element(blue_inf1)
+	# VehicleCatalogを初期化
+	ElementFactory.init_vehicle_catalog()
+	var catalog = ElementFactory.get_vehicle_catalog()
+	if catalog and catalog.is_loaded():
+		print("[VehicleCatalog] Loaded %d vehicles" % catalog.get_all_vehicle_ids().size())
 
-	var blue_inf2 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, Vector2(600, 1050))
-	world_model.add_element(blue_inf2)
+	# === BLUE陣営 (日本) ===
+	# HQ (通信ハブ - 後方配置、comm_range=3000m)
+	var blue_hq := ElementFactory.create_element("CMD_HQ", GameEnums.Faction.BLUE, Vector2(200, 950))
+	world_model.add_element(blue_hq)
 
-	# === RED陣営: 戦車1小隊 ===
-	# 歩兵との距離: ~150m（歩兵視界300m内、無反動砲射程500m内）
-	var red_tank := ElementFactory.create_element("TANK_PLT", GameEnums.Faction.RED, Vector2(750, 950))
-	world_model.add_element(red_tank)
+	# 90式戦車小隊×1（日本）
+	var blue_tank1 := ElementFactory.create_element_with_vehicle("JPN_Type90", GameEnums.Faction.BLUE, Vector2(400, 900))
+	world_model.add_element(blue_tank1)
+
+	# 89式装甲戦闘車小隊×1（日本 IFV）
+	var blue_ifv1 := ElementFactory.create_element_with_vehicle("JPN_Type89", GameEnums.Faction.BLUE, Vector2(500, 1000))
+	world_model.add_element(blue_ifv1)
+
+	# === RED陣営 (ロシア) ===
+	# HQ (通信ハブ - 後方配置、comm_range=3000m)
+	var red_hq := ElementFactory.create_element("CMD_HQ", GameEnums.Faction.RED, Vector2(1800, 950))
+	world_model.add_element(red_hq)
+
+	# BMP-3 IFV小隊×2（ロシア IFV）
+	var red_ifv1 := ElementFactory.create_element_with_vehicle("RUS_BMP3", GameEnums.Faction.RED, Vector2(1600, 900))
+	world_model.add_element(red_ifv1)
+
+	var red_ifv2 := ElementFactory.create_element_with_vehicle("RUS_BMP3", GameEnums.Faction.RED, Vector2(1500, 1000))
+	world_model.add_element(red_ifv2)
 
 	# スポーン後に衝突を解消
 	for element in world_model.elements:
 		movement_system.resolve_hard_collisions(element)
 
 	print("テストユニット生成完了: ", world_model.elements.size(), " elements")
-	print("=== 歩兵小隊2 vs 戦車小隊1 ===")
-	print("  BLUE: 歩兵2小隊 @ x=600 (INF_LINE: 30人小隊, ライフル + 84mm無反動砲)")
-	print("  RED:  戦車1小隊 @ x=750 (TANK_PLT: 4両)")
-	print("  距離: ~150m（歩兵視界300m内、無反動砲射程500m内）")
-	print("  歩兵の84mm無反動砲: HEAT弾、射程500m、側面撃破率70%%")
-	print("  戦車の同軸MG: 7.62mm、射程800m")
-	print("  期待: 歩兵は無反動砲で戦車を攻撃、戦車は同軸MGで歩兵を制圧")
+	print("=== BLUE (日本 戦車+IFV) vs RED (ロシア IFV×2) ===")
+	print("  BLUE: HQ + 90式戦車×1 + 89式IFV×1")
+	print("  RED:  HQ + BMP-3×2")
+	print("  期待: BLUE戦車が優位、RED IFVはATGMで対抗")
 	print("==========================")
 	for element in world_model.elements:
 		var weapons_str := ""
 		for w in element.weapons:
 			weapons_str += w.id + " "
-		var armor_str := ""
+		var extra_info := ""
 		if element.element_type and element.element_type.armor_class > 0:
-			armor_str = " (ArmorClass=%d)" % element.element_type.armor_class
+			extra_info = " (ArmorClass=%d)" % element.element_type.armor_class
+		if element.element_type and element.element_type.is_comm_hub:
+			extra_info += " [COMM_HUB: range=%dm]" % int(element.element_type.comm_range)
+		if element.vehicle_id != "":
+			extra_info += " [Vehicle: %s]" % element.vehicle_id
 		print("  %s (%s): Str=%d, Weapons=[%s], primary=%s%s" % [
 			element.id,
 			element.element_type.display_name if element.element_type else "?",
 			element.current_strength,
 			weapons_str.strip_edges(),
 			element.primary_weapon.id if element.primary_weapon else "NONE",
-			armor_str
+			extra_info
 		])
 
-	# 中隊AIをセットアップ
-	_setup_company_ais()
+	# コマンダーAIをセットアップ（簡易版）
+	_setup_commander_ais()
+	print("[AI Mode] コマンダーAI（簡易版）")
+
+
+func _setup_commander_ais() -> void:
+	# RED陣営のコマンダーAIを作成（AGGRESSIVEモード）
+	var red_ai = CommanderAIClass.new()
+	red_ai.faction = GameEnums.Faction.RED
+	red_ai.setup(world_model, vision_system, movement_system)
+	red_ai.set_mode(CommanderAIClass.AIMode.AGGRESSIVE)
+
+	# BLUE陣営の中心に向かって前進
+	var blue_elements := world_model.get_elements_for_faction(GameEnums.Faction.BLUE)
+	if blue_elements.size() > 0:
+		var blue_center := Vector2.ZERO
+		for element in blue_elements:
+			blue_center += element.position
+		blue_center /= blue_elements.size()
+		red_ai.set_advance_target(blue_center)
+
+	commander_ais[GameEnums.Faction.RED] = red_ai
+	print("[CommanderAI] RED -> AGGRESSIVE mode")
+
+	# BLUE陣営もCommanderAIを作成（PASSIVEモード = プレイヤー操作サポート）
+	# AIは自動行動せず、RightPanelでの状態表示用
+	var blue_ai = CommanderAIClass.new()
+	blue_ai.faction = GameEnums.Faction.BLUE
+	blue_ai.setup(world_model, vision_system, movement_system)
+	blue_ai.set_mode(CommanderAIClass.AIMode.PASSIVE)
+	commander_ais[GameEnums.Faction.BLUE] = blue_ai
+	print("[CommanderAI] BLUE -> PASSIVE mode (player control)")
 
 
 func _setup_company_ais() -> void:
@@ -446,9 +497,13 @@ func _handle_input() -> void:
 
 
 ## デバッグ入力処理
+var _reset_pending: bool = false
+
 func _handle_debug_input() -> void:
-	# デバッグ入力は現在無効
-	pass
+	# Rキーでリセット（1回だけ実行）
+	if Input.is_physical_key_pressed(KEY_R) and not _reset_pending:
+		_reset_pending = true
+		call_deferred("_reset_scene")
 
 
 func _handle_camera_input() -> void:
@@ -520,9 +575,9 @@ func _on_tick_advanced(tick: int) -> void:
 	# 全Elementの状態を保存
 	world_model.save_prev_states()
 
-	# データリンク状態を更新（ハブがない場合は全員LINKEDにフォールバック）
+	# データリンク状態を更新（HQの通信範囲内はLINKED、範囲外はISOLATED）
 	if data_link_system:
-		data_link_system.update_comm_states_no_hub_fallback(world_model.elements)
+		data_link_system.update_comm_states(world_model.elements)
 
 	# ATTACK命令中のユニットの移動制御
 	_update_attack_movement()
@@ -542,11 +597,14 @@ func _on_tick_advanced(tick: int) -> void:
 	# 戦闘更新
 	_update_combat(tick, GameConstants.SIM_DT)
 
-	# 拠点制圧更新
-	_update_capture(tick)
+	# 拠点制圧更新（コンクエストモード用）
+	# _update_capture(tick)
 
-	# 中隊AI更新
-	_update_company_ais(tick)
+	# コマンダーAI更新
+	_update_commander_ais(tick)
+
+	# 中隊AI更新（現在無効）
+	# _update_company_ais(tick)
 
 
 func _update_combat(tick: int, dt: float) -> void:
@@ -590,19 +648,12 @@ func _update_combat(tick: int, dt: float) -> void:
 					if enemy.state == GameEnums.UnitState.DESTROYED:
 						continue
 					var dist := shooter.position.distance_to(enemy.position)
-					# 抑圧を考慮した実効視界を計算
+					# 実効視界を取得（VisionSystemの計算を使用）
+					var r_eff := vision_system.get_effective_range_for_target(shooter, enemy) if vision_system else 0.0
 					var r_base := shooter.element_type.spot_range_base if shooter.element_type else 0.0
-					var m_observer := 1.0
-					if shooter.suppression >= 0.90:
-						m_observer = 0.20
-					elif shooter.suppression >= 0.70:
-						m_observer = 0.40
-					elif shooter.suppression >= 0.40:
-						m_observer = 0.75
-					var m_activity := 1.25 if enemy.is_moving else 1.0
-					var r_eff := r_base * m_observer * m_activity
-					print("    -> %s: dist=%.0fm, r_eff=%.0fm (base=%.0f*obs=%.2f*act=%.2f)" % [
-						enemy.id, dist, r_eff, r_base, m_observer, m_activity
+					var can_fire := vision_system.can_fire_at(shooter, enemy.id) if vision_system else false
+					print("    -> %s: dist=%.0fm, r_eff=%.0fm (base=%.0f), can_fire=%s" % [
+						enemy.id, dist, r_eff, r_base, can_fire
 					])
 			continue
 
@@ -715,25 +766,40 @@ func _update_combat(tick: int, dt: float) -> void:
 				shooter.current_target_id = target.id
 				continue
 
-			if target.is_vehicle():
-				# 装甲目標（v0.2非対象）: v0.1R ゾーン別装甲・貫徹判定を使用
+			if target.is_armored_vehicle():
+				# 装甲目標: v0.1R ゾーン別装甲・貫徹判定を使用
 				var result_armor := combat_system.calculate_direct_fire_vs_armor(
 					shooter, target, selected_weapon, distance, dt, t_los, terrain, false
 				)
 				is_valid = result_armor.is_valid
 				d_supp = result_armor.d_supp
 
-				# 離散ヒットモデル: p_hitでダメージ発生を判定
-				var roll := randf()
-				var did_hit := result_armor.p_hit > 0 and roll < result_armor.p_hit
-				if did_hit:
-					# ヒット時は車両ダメージ処理
-					combat_system.apply_vehicle_damage(
-						target,
-						selected_weapon.threat_class,
-						result_armor.exposure,
-						tick
-					)
+				# CONTINUOUS武器（機関砲等）: 累積ダメージモデル
+				if result_armor.is_continuous:
+					# 累積ダメージを蓄積し、閾値を超えたら車両ダメージを適用
+					target.accumulated_armor_damage += result_armor.d_dmg
+					if target.accumulated_armor_damage >= 1.0:
+						# 閾値を超えたらダメージ適用
+						combat_system.apply_vehicle_damage(
+							target,
+							selected_weapon.threat_class,
+							result_armor.exposure,
+							tick
+						)
+						target.accumulated_armor_damage -= 1.0
+					# d_dmgは0のままにして重複適用を防ぐ
+				else:
+					# DISCRETE武器: 離散ヒットモデル（p_hitでダメージ発生を判定）
+					var roll := randf()
+					var did_hit := result_armor.p_hit > 0 and roll < result_armor.p_hit
+					if did_hit:
+						# ヒット時は車両ダメージ処理
+						combat_system.apply_vehicle_damage(
+							target,
+							selected_weapon.threat_class,
+							result_armor.exposure,
+							tick
+						)
 
 			else:
 				# 非装甲目標: 従来の計算
@@ -748,6 +814,7 @@ func _update_combat(tick: int, dt: float) -> void:
 			# 抑圧とダメージを適用（threat_classを渡して車両の抑圧上限を適用）
 			var threat_class := selected_weapon.threat_class if selected_weapon else WeaponData.ThreatClass.SMALL_ARMS
 			combat_system.apply_damage(target, d_supp, d_dmg, tick, threat_class)
+
 			elements_under_fire[target.id] = true
 			shooter.last_fire_tick = tick
 			shooter.current_target_id = target.id
@@ -782,11 +849,14 @@ func _update_combat(tick: int, dt: float) -> void:
 						is_hit
 					)
 
-			# デバッグ出力（初回のみ）
-			if tick % 50 == 0:
-				var armor_str := " (ARMORED)" if target.is_vehicle() else ""
+			# デバッグ出力（100tickごと）
+			if tick % 100 == 0:
+				var armor_str := " (ARMORED)" if target.is_armored_vehicle() else ""
 				var weapon_name := selected_weapon.id if selected_weapon else "NONE"
-				print("[Combat] %s -> %s%s [%s]: supp=%.2f dmg=%.2f" % [shooter.id, target.id, armor_str, weapon_name, d_supp, d_dmg])
+				var accum_str := ""
+				if target.is_armored_vehicle() and selected_weapon and selected_weapon.fire_model == WeaponData.FireModel.CONTINUOUS:
+					accum_str = " accum=%.3f" % target.accumulated_armor_damage
+				print("[Combat] %s -> %s%s [%s]: supp=%.2f dmg=%.2f%s" % [shooter.id, target.id, armor_str, weapon_name, d_supp, d_dmg, accum_str])
 
 	# 射撃していないユニットの current_target_id をクリア
 	for element in world_model.elements:
@@ -887,6 +957,19 @@ func _update_capture(tick: int) -> void:
 func _on_speed_changed(_new_speed: float) -> void:
 	_update_hud()
 
+
+func _update_commander_ais(tick: int) -> void:
+	for faction in commander_ais:
+		var ai = commander_ais[faction]
+		ai.update(tick)
+
+	# デバッグ出力（10秒ごと）
+	if tick % 100 == 0:
+		for faction in commander_ais:
+			var ai = commander_ais[faction]
+			print(ai.get_debug_info())
+
+
 # =============================================================================
 # HUD セットアップと更新
 # =============================================================================
@@ -929,11 +1012,14 @@ func _update_hud() -> void:
 	if not sim_runner or not hud_manager:
 		return
 
-	var company_ai = company_ais.get(player_faction)
-	hud_manager.update_hud(sim_runner, company_ai)
+	# CommanderAI（簡易版）を渡す（CompanyControllerAIがない場合）
+	var ai = commander_ais.get(player_faction)
+	if not ai:
+		ai = company_ais.get(player_faction)
+	hud_manager.update_hud(sim_runner, ai)
 
 	# カメラ範囲をミニマップに反映
-	if hud_manager.minimap:
+	if hud_manager.minimap and get_viewport():
 		var viewport_size := get_viewport().get_visible_rect().size
 		var cam_rect := Rect2(
 			camera.position - viewport_size / 2 / camera.zoom,
@@ -992,35 +1078,33 @@ func _on_input_left_click(world_pos: Vector2, _screen_pos: Vector2) -> void:
 
 func _on_input_right_click(world_pos: Vector2, _screen_pos: Vector2) -> void:
 	# スマートコマンド: 右クリック先に応じて自動判定
-	# 中隊AI経由で命令を発行
 	if _selected_elements.size() == 0:
 		return
 
-	var company_ai = company_ais.get(player_faction)
-	if not company_ai:
-		return
-
 	# 敵ユニットをクリックした場合は攻撃（目標ID指定）
-	# TODO: 中隊AIにElement単位の攻撃命令を追加
 	var target_element := _get_element_at_position(world_pos)
 	if target_element and target_element.faction != player_faction:
 		_execute_attack_command(_selected_elements, target_element)
 		return
 
-	# 拠点をクリックした場合
+	# 拠点をクリックした場合（company_aiがある場合のみ）
 	var cp := _get_cp_at_position(world_pos)
 	if cp:
-		var use_road: bool = input_controller.is_alt_held() if input_controller else false
-		if cp.initial_owner == player_faction or cp.initial_owner == GameEnums.Faction.NONE:
-			company_ai.order_defend_cp(cp.id)
-			print("[CompanyAI] BLUE -> DEFEND_CP %s" % cp.id)
+		var company_ai = company_ais.get(player_faction)
+		if company_ai:
+			if cp.initial_owner == player_faction or cp.initial_owner == GameEnums.Faction.NONE:
+				company_ai.order_defend_cp(cp.id)
+				print("[CompanyAI] BLUE -> DEFEND_CP %s" % cp.id)
+			else:
+				company_ai.order_attack_cp(cp.id)
+				print("[CompanyAI] BLUE -> ATTACK_CP %s" % cp.id)
+			return
 		else:
-			company_ai.order_attack_cp(cp.id)
-			print("[CompanyAI] BLUE -> ATTACK_CP %s" % cp.id)
-		return
+			# company_aiがない場合は直接移動命令
+			_execute_command_for_selected(GameEnums.OrderType.MOVE, cp.position)
+			return
 
 	# それ以外は移動（選択ユニットのみに直接命令）
-	# 注意: company_ai.order_move() は全ユニットに命令を出すため使用しない
 	_execute_command_for_selected(GameEnums.OrderType.MOVE, world_pos)
 
 
@@ -1318,3 +1402,12 @@ func _get_terrain_color(terrain: GameEnums.TerrainType) -> Color:
 			return Color(0.2, 0.3, 0.7)
 		_:
 			return Color(0.3, 0.4, 0.3)
+
+# =============================================================================
+# デバッグ機能
+# =============================================================================
+
+## Rキーでシーンをリセット
+func _reset_scene() -> void:
+	print("[Debug] シーンをリセット")
+	get_tree().reload_current_scene()
