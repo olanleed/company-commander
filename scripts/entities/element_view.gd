@@ -149,14 +149,14 @@ func _update_visibility() -> void:
 			if _sprite:
 				_sprite.modulate = Color(1, 1, 1, 1)
 		GameEnums.ContactState.SUSPECTED:
-			visible = true
-			modulate = Color(1, 1, 1, 0.5)  # 半透明
-			# SUS時は推定位置を使用
-			position = _estimated_position
+			# SUS: 半透明で推定位置に表示（デバッグ中は非表示）
+			visible = false  # ゴースト防止のため一時的に非表示
+			# visible = true
+			# modulate = Color(1, 1, 1, 0.5)
+			# position = _estimated_position
 		GameEnums.ContactState.LOST:
-			visible = true
-			modulate = Color(1, 1, 1, 0.25)  # さらに薄く
-			position = _estimated_position
+			# LOST: 非表示（ゴースト防止）
+			visible = false
 		GameEnums.ContactState.UNKNOWN:
 			visible = false
 

@@ -204,13 +204,8 @@ func _calculate_effective_range(observer: ElementData.ElementInstance, target: E
 	# 目標位置の隠蔽係数
 	var m_terrain := _get_concealment_modifier(target.position)
 
-	# 目標の活動係数
-	var m_activity := _get_activity_modifier(target)
-
-	# 観測側の状態係数
-	var m_observer := _get_observer_modifier(observer)
-
-	return r_base * m_terrain * m_activity * m_observer
+	# シンプルな計算: 基本視界 × 地形隠蔽のみ
+	return r_base * m_terrain
 
 
 ## 地形による隠蔽係数
@@ -234,46 +229,6 @@ func _get_concealment_modifier(pos: Vector2) -> float:
 			return 1.00
 
 
-## 目標の活動による係数
-func _get_activity_modifier(target: ElementData.ElementInstance) -> float:
-	# 移動中は見つかりやすい
-	if target.is_moving:
-		if target.element_type and target.element_type.mobility_class == GameEnums.MobilityType.FOOT:
-			return 1.15
-		else:
-			return 1.25
-
-	# TODO: 射撃中の判定
-	return 1.00
-
-
-## 観測側の状態による係数
-func _get_observer_modifier(observer: ElementData.ElementInstance) -> float:
-	var suppression := observer.suppression
-
-	# 装甲車両は抑圧による視界低下が緩和される
-	# 理由: 車内から照準器/センサーを使用するため、外部からの射撃に晒されても
-	# 歩兵ほど視界が低下しない
-	if observer.is_vehicle():
-		# 車両は抑圧による視界低下を半減（最低でも0.5を維持）
-		if suppression < 0.40:
-			return 1.00
-		elif suppression < 0.70:
-			return 0.90  # 歩兵: 0.75
-		elif suppression < 0.90:
-			return 0.70  # 歩兵: 0.40
-		else:
-			return 0.50  # 歩兵: 0.20
-
-	# 歩兵・非装甲ユニットは従来通り
-	if suppression < 0.40:
-		return 1.00
-	elif suppression < 0.70:
-		return 0.75
-	elif suppression < 0.90:
-		return 0.40
-	else:
-		return 0.20
 
 # =============================================================================
 # LoS判定
@@ -568,18 +523,14 @@ func get_effective_range_for_target(observer: ElementData.ElementInstance, targe
 	return _calculate_effective_range(observer, target)
 
 
-## observerの実効視界範囲を取得（静止目標に対する、抑圧考慮済み）
+## observerの実効視界範囲を取得
 ## TacticalOverlay等で視界円を描画するために使用
 func get_effective_view_range(observer: ElementData.ElementInstance) -> float:
 	if not observer or not observer.element_type:
 		return 0.0
 
-	var r_base := observer.element_type.spot_range_base
-	var m_observer := _get_observer_modifier(observer)
-
-	# 静止目標・隠蔽なし地形での実効視界
-	# (m_terrain=1.0, m_activity=1.0を仮定)
-	return r_base * m_observer
+	# シンプルに基本視界を返す（地形隠蔽は目標位置依存なのでここでは適用しない）
+	return observer.element_type.spot_range_base
 
 
 ## observerの基本視界範囲を取得（抑圧なし、静止目標に対する最大視界）

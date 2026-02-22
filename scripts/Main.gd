@@ -258,39 +258,52 @@ func _spawn_test_units() -> void:
 		print("[VehicleCatalog] Loaded %d vehicles" % catalog.get_all_vehicle_ids().size())
 
 	# === BLUE陣営 (日本) ===
-	# HQ (通信ハブ - 後方配置、comm_range=3000m)
-	var blue_hq := ElementFactory.create_element("CMD_HQ", GameEnums.Faction.BLUE, Vector2(200, 950))
+	# 82式指揮通信車（通信ハブ - 後方配置）
+	var blue_hq := ElementFactory.create_element_with_vehicle("JPN_Type82_CCV", GameEnums.Faction.BLUE, Vector2(200, 950))
 	world_model.add_element(blue_hq)
 
-	# 90式戦車小隊×1（日本）
-	var blue_tank1 := ElementFactory.create_element_with_vehicle("JPN_Type90", GameEnums.Faction.BLUE, Vector2(400, 900))
+	# 10式戦車小隊×1（日本 最新MBT）
+	var blue_tank1 := ElementFactory.create_element_with_vehicle("JPN_Type10", GameEnums.Faction.BLUE, Vector2(400, 900))
 	world_model.add_element(blue_tank1)
 
 	# 89式装甲戦闘車小隊×1（日本 IFV）
 	var blue_ifv1 := ElementFactory.create_element_with_vehicle("JPN_Type89", GameEnums.Faction.BLUE, Vector2(500, 1000))
 	world_model.add_element(blue_ifv1)
 
+	# 16式機動戦闘車×1（日本 装輪戦車）
+	var blue_mcv := ElementFactory.create_element_with_vehicle("JPN_Type16", GameEnums.Faction.BLUE, Vector2(350, 850))
+	world_model.add_element(blue_mcv)
+
+	# 96式装輪装甲車×1（日本 APC）
+	var blue_apc := ElementFactory.create_element_with_vehicle("JPN_Type96_WAPC", GameEnums.Faction.BLUE, Vector2(300, 1050))
+	world_model.add_element(blue_apc)
+
 	# === RED陣営 (ロシア) ===
-	# HQ (通信ハブ - 後方配置、comm_range=3000m)
-	var red_hq := ElementFactory.create_element("CMD_HQ", GameEnums.Faction.RED, Vector2(1800, 950))
+	# 指揮車両（通信ハブ）
+	var red_hq := ElementFactory.create_element("COMMAND_VEH", GameEnums.Faction.RED, Vector2(1800, 950))
 	world_model.add_element(red_hq)
 
-	# BMP-3 IFV小隊×2（ロシア IFV）
+	# T-90M戦車小隊×1（ロシア 最新MBT）
+	var red_tank1 := ElementFactory.create_element_with_vehicle("RUS_T90M", GameEnums.Faction.RED, Vector2(1600, 850))
+	world_model.add_element(red_tank1)
+
+	# BMP-3 IFV小隊×1（ロシア IFV）
 	var red_ifv1 := ElementFactory.create_element_with_vehicle("RUS_BMP3", GameEnums.Faction.RED, Vector2(1600, 900))
 	world_model.add_element(red_ifv1)
 
-	var red_ifv2 := ElementFactory.create_element_with_vehicle("RUS_BMP3", GameEnums.Faction.RED, Vector2(1500, 1000))
-	world_model.add_element(red_ifv2)
+	# BTR-82A APC小隊×1（ロシア 装輪APC）
+	var red_apc := ElementFactory.create_element_with_vehicle("RUS_BTR82A", GameEnums.Faction.RED, Vector2(1500, 1000))
+	world_model.add_element(red_apc)
 
 	# スポーン後に衝突を解消
 	for element in world_model.elements:
 		movement_system.resolve_hard_collisions(element)
 
 	print("テストユニット生成完了: ", world_model.elements.size(), " elements")
-	print("=== BLUE (日本 戦車+IFV) vs RED (ロシア IFV×2) ===")
-	print("  BLUE: HQ + 90式戦車×1 + 89式IFV×1")
-	print("  RED:  HQ + BMP-3×2")
-	print("  期待: BLUE戦車が優位、RED IFVはATGMで対抗")
+	print("=== BLUE (日本) vs RED (ロシア) ===")
+	print("  BLUE: 82式CCV + 10式MBT + 89式IFV + 16式MCV + 96式APC")
+	print("  RED:  指揮車 + T-90M + BMP-3 + BTR-82A")
+	print("  期待: 多様なユニットタイプの交戦テスト")
 	print("==========================")
 	for element in world_model.elements:
 		var weapons_str := ""
