@@ -90,6 +90,10 @@ var _camera: Camera2D
 var _pie_menu: PieMenu
 var _hud_manager: Control  # HUDManager参照（UI領域判定用）
 
+## 選択中ユニットのカテゴリを取得するコールバック
+## 戻り値: String（例: "TANK", "IFV", "INFANTRY"）、選択なしは""
+var _get_selected_category_callback: Callable = Callable()
+
 # =============================================================================
 # 初期化
 # =============================================================================
@@ -98,6 +102,11 @@ func setup(camera: Camera2D, pie_menu: PieMenu = null, hud_manager: Control = nu
 	_camera = camera
 	_pie_menu = pie_menu
 	_hud_manager = hud_manager
+
+
+## 選択中ユニットのカテゴリ取得コールバックを設定
+func set_selected_category_callback(callback: Callable) -> void:
+	_get_selected_category_callback = callback
 
 	if _pie_menu:
 		_pie_menu.command_selected.connect(_on_pie_menu_command_selected)
@@ -266,7 +275,13 @@ func _show_pie_menu() -> void:
 
 	_pie_menu_shown = true
 	_right_press_time = 0.0  # タイマーをリセットして再表示を防ぐ
-	_pie_menu.show_menu(_right_press_screen_pos, _right_press_world_pos)
+
+	# 選択中ユニットのカテゴリを取得
+	var category := ""
+	if _get_selected_category_callback.is_valid():
+		category = _get_selected_category_callback.call()
+
+	_pie_menu.show_menu_for_category(_right_press_screen_pos, _right_press_world_pos, category)
 	pie_menu_requested.emit(_right_press_screen_pos, _right_press_world_pos)
 
 # =============================================================================

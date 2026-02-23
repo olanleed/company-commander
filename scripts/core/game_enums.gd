@@ -146,18 +146,24 @@ enum VehicleState {
 
 enum OrderType {
 	NONE = 0,           ## なし
-	MOVE = 1,           ## 移動
-	MOVE_FAST = 2,      ## 急速移動
-	ATTACK_MOVE = 3,    ## 攻撃前進
-	HOLD = 4,           ## 停止
-	DEFEND = 5,         ## 防御
-	ATTACK = 6,         ## 攻撃
-	RETREAT = 7,        ## 後退
-	RECON = 8,          ## 偵察
+	MOVE = 1,           ## 移動（指定位置へ移動して停止）
+	MOVE_FAST = 2,      ## 急速移動（遮蔽無視、発見されやすい）
+	ATTACK_MOVE = 3,    ## [廃止] Move + SOP(Fire at Will) で代替
+	HOLD = 4,           ## 停止（現在の移動をキャンセル）= STOP
+	DEFEND = 5,         ## [廃止] Stop + SOP で代替
+	ATTACK = 6,         ## 攻撃（指定目標を追尾・射撃）
+	RETREAT = 7,        ## 後退（正面を維持したまま後退）= REVERSE
+	RECON = 8,          ## 偵察（偵察前進/監視）
 	SUPPRESS = 9,       ## 制圧射撃
-	SMOKE = 10,         ## 煙幕展開
-	SUPPORT = 11,       ## 支援
-	BREAK_CONTACT = 12, ## 離脱
+	SMOKE = 10,         ## 煙幕展開（発煙弾発射）
+	SUPPORT = 11,       ## 支援（火力支援/補給）
+	BREAK_CONTACT = 12, ## 離脱（戦闘離脱）
+	# === 新規追加（v0.2.2） ===
+	UNLOAD = 13,        ## 下車（IFV/APC：搭乗歩兵を下車）
+	LOAD = 14,          ## 乗車（IFV/APC：近くの歩兵を乗車）
+	AMBUSH = 15,        ## 待ち伏せ（歩兵：SOP Hold Fireで待機、近距離で射撃）
+	OBSERVE = 16,       ## 監視（偵察：移動停止、視界集中）
+	FIRE_MISSION = 17,  ## 射撃任務（砲兵：間接射撃）
 }
 
 # =============================================================================

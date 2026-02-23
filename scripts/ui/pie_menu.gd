@@ -3,7 +3,7 @@ extends Control
 
 ## 放射状コマンドメニュー（Pie Menu / Marking Menu）
 ## 右クリック長押しで表示、8方向でコマンド選択
-## 仕様: docs/ui_design_v0.1.md, docs/ui_input_v0.1.md
+## 仕様: docs/pie_menu_commands_v0.2.md
 
 # =============================================================================
 # 定数
@@ -14,18 +14,69 @@ const OUTER_RADIUS := 120.0
 const ACTIVATION_DELAY := 0.2  # 右クリック長押し判定（秒）
 const DEADZONE_RADIUS := 30.0  # 中心のデッドゾーン
 
-## 8方向コマンド配置（12時から時計回り）
-## N=Move, NE=Defend, E=Attack, SE=Recon, S=Break, SW=Smoke, W=Support, NW=Suppress
-const COMMANDS := [
-	{"name": "Move", "type": GameEnums.OrderType.MOVE, "angle": 270, "color": Color(0.3, 0.6, 0.9)},
-	{"name": "Defend", "type": GameEnums.OrderType.DEFEND, "angle": 315, "color": Color(0.3, 0.8, 0.3)},
-	{"name": "Attack", "type": GameEnums.OrderType.ATTACK, "angle": 0, "color": Color(0.9, 0.3, 0.3)},
-	{"name": "Recon", "type": GameEnums.OrderType.RECON, "angle": 45, "color": Color(0.7, 0.7, 0.3)},
-	{"name": "Break", "type": GameEnums.OrderType.BREAK_CONTACT, "angle": 90, "color": Color(0.5, 0.5, 0.5)},
-	{"name": "Smoke", "type": GameEnums.OrderType.SMOKE, "angle": 135, "color": Color(0.6, 0.6, 0.7)},
-	{"name": "Support", "type": GameEnums.OrderType.SUPPORT, "angle": 180, "color": Color(0.4, 0.7, 0.4)},
-	{"name": "Suppress", "type": GameEnums.OrderType.SUPPRESS, "angle": 225, "color": Color(0.8, 0.5, 0.2)},
+## 8方向コマンド配置（仕様書 v0.2.2 準拠）
+## 角度: 270=N(↑), 315=NE(↗), 0=E(→), 45=SE(↘), 90=S(↓), 135=SW(↙), 180=W(←), 225=NW(↖)
+##
+## 共通コマンド（全ユニット）:
+## - N(↑): Move - 移動して停止
+## - E(→): Attack - 指定目標を攻撃
+## - S(↓): Stop - 即座に停止
+## - NW(↖): Break Contact - 戦闘離脱
+##
+## 空きスロット（ユニット固有コマンド用）:
+## - NE(↗), SE(↘), SW(↙), W(←)
+
+const DEFAULT_COMMANDS := [
+	{"name": "Move", "type": GameEnums.OrderType.MOVE, "angle": 270, "color": Color(0.3, 0.6, 0.9), "enabled": true},
+	{"name": "---", "type": GameEnums.OrderType.NONE, "angle": 315, "color": Color(0.4, 0.4, 0.4), "enabled": false},  # NE: 空き
+	{"name": "Attack", "type": GameEnums.OrderType.ATTACK, "angle": 0, "color": Color(0.9, 0.3, 0.3), "enabled": true},
+	{"name": "---", "type": GameEnums.OrderType.NONE, "angle": 45, "color": Color(0.4, 0.4, 0.4), "enabled": false},   # SE: 空き
+	{"name": "Stop", "type": GameEnums.OrderType.HOLD, "angle": 90, "color": Color(0.5, 0.5, 0.6), "enabled": true},
+	{"name": "Reverse", "type": GameEnums.OrderType.RETREAT, "angle": 135, "color": Color(0.6, 0.5, 0.4), "enabled": false},  # SW: Reverse（戦車/IFV用）
+	{"name": "Smoke", "type": GameEnums.OrderType.SMOKE, "angle": 180, "color": Color(0.6, 0.6, 0.7), "enabled": false},  # W: Smoke（装備時のみ）
+	{"name": "Break", "type": GameEnums.OrderType.BREAK_CONTACT, "angle": 225, "color": Color(0.7, 0.4, 0.4), "enabled": true},
 ]
+
+## ユニットカテゴリ別コマンド設定
+const CATEGORY_COMMANDS := {
+	"TANK": {
+		315: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},  # NE: 空き（将来: Fire Position）
+		45: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},   # SE: 空き
+		135: {"name": "Reverse", "type": GameEnums.OrderType.RETREAT, "enabled": true},  # SW: Reverse
+		180: {"name": "Smoke", "type": GameEnums.OrderType.SMOKE, "enabled": true},  # W: Smoke
+	},
+	"IFV": {
+		315: {"name": "Unload", "type": GameEnums.OrderType.UNLOAD, "enabled": true},  # NE: Unload
+		45: {"name": "Load", "type": GameEnums.OrderType.LOAD, "enabled": true},   # SE: Load
+		135: {"name": "Reverse", "type": GameEnums.OrderType.RETREAT, "enabled": true},  # SW: Reverse
+		180: {"name": "Smoke", "type": GameEnums.OrderType.SMOKE, "enabled": true},  # W: Smoke
+	},
+	"ARTILLERY": {
+		315: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},  # NE: 空き（将来: Deploy）
+		45: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},   # SE: 空き（将来: Cease Fire）
+		135: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},  # SW: 空き
+		180: {"name": "Fire HE", "type": GameEnums.OrderType.FIRE_MISSION, "enabled": true},  # W: Fire Mission
+		0: {"name": "Fire HE", "type": GameEnums.OrderType.FIRE_MISSION, "enabled": true},  # E: Fire Mission（Attackの代わり）
+	},
+	"INFANTRY": {
+		315: {"name": "Fast", "type": GameEnums.OrderType.MOVE_FAST, "enabled": true},  # NE: Fast Move
+		45: {"name": "Ambush", "type": GameEnums.OrderType.AMBUSH, "enabled": true},   # SE: Ambush
+		135: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},  # SW: 空き（将来: Dig In）
+		180: {"name": "Board", "type": GameEnums.OrderType.LOAD, "enabled": true},  # W: Board（乗車）
+	},
+	"RECON": {
+		315: {"name": "Recon", "type": GameEnums.OrderType.RECON, "enabled": true},  # NE: Recon Move
+		45: {"name": "Observe", "type": GameEnums.OrderType.OBSERVE, "enabled": true},   # SE: Observe
+		135: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},  # SW: 空き（将来: Hide）
+		180: {"name": "Smoke", "type": GameEnums.OrderType.SMOKE, "enabled": false},  # W: Smoke（装備時のみ）
+	},
+	"SUPPORT": {
+		315: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},  # NE: 空き（将来: Follow）
+		45: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},   # SE: 空き
+		135: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},  # SW: 空き
+		180: {"name": "Resupply", "type": GameEnums.OrderType.SUPPORT, "enabled": true},  # W: Resupply
+	},
+}
 
 # =============================================================================
 # シグナル
@@ -43,6 +94,8 @@ var _center_pos := Vector2.ZERO
 var _world_pos := Vector2.ZERO  # ワールド座標（命令の目標位置）
 var _hovered_index := -1
 var _selected_command: GameEnums.OrderType = GameEnums.OrderType.NONE
+var _current_commands: Array = []  # 現在表示中のコマンド
+var _current_category: String = ""  # 現在のユニットカテゴリ
 
 
 # =============================================================================
@@ -55,6 +108,8 @@ func _ready() -> void:
 	# 非表示時はマウスイベントを通過させる
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visible = false
+	# デフォルトコマンドで初期化
+	_current_commands = DEFAULT_COMMANDS.duplicate(true)
 
 
 func _draw() -> void:
@@ -71,16 +126,21 @@ func _draw() -> void:
 
 
 func _draw_pie_segments() -> void:
-	var segment_angle := TAU / COMMANDS.size()
+	var segment_angle := TAU / _current_commands.size()
 
-	for i in range(COMMANDS.size()):
-		var cmd: Dictionary = COMMANDS[i]
+	for i in range(_current_commands.size()):
+		var cmd: Dictionary = _current_commands[i]
 		var start_angle: float = deg_to_rad(cmd.angle) - segment_angle / 2
 		var end_angle: float = start_angle + segment_angle
 
 		var is_hovered := i == _hovered_index
+		var is_enabled: bool = cmd.get("enabled", true)
 		var color: Color = cmd.color
-		if is_hovered:
+
+		if not is_enabled:
+			# 無効なコマンドはグレーアウト
+			color = Color(0.3, 0.3, 0.35, 0.5)
+		elif is_hovered:
 			color = color.lightened(0.3)
 		else:
 			color = color.darkened(0.3)
@@ -103,7 +163,7 @@ func _draw_pie_segments() -> void:
 		draw_polygon(points, [color])
 
 		# 境界線
-		var border_color := Color.WHITE if is_hovered else Color(0.4, 0.4, 0.5)
+		var border_color := Color.WHITE if is_hovered and is_enabled else Color(0.4, 0.4, 0.5)
 		for j in range(points.size()):
 			var next_j := (j + 1) % points.size()
 			draw_line(points[j], points[next_j], border_color, 1.0 if is_hovered else 0.5)
@@ -130,14 +190,18 @@ func _draw_labels() -> void:
 	var font := ThemeDB.fallback_font
 	var font_size := 14
 
-	for i in range(COMMANDS.size()):
-		var cmd: Dictionary = COMMANDS[i]
+	for i in range(_current_commands.size()):
+		var cmd: Dictionary = _current_commands[i]
 		var angle: float = deg_to_rad(cmd.angle)
 		var label_radius: float = (INNER_RADIUS + OUTER_RADIUS) / 2
 		var label_pos := _center_pos + Vector2(cos(angle), sin(angle)) * label_radius
 
 		var is_hovered := i == _hovered_index
-		var color := Color.WHITE if is_hovered else Color(0.85, 0.85, 0.85)
+		var is_enabled: bool = cmd.get("enabled", true)
+		var color := Color.WHITE if is_hovered and is_enabled else Color(0.85, 0.85, 0.85)
+
+		if not is_enabled:
+			color = Color(0.5, 0.5, 0.5, 0.7)
 
 		var text: String = cmd.name
 		var text_size := font.get_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1, font_size)
@@ -184,10 +248,10 @@ func _update_hover(mouse_pos: Vector2) -> void:
 
 	# 角度からセグメントを特定
 	var angle := fmod(offset.angle() + TAU, TAU)  # 0〜TAU に正規化
-	var segment_angle := TAU / COMMANDS.size()
+	var segment_angle := TAU / _current_commands.size()
 
-	for i in range(COMMANDS.size()):
-		var cmd: Dictionary = COMMANDS[i]
+	for i in range(_current_commands.size()):
+		var cmd: Dictionary = _current_commands[i]
 		var cmd_angle := fmod(deg_to_rad(cmd.angle) + TAU, TAU)
 		var start_angle := fmod(cmd_angle - segment_angle / 2 + TAU, TAU)
 		var end_angle := fmod(cmd_angle + segment_angle / 2 + TAU, TAU)
@@ -208,10 +272,16 @@ func _angle_in_range(angle: float, start: float, end: float) -> bool:
 
 
 func _confirm_selection() -> void:
-	if _hovered_index >= 0 and _hovered_index < COMMANDS.size():
-		var cmd: Dictionary = COMMANDS[_hovered_index]
-		_selected_command = cmd.type
-		command_selected.emit(_selected_command, _world_pos)
+	if _hovered_index >= 0 and _hovered_index < _current_commands.size():
+		var cmd: Dictionary = _current_commands[_hovered_index]
+		var is_enabled: bool = cmd.get("enabled", true)
+
+		if is_enabled and cmd.type != GameEnums.OrderType.NONE:
+			_selected_command = cmd.type
+			command_selected.emit(_selected_command, _world_pos)
+		else:
+			# 無効なコマンドはキャンセル扱い
+			menu_cancelled.emit()
 	else:
 		menu_cancelled.emit()
 
@@ -221,15 +291,48 @@ func _confirm_selection() -> void:
 # メニュー表示/非表示
 # =============================================================================
 
-## メニューを表示
+## メニューを表示（カテゴリ指定なし：デフォルトコマンド）
 func show_menu(screen_pos: Vector2, world_pos: Vector2) -> void:
+	show_menu_for_category(screen_pos, world_pos, "")
+
+
+## メニューを表示（カテゴリ指定あり）
+func show_menu_for_category(screen_pos: Vector2, world_pos: Vector2, category: String) -> void:
 	_center_pos = screen_pos
 	_world_pos = world_pos
 	_hovered_index = -1
+	_current_category = category
+
+	# カテゴリに応じたコマンドを設定
+	_setup_commands_for_category(category)
+
 	_is_active = true
 	visible = true
 	mouse_filter = Control.MOUSE_FILTER_STOP  # 表示時はイベントをキャプチャ
 	queue_redraw()
+
+
+## カテゴリに応じたコマンドを設定
+func _setup_commands_for_category(category: String) -> void:
+	# デフォルトコマンドをコピー
+	_current_commands = DEFAULT_COMMANDS.duplicate(true)
+
+	# カテゴリ固有のコマンドで上書き
+	if category != "" and CATEGORY_COMMANDS.has(category):
+		var category_overrides: Dictionary = CATEGORY_COMMANDS[category]
+
+		for i in range(_current_commands.size()):
+			var cmd: Dictionary = _current_commands[i]
+			var angle: int = int(cmd.angle)
+
+			if category_overrides.has(angle):
+				var override: Dictionary = category_overrides[angle]
+				cmd.name = override.name
+				cmd.type = override.type
+				cmd.enabled = override.enabled
+				# 色はデフォルトのまま維持（または上書き）
+				if override.has("color"):
+					cmd.color = override.color
 
 
 ## メニューを非表示
@@ -255,3 +358,28 @@ func is_active() -> bool:
 
 func get_activation_delay() -> float:
 	return ACTIVATION_DELAY
+
+
+func get_current_category() -> String:
+	return _current_category
+
+
+## アーキタイプからカテゴリを取得
+static func get_category_for_archetype(archetype: String) -> String:
+	match archetype:
+		"TANK_PLT", "LIGHT_TANK":
+			return "TANK"
+		"IFV_PLT", "APC_PLT":
+			return "IFV"
+		"SP_ARTILLERY", "SP_MORTAR", "MLRS":
+			return "ARTILLERY"
+		"INF_LINE", "INF_AT", "INF_MG":
+			return "INFANTRY"
+		"RECON_VEH", "RECON_TEAM":
+			return "RECON"
+		"SPAAG", "SAM_VEH":
+			return "AIR_DEFENSE"
+		"LOG_TRUCK", "COMMAND_VEH", "MEDICAL_VEH":
+			return "SUPPORT"
+		_:
+			return ""

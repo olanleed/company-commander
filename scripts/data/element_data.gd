@@ -118,6 +118,8 @@ class ElementInstance:
 	var path_index: int = 0
 	var is_moving: bool = false
 	var use_road_only: bool = false
+	var is_reversing: bool = false  ## 後退中フラグ（正面を維持して後退）
+	var break_contact_smoke_requested: bool = false  ## 離脱時の煙幕要請
 
 	## 命令
 	var current_order_type: GameEnums.OrderType = GameEnums.OrderType.HOLD

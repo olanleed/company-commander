@@ -1014,6 +1014,7 @@ func _setup_hud() -> void:
 	input_controller.name = "InputController"
 	add_child(input_controller)
 	input_controller.setup(camera, hud_manager.pie_menu, hud_manager)
+	input_controller.set_selected_category_callback(_get_selected_unit_category)
 
 	# シグナル接続
 	input_controller.left_click.connect(_on_input_left_click)
@@ -1048,6 +1049,24 @@ func _update_hud() -> void:
 			viewport_size / camera.zoom
 		)
 		hud_manager.minimap.set_camera_rect(cam_rect)
+
+
+# =============================================================================
+# 選択ユニットヘルパー
+# =============================================================================
+
+## 選択中ユニットのカテゴリを取得（パイメニュー表示用）
+func _get_selected_unit_category() -> String:
+	if _selected_elements.is_empty():
+		return ""
+
+	# 最初の選択ユニットからカテゴリを取得
+	var first_element := _selected_elements[0]
+	if not first_element or not first_element.element_type:
+		return ""
+
+	var archetype := first_element.element_type.id
+	return PieMenu.get_category_for_archetype(archetype)
 
 
 # =============================================================================
@@ -1198,16 +1217,36 @@ func _execute_command_for_selected(command_type: GameEnums.OrderType, target_pos
 				element.forced_target_id = ""
 				element.current_order_type = GameEnums.OrderType.MOVE
 				movement_system.issue_move_order(element, target_pos, use_road)
+
 			GameEnums.OrderType.ATTACK:
 				# 攻撃命令（位置指定）：その位置へ移動しつつ交戦
 				element.forced_target_id = ""  # 位置指定なので特定目標なし
 				element.current_order_type = GameEnums.OrderType.ATTACK
 				movement_system.issue_move_order(element, target_pos, use_road)
+
+			GameEnums.OrderType.HOLD:
+				# 停止命令：即座に移動を停止
+				movement_system.issue_stop_order(element)
+
+			GameEnums.OrderType.RETREAT:
+				# 後退命令：正面を維持したまま後退
+				# target_posへ向かって後退（クリック位置が後退先）
+				movement_system.issue_reverse_order(element, element.position.distance_to(target_pos))
+
+			GameEnums.OrderType.BREAK_CONTACT:
+				# 離脱命令：煙幕＋後退で戦闘離脱
+				movement_system.issue_break_contact_order(element, target_pos)
+
+			GameEnums.OrderType.SMOKE:
+				# 煙幕命令：発煙弾を発射
+				_execute_smoke_command(element, target_pos)
+
 			GameEnums.OrderType.DEFEND:
-				# 防御命令：その位置で防御
+				# 防御命令：その位置で防御（廃止だが後方互換）
 				element.forced_target_id = ""
 				element.current_order_type = GameEnums.OrderType.DEFEND
 				movement_system.issue_move_order(element, target_pos, use_road)
+
 			_:
 				# その他のコマンドは移動として処理（暫定）
 				element.current_order_type = command_type
@@ -1241,6 +1280,20 @@ func _execute_attack_command(attackers: Array[ElementData.ElementInstance], targ
 			movement_system.issue_move_order(element, target.position, use_road)
 
 		print("[Order] %s -> ATTACK %s (can_fire=%s)" % [element.id, target.id, can_fire])
+
+
+## 煙幕コマンドを実行（発煙弾発射）
+func _execute_smoke_command(element: ElementData.ElementInstance, _target_pos: Vector2) -> void:
+	if not element:
+		return
+
+	# TODO: 煙幕システムの実装
+	# 現在は停止して煙幕モードに設定するだけ
+	element.current_order_type = GameEnums.OrderType.SMOKE
+	element.forced_target_id = ""
+
+	# 煙幕発射をリクエスト（将来: SmokeSystemで処理）
+	print("[Order] %s -> SMOKE (not yet implemented)" % element.id)
 
 
 func _get_cp_at_position(pos: Vector2) -> MapData.CapturePoint:

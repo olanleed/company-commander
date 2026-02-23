@@ -78,7 +78,88 @@ func issue_move_order(element: ElementData.ElementInstance, target: Vector2, use
 	element.use_road_only = use_route
 	element.order_target_position = target
 	element.current_order_type = GameEnums.OrderType.MOVE
+	element.is_reversing = false  # 通常移動
 
+	return true
+
+
+## 停止命令を発行（即座に移動を停止）
+func issue_stop_order(element: ElementData.ElementInstance) -> void:
+	if not element:
+		return
+
+	_stop_movement(element)
+	element.current_order_type = GameEnums.OrderType.HOLD
+	element.forced_target_id = ""
+	print("[MovementSystem] %s -> STOP" % element.id)
+
+
+## 後退命令を発行（正面を維持したまま後退）
+func issue_reverse_order(element: ElementData.ElementInstance, distance: float = 100.0) -> bool:
+	if not element or not element.element_type:
+		return false
+
+	# 現在の向きと反対方向に目標を設定
+	var reverse_direction := Vector2(cos(element.facing), sin(element.facing)) * -1.0
+	var target := element.position + reverse_direction * distance
+
+	# マップ範囲内にクランプ
+	if map_data:
+		target.x = clampf(target.x, 0.0, map_data.size_m.x)
+		target.y = clampf(target.y, 0.0, map_data.size_m.y)
+
+	# パスを生成（後退中は経路探索をシンプルに）
+	var path := PackedVector2Array()
+	path.append(element.position)
+	path.append(target)
+
+	element.current_path = path
+	element.path_index = 1
+	element.is_moving = true
+	element.is_reversing = true  # 後退フラグ
+	element.use_road_only = false
+	element.order_target_position = target
+	element.current_order_type = GameEnums.OrderType.RETREAT
+	element.forced_target_id = ""
+
+	print("[MovementSystem] %s -> REVERSE to %s" % [element.id, target])
+	return true
+
+
+## 離脱命令を発行（戦闘離脱：後退＋煙幕）
+func issue_break_contact_order(element: ElementData.ElementInstance, retreat_pos: Vector2) -> bool:
+	if not element or not element.element_type:
+		return false
+
+	# マップ範囲内にクランプ
+	var clamped_target := retreat_pos
+	if map_data:
+		clamped_target.x = clampf(retreat_pos.x, 0.0, map_data.size_m.x)
+		clamped_target.y = clampf(retreat_pos.y, 0.0, map_data.size_m.y)
+
+	# 経路探索
+	var path := PackedVector2Array()
+	if nav_manager:
+		var mobility := element.element_type.mobility_class
+		path = nav_manager.find_path(element.position, clamped_target, mobility, false)
+
+	if path.is_empty():
+		# パスが見つからない場合は直線移動
+		path = PackedVector2Array()
+		path.append(element.position)
+		path.append(clamped_target)
+
+	element.current_path = path
+	element.path_index = 1 if path.size() > 1 else 0
+	element.is_moving = true
+	element.is_reversing = false
+	element.use_road_only = false
+	element.order_target_position = clamped_target
+	element.current_order_type = GameEnums.OrderType.BREAK_CONTACT
+	element.forced_target_id = ""
+	element.break_contact_smoke_requested = true  # 煙幕要請フラグ
+
+	print("[MovementSystem] %s -> BREAK_CONTACT to %s" % [element.id, clamped_target])
 	return true
 
 # =============================================================================
@@ -120,28 +201,48 @@ func update_element(element: ElementData.ElementInstance, dt: float) -> void:
 
 	# 移動方向と速度を計算
 	var direction := to_waypoint.normalized()
-	var target_facing := atan2(direction.y, direction.x)
 
-	# 回転 (スムーズに)
-	element.facing = _rotate_toward(element.facing, target_facing, ROTATION_SPEED * dt)
+	# 後退モードかどうかで挙動を変える
+	if element.is_reversing:
+		# 後退時：正面を維持（回転しない）、移動速度は半減
+		var terrain := map_data.get_terrain_at(element.position) if map_data else GameEnums.TerrainType.OPEN
+		var speed := element.get_speed(terrain) * 0.5  # 後退は半速
 
-	# 現在地の地形に応じた速度を取得
-	var terrain := map_data.get_terrain_at(element.position) if map_data else GameEnums.TerrainType.OPEN
-	var speed := element.get_speed(terrain)
+		# 抑圧による速度低下
+		speed *= (1.0 - element.suppression * 0.5)
 
-	# 抑圧による速度低下
-	speed *= (1.0 - element.suppression * 0.5)
+		# 衝突回避ベクトルを計算
+		var avoidance := _calculate_collision_avoidance(element)
 
-	# 衝突回避ベクトルを計算
-	var avoidance := _calculate_collision_avoidance(element)
+		# 移動方向に衝突回避を加算
+		var final_direction := (direction + avoidance).normalized()
 
-	# 移動方向に衝突回避を加算
-	var final_direction := (direction + avoidance).normalized()
+		# 移動
+		var move_dist: float = min(speed * dt, distance)
+		element.velocity = final_direction * speed
+		element.position += final_direction * move_dist
+	else:
+		# 通常移動：移動方向に向きを変える
+		var target_facing := atan2(direction.y, direction.x)
+		element.facing = _rotate_toward(element.facing, target_facing, ROTATION_SPEED * dt)
 
-	# 移動
-	var move_dist: float = min(speed * dt, distance)
-	element.velocity = final_direction * speed
-	element.position += final_direction * move_dist
+		# 現在地の地形に応じた速度を取得
+		var terrain := map_data.get_terrain_at(element.position) if map_data else GameEnums.TerrainType.OPEN
+		var speed := element.get_speed(terrain)
+
+		# 抑圧による速度低下
+		speed *= (1.0 - element.suppression * 0.5)
+
+		# 衝突回避ベクトルを計算
+		var avoidance := _calculate_collision_avoidance(element)
+
+		# 移動方向に衝突回避を加算
+		var final_direction := (direction + avoidance).normalized()
+
+		# 移動
+		var move_dist: float = min(speed * dt, distance)
+		element.velocity = final_direction * speed
+		element.position += final_direction * move_dist
 
 	# ハード衝突解消（移動後に重なりをチェック）
 	resolve_hard_collisions(element)
@@ -154,6 +255,7 @@ func update_element(element: ElementData.ElementInstance, dt: float) -> void:
 
 func _stop_movement(element: ElementData.ElementInstance) -> void:
 	element.is_moving = false
+	element.is_reversing = false
 	element.velocity = Vector2.ZERO
 	element.current_path.clear()
 	element.path_index = 0

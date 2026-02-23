@@ -89,6 +89,12 @@ func run_all_tests() -> void:
 	print("\n[Weapon Selection Algorithm Tests]")
 	test_weapon_selection_algorithm()
 
+	print("\n[Pie Menu Commands Tests]")
+	test_pie_menu_commands()
+
+	print("\n[Tank Commands Tests]")
+	test_tank_commands()
+
 
 # =============================================================================
 # WeaponData Tests
@@ -3192,3 +3198,317 @@ func _pass() -> void:
 func _fail(message: String) -> void:
 	print("  ✗ %s: %s" % [_current_test, message])
 	_tests_failed += 1
+
+
+# =============================================================================
+# Pie Menu Commands Tests
+# =============================================================================
+
+func test_pie_menu_commands() -> void:
+	var PieMenuClass: GDScript = load("res://scripts/ui/pie_menu.gd")
+
+	# ========================================
+	# 共通コマンドの存在テスト
+	# ========================================
+	_current_test = "common_commands_exist"
+	assert_true(GameEnums.OrderType.MOVE != null)
+	assert_true(GameEnums.OrderType.ATTACK != null)
+	assert_true(GameEnums.OrderType.HOLD != null)  # STOP
+	assert_true(GameEnums.OrderType.BREAK_CONTACT != null)
+	_pass()
+
+	_current_test = "common_commands_values"
+	assert_eq(GameEnums.OrderType.MOVE, 1)
+	assert_eq(GameEnums.OrderType.ATTACK, 6)
+	assert_eq(GameEnums.OrderType.BREAK_CONTACT, 12)
+	_pass()
+
+	# ========================================
+	# SOPモードのテスト
+	# ========================================
+	_current_test = "sop_modes_exist"
+	assert_true(GameEnums.SOPMode.HOLD_FIRE != null)
+	assert_true(GameEnums.SOPMode.RETURN_FIRE != null)
+	assert_true(GameEnums.SOPMode.FIRE_AT_WILL != null)
+	_pass()
+
+	_current_test = "sop_modes_values"
+	assert_eq(GameEnums.SOPMode.HOLD_FIRE, 0)
+	assert_eq(GameEnums.SOPMode.RETURN_FIRE, 1)
+	assert_eq(GameEnums.SOPMode.FIRE_AT_WILL, 2)
+	_pass()
+
+	# ========================================
+	# 新規追加コマンド（v0.2.2）のテスト
+	# ========================================
+	_current_test = "new_commands_v022_exist"
+	assert_eq(GameEnums.OrderType.UNLOAD, 13)
+	assert_eq(GameEnums.OrderType.LOAD, 14)
+	assert_eq(GameEnums.OrderType.AMBUSH, 15)
+	assert_eq(GameEnums.OrderType.OBSERVE, 16)
+	assert_eq(GameEnums.OrderType.FIRE_MISSION, 17)
+	_pass()
+
+	# ========================================
+	# 廃止コマンドのテスト
+	# ========================================
+	_current_test = "deprecated_commands_still_exist"
+	# ATTACK_MOVE と DEFEND は廃止だが enum には存在（後方互換性）
+	assert_eq(GameEnums.OrderType.ATTACK_MOVE, 3)
+	assert_eq(GameEnums.OrderType.DEFEND, 5)
+	_pass()
+
+	# ========================================
+	# アーキタイプカテゴリ分類テスト
+	# ========================================
+	_current_test = "category_tank"
+	assert_eq(PieMenuClass.get_category_for_archetype("TANK_PLT"), "TANK")
+	assert_eq(PieMenuClass.get_category_for_archetype("LIGHT_TANK"), "TANK")
+	_pass()
+
+	_current_test = "category_ifv"
+	assert_eq(PieMenuClass.get_category_for_archetype("IFV_PLT"), "IFV")
+	assert_eq(PieMenuClass.get_category_for_archetype("APC_PLT"), "IFV")
+	_pass()
+
+	_current_test = "category_artillery"
+	assert_eq(PieMenuClass.get_category_for_archetype("SP_ARTILLERY"), "ARTILLERY")
+	assert_eq(PieMenuClass.get_category_for_archetype("SP_MORTAR"), "ARTILLERY")
+	assert_eq(PieMenuClass.get_category_for_archetype("MLRS"), "ARTILLERY")
+	_pass()
+
+	_current_test = "category_infantry"
+	assert_eq(PieMenuClass.get_category_for_archetype("INF_LINE"), "INFANTRY")
+	assert_eq(PieMenuClass.get_category_for_archetype("INF_AT"), "INFANTRY")
+	assert_eq(PieMenuClass.get_category_for_archetype("INF_MG"), "INFANTRY")
+	_pass()
+
+	_current_test = "category_recon"
+	assert_eq(PieMenuClass.get_category_for_archetype("RECON_VEH"), "RECON")
+	assert_eq(PieMenuClass.get_category_for_archetype("RECON_TEAM"), "RECON")
+	_pass()
+
+	_current_test = "category_support"
+	assert_eq(PieMenuClass.get_category_for_archetype("LOG_TRUCK"), "SUPPORT")
+	assert_eq(PieMenuClass.get_category_for_archetype("COMMAND_VEH"), "SUPPORT")
+	assert_eq(PieMenuClass.get_category_for_archetype("MEDICAL_VEH"), "SUPPORT")
+	_pass()
+
+	_current_test = "category_unknown"
+	assert_eq(PieMenuClass.get_category_for_archetype("UNKNOWN_TYPE"), "")
+	_pass()
+
+	# ========================================
+	# Move + SOP 組み合わせテスト
+	# ========================================
+	_current_test = "move_with_hold_fire"
+	# Move + Hold Fire = 隠密移動
+	assert_eq(GameEnums.OrderType.MOVE, 1)
+	assert_eq(GameEnums.SOPMode.HOLD_FIRE, 0)
+	_pass()
+
+	_current_test = "move_with_fire_at_will"
+	# Move + Fire at Will = 攻撃前進（旧Attack Move相当）
+	assert_eq(GameEnums.OrderType.MOVE, 1)
+	assert_eq(GameEnums.SOPMode.FIRE_AT_WILL, 2)
+	_pass()
+
+	# ========================================
+	# カテゴリ別コマンド定義のテスト
+	# ========================================
+	_current_test = "tank_category_commands"
+	var tank_cmds = PieMenuClass.CATEGORY_COMMANDS.get("TANK", {})
+	assert_true(tank_cmds.has(135))  # Reverse at 135°
+	assert_true(tank_cmds.has(180))  # Smoke at 180°
+	_pass()
+
+	_current_test = "ifv_category_commands"
+	var ifv_cmds = PieMenuClass.CATEGORY_COMMANDS.get("IFV", {})
+	assert_true(ifv_cmds.has(315))  # Unload at 315°
+	assert_true(ifv_cmds.has(45))   # Load at 45°
+	_pass()
+
+	_current_test = "artillery_category_commands"
+	var arty_cmds = PieMenuClass.CATEGORY_COMMANDS.get("ARTILLERY", {})
+	assert_true(arty_cmds.has(0))   # Fire HE at 0° (replaces Attack)
+	assert_true(arty_cmds.has(180)) # Fire Smoke at 180°
+	_pass()
+
+	_current_test = "infantry_category_commands"
+	var inf_cmds = PieMenuClass.CATEGORY_COMMANDS.get("INFANTRY", {})
+	assert_true(inf_cmds.has(315))  # Fast at 315°
+	assert_true(inf_cmds.has(45))   # Ambush at 45°
+	_pass()
+
+	_current_test = "recon_category_commands"
+	var recon_cmds = PieMenuClass.CATEGORY_COMMANDS.get("RECON", {})
+	assert_true(recon_cmds.has(315)) # Recon at 315°
+	assert_true(recon_cmds.has(45))  # Observe at 45°
+	_pass()
+
+	_current_test = "support_category_commands"
+	var support_cmds = PieMenuClass.CATEGORY_COMMANDS.get("SUPPORT", {})
+	assert_true(support_cmds.has(180)) # Resupply at 180° (replaces Smoke)
+	_pass()
+
+	# ========================================
+	# DEFAULT_COMMANDSの構造テスト
+	# ========================================
+	_current_test = "default_commands_count"
+	assert_eq(PieMenuClass.DEFAULT_COMMANDS.size(), 8)  # 8方向
+	_pass()
+
+	_current_test = "default_commands_have_required_keys"
+	for cmd in PieMenuClass.DEFAULT_COMMANDS:
+		assert_true(cmd.has("name"))
+		assert_true(cmd.has("type"))
+		assert_true(cmd.has("angle"))
+		assert_true(cmd.has("enabled"))
+	_pass()
+
+	_current_test = "default_commands_move_at_north"
+	# Move は 270° (上方向)
+	var move_cmd = null
+	for cmd in PieMenuClass.DEFAULT_COMMANDS:
+		if cmd["type"] == GameEnums.OrderType.MOVE:
+			move_cmd = cmd
+			break
+	assert_true(move_cmd != null)
+	assert_eq(move_cmd["angle"], 270)
+	_pass()
+
+	_current_test = "default_commands_attack_at_east"
+	# Attack は 0° (右方向)
+	var attack_cmd = null
+	for cmd in PieMenuClass.DEFAULT_COMMANDS:
+		if cmd["type"] == GameEnums.OrderType.ATTACK:
+			attack_cmd = cmd
+			break
+	assert_true(attack_cmd != null)
+	assert_eq(attack_cmd["angle"], 0)
+	_pass()
+
+	_current_test = "default_commands_stop_at_south"
+	# Stop (HOLD) は 90° (下方向)
+	var stop_cmd = null
+	for cmd in PieMenuClass.DEFAULT_COMMANDS:
+		if cmd["type"] == GameEnums.OrderType.HOLD:
+			stop_cmd = cmd
+			break
+	assert_true(stop_cmd != null)
+	assert_eq(stop_cmd["angle"], 90)
+	_pass()
+
+	_current_test = "default_commands_break_at_southwest"
+	# Break Contact は 225° (左下方向)
+	var break_cmd = null
+	for cmd in PieMenuClass.DEFAULT_COMMANDS:
+		if cmd["type"] == GameEnums.OrderType.BREAK_CONTACT:
+			break_cmd = cmd
+			break
+	assert_true(break_cmd != null)
+	assert_eq(break_cmd["angle"], 225)
+	_pass()
+
+
+# =============================================================================
+# Tank Command Execution Tests
+# =============================================================================
+
+func test_tank_commands() -> void:
+	var MovementSystemClass: GDScript = load("res://scripts/systems/movement_system.gd")
+	var ElementDataClass: GDScript = load("res://scripts/data/element_data.gd")
+
+	var movement_system = MovementSystemClass.new()
+
+	# ========================================
+	# テスト用のユニットタイプを作成
+	# ========================================
+	var tank_type = ElementDataClass.ElementType.new()
+	tank_type.id = "TANK_PLT"
+	tank_type.max_strength = 4
+	tank_type.armor_class = 4
+	tank_type.category = ElementDataClass.Category.VEH
+	tank_type.road_speed = 12.0  # m/s（約43km/h）
+
+	# ========================================
+	# テスト: Stop命令
+	# ========================================
+	_current_test = "stop_command_stops_movement"
+	var tank = ElementDataClass.ElementInstance.new(tank_type)
+	tank.id = "test_tank_1"
+	tank.faction = GameEnums.Faction.BLUE
+	tank.position = Vector2(500, 500)
+	tank.is_moving = true
+	tank.current_path = PackedVector2Array([Vector2(500, 500), Vector2(600, 600)])
+	tank.path_index = 1
+
+	movement_system.issue_stop_order(tank)
+
+	assert_false(tank.is_moving)
+	assert_eq(tank.current_order_type, GameEnums.OrderType.HOLD)
+	assert_true(tank.current_path.is_empty())
+	_pass()
+
+	# ========================================
+	# テスト: Reverse命令
+	# ========================================
+	_current_test = "reverse_command_sets_flags"
+	var tank2 = ElementDataClass.ElementInstance.new(tank_type)
+	tank2.id = "test_tank_2"
+	tank2.faction = GameEnums.Faction.BLUE
+	tank2.position = Vector2(500, 500)
+	tank2.facing = 0.0  # 東向き
+
+	var result = movement_system.issue_reverse_order(tank2, 100.0)
+
+	assert_true(result)
+	assert_true(tank2.is_moving)
+	assert_true(tank2.is_reversing)
+	assert_eq(tank2.current_order_type, GameEnums.OrderType.RETREAT)
+	# 後退先は現在の向きと逆方向（東向きなら西へ）
+	assert_true(tank2.order_target_position.x < tank2.position.x)
+	_pass()
+
+	# ========================================
+	# テスト: Break Contact命令
+	# ========================================
+	_current_test = "break_contact_command_sets_flags"
+	var tank3 = ElementDataClass.ElementInstance.new(tank_type)
+	tank3.id = "test_tank_3"
+	tank3.faction = GameEnums.Faction.BLUE
+	tank3.position = Vector2(500, 500)
+
+	var retreat_pos = Vector2(300, 300)
+	result = movement_system.issue_break_contact_order(tank3, retreat_pos)
+
+	assert_true(result)
+	assert_true(tank3.is_moving)
+	assert_eq(tank3.current_order_type, GameEnums.OrderType.BREAK_CONTACT)
+	assert_true(tank3.break_contact_smoke_requested)
+	_pass()
+
+	# ========================================
+	# テスト: is_reversing フラグのリセット
+	# ========================================
+	_current_test = "stop_clears_reversing_flag"
+	var tank4 = ElementDataClass.ElementInstance.new(tank_type)
+	tank4.id = "test_tank_4"
+	tank4.faction = GameEnums.Faction.BLUE
+	tank4.position = Vector2(500, 500)
+	tank4.is_reversing = true
+
+	movement_system.issue_stop_order(tank4)
+
+	assert_false(tank4.is_reversing)
+	_pass()
+
+	# ========================================
+	# テスト: Element フラグの存在確認
+	# ========================================
+	_current_test = "element_has_reversing_flag"
+	var tank5 = ElementDataClass.ElementInstance.new(tank_type)
+	# 初期状態でis_reversingとbreak_contact_smoke_requestedが存在することを確認
+	assert_false(tank5.is_reversing)
+	assert_false(tank5.break_contact_smoke_requested)
+	_pass()
