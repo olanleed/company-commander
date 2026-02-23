@@ -2444,6 +2444,1428 @@ static func create_cw_m2hb() -> WeaponType:
 	return w
 
 
+# =============================================================================
+# ロシア軍専用武器
+# =============================================================================
+
+## CW_TANK_KE_125_RUS: ロシア軍125mm滑腔砲 (2A46M-5/2A82-1M) - 3BM60 Svinets-2
+## T-90M, T-80BVM等に搭載
+static func create_cw_tank_ke_125_rus() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_TANK_KE_125_RUS"
+	w.display_name = "125mm 2A46M-5 (3BM60)"
+	w.mechanism = Mechanism.KINETIC
+	w.fire_model = FireModel.DISCRETE
+	w.min_range_m = 50.0
+	w.max_range_m = 4000.0
+	w.range_band_thresholds_m = [1500.0, 3000.0]
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.ammo_endurance_min = 15.0  # 自動装填装置
+	w.rof_rpm = 7.0  # 自動装填: 7-8発/分
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 95,
+			TargetClass.FORTIFIED: 90,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 90,
+			TargetClass.FORTIFIED: 85,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 80,
+			TargetClass.FORTIFIED: 75,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 100,
+		RangeBand.MID: 95,
+		RangeBand.FAR: 85,
+	}
+
+	# 3BM60 Svinets-2: 700mm RHA @ 2km (pen_ke = 700/5 = 140)
+	w.pen_ke = {
+		RangeBand.NEAR: 150,  # 750mm
+		RangeBand.MID: 140,   # 700mm
+		RangeBand.FAR: 125,   # 625mm
+	}
+
+	w.projectile_speed_mps = 1780.0
+	w.projectile_size = 3.0
+
+	return w
+
+
+## CW_TANK_KE_125_MANGO: ロシア軍125mm滑腔砲 - 3BM42 Mango
+## T-72B3, T-80U等に搭載（旧世代弾薬）
+static func create_cw_tank_ke_125_mango() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_TANK_KE_125_MANGO"
+	w.display_name = "125mm 2A46M (3BM42)"
+	w.mechanism = Mechanism.KINETIC
+	w.fire_model = FireModel.DISCRETE
+	w.min_range_m = 50.0
+	w.max_range_m = 4000.0
+	w.range_band_thresholds_m = [1500.0, 3000.0]
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.ammo_endurance_min = 15.0
+	w.rof_rpm = 7.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 85,
+			TargetClass.FORTIFIED: 85,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 75,
+			TargetClass.FORTIFIED: 80,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 60,
+			TargetClass.FORTIFIED: 70,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 100,
+		RangeBand.MID: 95,
+		RangeBand.FAR: 85,
+	}
+
+	# 3BM42 Mango: 500mm RHA @ 2km (pen_ke = 500/5 = 100)
+	w.pen_ke = {
+		RangeBand.NEAR: 110,  # 550mm
+		RangeBand.MID: 100,   # 500mm
+		RangeBand.FAR: 85,    # 425mm
+	}
+
+	w.projectile_speed_mps = 1700.0
+	w.projectile_size = 3.0
+
+	return w
+
+
+## CW_AUTOCANNON_30_RUS: ロシア軍30mm機関砲 (2A42/2A72)
+## BMP-2, BMP-3, BTR-82A等に搭載
+static func create_cw_autocannon_30_rus() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_AUTOCANNON_30_RUS"
+	w.display_name = "30mm 2A42/2A72"
+	w.mechanism = Mechanism.KINETIC
+	w.fire_model = FireModel.CONTINUOUS
+	w.min_range_m = 0.0
+	w.max_range_m = 4000.0
+	w.range_band_thresholds_m = [800.0, 2000.0]
+	w.threat_class = ThreatClass.AUTOCANNON
+	w.preferred_target = PreferredTarget.ANY
+	w.ammo_endurance_min = 8.0
+	w.rof_rpm = 550.0  # 2A42: 200-800発/分 (デュアルフィード)
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 90,
+			TargetClass.HEAVY: 25,
+			TargetClass.FORTIFIED: 70,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 90,
+			TargetClass.LIGHT: 75,
+			TargetClass.HEAVY: 15,
+			TargetClass.FORTIFIED: 55,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 70,
+			TargetClass.LIGHT: 50,
+			TargetClass.HEAVY: 5,
+			TargetClass.FORTIFIED: 35,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 85,
+		RangeBand.MID: 70,
+		RangeBand.FAR: 50,
+	}
+
+	# 3UBR8 APDS: 60-70mm @ 1km (pen_ke = 65/5 = 13)
+	w.pen_ke = {
+		RangeBand.NEAR: 14,   # 70mm
+		RangeBand.MID: 12,    # 60mm
+		RangeBand.FAR: 8,     # 40mm
+	}
+
+	w.projectile_speed_mps = 1120.0
+	w.projectile_size = 1.0
+
+	return w
+
+
+## CW_AUTOCANNON_100_RUS: BMP-3 100mm低圧砲 (2A70)
+## HE弾メイン、対ソフトターゲット
+static func create_cw_autocannon_100_rus() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_AUTOCANNON_100_RUS"
+	w.display_name = "100mm 2A70 低圧砲"
+	w.mechanism = Mechanism.BLAST_FRAG
+	w.fire_model = FireModel.DISCRETE
+	w.min_range_m = 50.0
+	w.max_range_m = 4000.0
+	w.range_band_thresholds_m = [1000.0, 2500.0]
+	w.threat_class = ThreatClass.HE_FRAG
+	w.preferred_target = PreferredTarget.SOFT
+	w.ammo_endurance_min = 12.0  # 22発HE + 8発ATGM
+	w.rof_rpm = 10.0  # 自動装填
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 85,
+			TargetClass.HEAVY: 30,
+			TargetClass.FORTIFIED: 80,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 75,
+			TargetClass.HEAVY: 20,
+			TargetClass.FORTIFIED: 70,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 85,
+			TargetClass.LIGHT: 60,
+			TargetClass.HEAVY: 10,
+			TargetClass.FORTIFIED: 55,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 90,
+		RangeBand.MID: 80,
+		RangeBand.FAR: 65,
+	}
+
+	# HEAT弾: 約500mm
+	w.pen_ce = {
+		RangeBand.NEAR: 100,  # 500mm
+		RangeBand.MID: 100,   # 500mm
+		RangeBand.FAR: 100,   # 500mm
+	}
+
+	w.blast_radius_m = 8.0  # HE弾効果
+	w.projectile_speed_mps = 355.0  # 低圧砲
+	w.projectile_size = 2.0
+
+	return w
+
+
+## CW_HMG_KPVT: ロシア軍14.5mm重機関銃 (KPVT)
+## BTR-80等に搭載
+static func create_cw_hmg_kpvt() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_HMG_KPVT"
+	w.display_name = "14.5mm KPVT"
+	w.mechanism = Mechanism.SMALL_ARMS
+	w.fire_model = FireModel.CONTINUOUS
+	w.min_range_m = 0.0
+	w.max_range_m = 2000.0
+	w.range_band_thresholds_m = [400.0, 1000.0]
+	w.threat_class = ThreatClass.SMALL_ARMS
+	w.preferred_target = PreferredTarget.SOFT
+	w.ammo_endurance_min = 8.0
+	w.rof_rpm = 600.0  # 550-600発/分
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 70,
+			TargetClass.HEAVY: 10,
+			TargetClass.FORTIFIED: 50,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 85,
+			TargetClass.LIGHT: 50,
+			TargetClass.HEAVY: 5,
+			TargetClass.FORTIFIED: 35,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 65,
+			TargetClass.LIGHT: 30,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 20,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 85,
+		RangeBand.MID: 70,
+		RangeBand.FAR: 55,
+	}
+
+	# 14.5mm BS-41: 32mm @ 500m (pen_ke = 32/5 = 6.4)
+	w.pen_ke = {
+		RangeBand.NEAR: 8,    # 40mm
+		RangeBand.MID: 6,     # 30mm
+		RangeBand.FAR: 4,     # 20mm
+	}
+
+	w.projectile_speed_mps = 1000.0
+	w.projectile_size = 0.6
+
+	return w
+
+
+## CW_PKT_COAX: ロシア軍7.62mm同軸機銃 (PKT/PKTM)
+static func create_cw_pkt_coax() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_PKT_COAX"
+	w.display_name = "7.62mm PKT 同軸機銃"
+	w.mechanism = Mechanism.SMALL_ARMS
+	w.fire_model = FireModel.CONTINUOUS
+	w.min_range_m = 0.0
+	w.max_range_m = 1000.0
+	w.range_band_thresholds_m = [200.0, 500.0]
+	w.threat_class = ThreatClass.SMALL_ARMS
+	w.preferred_target = PreferredTarget.SOFT
+	w.ammo_endurance_min = 12.0  # 2000発ベルト
+	w.rof_rpm = 750.0  # 700-800発/分
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 85,
+			TargetClass.LIGHT: 30,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 25,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 70,
+			TargetClass.LIGHT: 20,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 15,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 50,
+			TargetClass.LIGHT: 10,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 10,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 70,
+		RangeBand.MID: 55,
+		RangeBand.FAR: 40,
+	}
+
+	w.projectile_speed_mps = 855.0
+	w.projectile_size = 0.3
+
+	return w
+
+
+## CW_KORD_AA: ロシア軍12.7mm重機関銃 (Kord)
+## T-90M, T-80BVM等の対空機銃
+static func create_cw_kord_aa() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_KORD_AA"
+	w.display_name = "12.7mm Kord"
+	w.mechanism = Mechanism.SMALL_ARMS
+	w.fire_model = FireModel.CONTINUOUS
+	w.min_range_m = 0.0
+	w.max_range_m = 1500.0
+	w.range_band_thresholds_m = [300.0, 800.0]
+	w.threat_class = ThreatClass.SMALL_ARMS
+	w.preferred_target = PreferredTarget.SOFT
+	w.ammo_endurance_min = 8.0
+	w.rof_rpm = 700.0  # 650-750発/分
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 55,
+			TargetClass.HEAVY: 5,
+			TargetClass.FORTIFIED: 40,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 80,
+			TargetClass.LIGHT: 40,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 30,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 60,
+			TargetClass.LIGHT: 25,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 20,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 80,
+		RangeBand.MID: 65,
+		RangeBand.FAR: 50,
+	}
+
+	# 12.7mm B-32: 20mm @ 500m (pen_ke = 4-5)
+	w.pen_ke = {
+		RangeBand.NEAR: 5,    # 25mm
+		RangeBand.MID: 4,     # 20mm
+		RangeBand.FAR: 3,     # 15mm
+	}
+
+	w.projectile_speed_mps = 850.0
+	w.projectile_size = 0.5
+
+	return w
+
+
+## CW_ATGM_KORNET: 9M133 Kornet ATGM
+## 最新のロシア軍ATGM、タンデム弾頭
+static func create_cw_atgm_kornet() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_ATGM_KORNET"
+	w.display_name = "9M133 Kornet"
+	w.mechanism = Mechanism.SHAPED_CHARGE
+	w.fire_model = FireModel.DISCRETE
+	w.min_range_m = 100.0
+	w.max_range_m = 5500.0  # Kornet-EM: 8km
+	w.range_band_thresholds_m = [1500.0, 4000.0]
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.ammo_endurance_min = 8.0
+	w.rof_rpm = 3.0
+	w.requires_observer = false  # レーザービームライディング
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 95,
+			TargetClass.FORTIFIED: 95,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 90,
+			TargetClass.FORTIFIED: 90,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 85,
+			TargetClass.FORTIFIED: 85,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 90,
+		RangeBand.MID: 85,
+		RangeBand.FAR: 80,
+	}
+
+	# Kornet: 1200-1300mm RHA (ERA後) (pen_ce = 1200/5 = 240)
+	w.pen_ce = {
+		RangeBand.NEAR: 240,  # 1200mm
+		RangeBand.MID: 240,   # 1200mm
+		RangeBand.FAR: 240,   # 1200mm
+	}
+
+	w.projectile_speed_mps = 300.0  # 亜音速
+	w.projectile_size = 1.5
+
+	return w
+
+
+## CW_ATGM_REFLEKS: 9M119M Refleks (AT-11 Sniper-B)
+## T-90, T-80等の砲発射式ATGM
+static func create_cw_atgm_refleks() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_ATGM_REFLEKS"
+	w.display_name = "9M119M Refleks"
+	w.mechanism = Mechanism.SHAPED_CHARGE
+	w.fire_model = FireModel.DISCRETE
+	w.min_range_m = 100.0
+	w.max_range_m = 5000.0
+	w.range_band_thresholds_m = [1500.0, 3500.0]
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.ammo_endurance_min = 6.0  # カルーセル内に限定搭載
+	w.rof_rpm = 3.0
+	w.requires_observer = false
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 85,
+			TargetClass.FORTIFIED: 90,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 80,
+			TargetClass.FORTIFIED: 85,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 70,
+			TargetClass.FORTIFIED: 80,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 85,
+		RangeBand.MID: 80,
+		RangeBand.FAR: 75,
+	}
+
+	# Refleks: 850-900mm RHA (タンデム) (pen_ce = 900/5 = 180)
+	w.pen_ce = {
+		RangeBand.NEAR: 180,  # 900mm
+		RangeBand.MID: 180,   # 900mm
+		RangeBand.FAR: 180,   # 900mm
+	}
+
+	w.projectile_speed_mps = 350.0
+	w.projectile_size = 1.5
+
+	return w
+
+
+## CW_ATGM_KONKURS: 9M113M Konkurs-M (AT-5B Spandrel)
+## BMP-2等の車載ATGM
+static func create_cw_atgm_konkurs() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_ATGM_KONKURS"
+	w.display_name = "9M113M Konkurs-M"
+	w.mechanism = Mechanism.SHAPED_CHARGE
+	w.fire_model = FireModel.DISCRETE
+	w.min_range_m = 75.0
+	w.max_range_m = 4000.0
+	w.range_band_thresholds_m = [1000.0, 2500.0]
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.ammo_endurance_min = 5.0
+	w.rof_rpm = 2.0  # SACLOS、再装填時間長い
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 75,
+			TargetClass.FORTIFIED: 85,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 65,
+			TargetClass.FORTIFIED: 80,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 90,
+			TargetClass.LIGHT: 90,
+			TargetClass.HEAVY: 55,
+			TargetClass.FORTIFIED: 70,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 80,
+		RangeBand.MID: 75,
+		RangeBand.FAR: 65,
+	}
+
+	# Konkurs-M: 750-800mm RHA (タンデム) (pen_ce = 800/5 = 160)
+	w.pen_ce = {
+		RangeBand.NEAR: 160,  # 800mm
+		RangeBand.MID: 160,   # 800mm
+		RangeBand.FAR: 160,   # 800mm
+	}
+
+	w.projectile_speed_mps = 200.0  # 低速ワイヤー誘導
+	w.projectile_size = 1.2
+
+	return w
+
+
+## CW_ATGM_BASTION: 9M117 Bastion (AT-10 Stabber)
+## BMP-3 100mm砲発射式ATGM
+static func create_cw_atgm_bastion() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_ATGM_BASTION"
+	w.display_name = "9M117 Bastion"
+	w.mechanism = Mechanism.SHAPED_CHARGE
+	w.fire_model = FireModel.DISCRETE
+	w.min_range_m = 100.0
+	w.max_range_m = 4000.0
+	w.range_band_thresholds_m = [1000.0, 2500.0]
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.ammo_endurance_min = 5.0  # 100mm砲と弾倉共有
+	w.rof_rpm = 3.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 65,
+			TargetClass.FORTIFIED: 80,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 55,
+			TargetClass.FORTIFIED: 75,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 90,
+			TargetClass.LIGHT: 90,
+			TargetClass.HEAVY: 45,
+			TargetClass.FORTIFIED: 65,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 75,
+		RangeBand.MID: 70,
+		RangeBand.FAR: 60,
+	}
+
+	# Bastion: 550mm RHA (pen_ce = 550/5 = 110)
+	w.pen_ce = {
+		RangeBand.NEAR: 110,  # 550mm
+		RangeBand.MID: 110,   # 550mm
+		RangeBand.FAR: 110,   # 550mm
+	}
+
+	w.projectile_speed_mps = 370.0
+	w.projectile_size = 1.2
+
+	return w
+
+
+# =============================================================================
+# 中国軍専用武器
+# =============================================================================
+
+## 125mm ZPT-98 (DTC10-125 APFSDS) - Type 99A
+static func create_cw_tank_ke_125_chn() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_TANK_KE_125_CHN"
+	w.display_name = "125mm ZPT-98 (DTC10-125)"
+	w.mechanism = Mechanism.KINETIC
+	w.fire_model = FireModel.DISCRETE
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.min_range_m = 0.0
+	w.max_range_m = 4000.0
+	w.range_band_thresholds_m = [500.0, 2000.0]
+	w.rof_rpm = 8.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 100,
+			TargetClass.FORTIFIED: 90,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 95,
+			TargetClass.FORTIFIED: 85,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 85,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 85,
+			TargetClass.FORTIFIED: 75,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 85,
+		RangeBand.MID: 80,
+		RangeBand.FAR: 70,
+	}
+
+	# DTC10-125 APFSDS: 960mm @ 1000m, 800mm @ 2000m
+	w.pen_ke = {
+		RangeBand.NEAR: 192,  # 960mm
+		RangeBand.MID: 160,   # 800mm
+		RangeBand.FAR: 130,   # 650mm
+	}
+
+	w.projectile_speed_mps = 1780.0
+	w.projectile_size = 1.5
+
+	return w
+
+
+## 125mm ZPT-98 (DTW-125 Type II) - Type 99, Type 96A
+static func create_cw_tank_ke_125_chn_std() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_TANK_KE_125_CHN_STD"
+	w.display_name = "125mm ZPT-98 (DTW-125 II)"
+	w.mechanism = Mechanism.KINETIC
+	w.fire_model = FireModel.DISCRETE
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.min_range_m = 0.0
+	w.max_range_m = 4000.0
+	w.range_band_thresholds_m = [500.0, 2000.0]
+	w.rof_rpm = 8.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 95,
+			TargetClass.FORTIFIED: 85,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 90,
+			TargetClass.FORTIFIED: 80,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 85,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 80,
+			TargetClass.FORTIFIED: 70,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 85,
+		RangeBand.MID: 80,
+		RangeBand.FAR: 70,
+	}
+
+	# DTW-125 Type II: 750mm @ 500m, 700mm @ 1000m
+	w.pen_ke = {
+		RangeBand.NEAR: 150,  # 750mm
+		RangeBand.MID: 140,   # 700mm
+		RangeBand.FAR: 115,   # 575mm
+	}
+
+	w.projectile_speed_mps = 1700.0
+	w.projectile_size = 1.5
+
+	return w
+
+
+## 125mm ZPT-96 (DTW-125) - Type 96
+static func create_cw_tank_ke_125_chn_old() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_TANK_KE_125_CHN_OLD"
+	w.display_name = "125mm ZPT-96 (DTW-125)"
+	w.mechanism = Mechanism.KINETIC
+	w.fire_model = FireModel.DISCRETE
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.min_range_m = 0.0
+	w.max_range_m = 3500.0
+	w.range_band_thresholds_m = [500.0, 2000.0]
+	w.rof_rpm = 8.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 85,
+			TargetClass.FORTIFIED: 80,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 75,
+			TargetClass.FORTIFIED: 70,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 85,
+			TargetClass.LIGHT: 90,
+			TargetClass.HEAVY: 65,
+			TargetClass.FORTIFIED: 60,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 85,
+		RangeBand.MID: 80,
+		RangeBand.FAR: 70,
+	}
+
+	# DTW-125 (first gen): 650mm @ 500m, 550mm @ 1000m
+	w.pen_ke = {
+		RangeBand.NEAR: 130,  # 650mm
+		RangeBand.MID: 110,   # 550mm
+		RangeBand.FAR: 90,    # 450mm
+	}
+
+	w.projectile_speed_mps = 1650.0
+	w.projectile_size = 1.5
+
+	return w
+
+
+## 105mm ZPL-151 Rifled - Type 15 Light Tank
+static func create_cw_tank_ke_105_chn() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_TANK_KE_105_CHN"
+	w.display_name = "105mm ZPL-151"
+	w.mechanism = Mechanism.KINETIC
+	w.fire_model = FireModel.DISCRETE
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.min_range_m = 0.0
+	w.max_range_m = 3000.0
+	w.range_band_thresholds_m = [400.0, 1500.0]
+	w.rof_rpm = 10.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 80,
+			TargetClass.FORTIFIED: 75,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 90,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 70,
+			TargetClass.FORTIFIED: 65,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 80,
+			TargetClass.LIGHT: 85,
+			TargetClass.HEAVY: 55,
+			TargetClass.FORTIFIED: 55,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 80,
+		RangeBand.MID: 75,
+		RangeBand.FAR: 65,
+	}
+
+	# Modern 105mm APFSDS: 550mm @ 500m, 500mm @ 2000m
+	w.pen_ke = {
+		RangeBand.NEAR: 110,  # 550mm
+		RangeBand.MID: 100,   # 500mm
+		RangeBand.FAR: 85,    # 425mm
+	}
+
+	w.projectile_speed_mps = 1500.0
+	w.projectile_size = 1.3
+
+	return w
+
+
+## 105mm Type 83 Rifled - Type 63A, ZTL-11
+static func create_cw_tank_ke_105_chn_old() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_TANK_KE_105_CHN_OLD"
+	w.display_name = "105mm Type 83"
+	w.mechanism = Mechanism.KINETIC
+	w.fire_model = FireModel.DISCRETE
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.min_range_m = 0.0
+	w.max_range_m = 2500.0
+	w.range_band_thresholds_m = [400.0, 1500.0]
+	w.rof_rpm = 7.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 90,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 65,
+			TargetClass.FORTIFIED: 70,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 85,
+			TargetClass.LIGHT: 90,
+			TargetClass.HEAVY: 55,
+			TargetClass.FORTIFIED: 60,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 75,
+			TargetClass.LIGHT: 80,
+			TargetClass.HEAVY: 40,
+			TargetClass.FORTIFIED: 50,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 75,
+		RangeBand.MID: 70,
+		RangeBand.FAR: 60,
+	}
+
+	# Standard 105mm APFSDS: 450mm @ 500m, 400mm @ 1000m
+	w.pen_ke = {
+		RangeBand.NEAR: 90,   # 450mm
+		RangeBand.MID: 80,    # 400mm
+		RangeBand.FAR: 65,    # 325mm
+	}
+
+	w.projectile_speed_mps = 1400.0
+	w.projectile_size = 1.3
+
+	return w
+
+
+## 30mm ZPT-99 Autocannon - ZBD-04A, ZBD-09, ZBD-03
+static func create_cw_autocannon_30_chn() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_AUTOCANNON_30_CHN"
+	w.display_name = "30mm ZPT-99"
+	w.mechanism = Mechanism.KINETIC
+	w.fire_model = FireModel.CONTINUOUS
+	w.threat_class = ThreatClass.AUTOCANNON
+	w.preferred_target = PreferredTarget.ANY
+	w.min_range_m = 0.0
+	w.max_range_m = 2000.0
+	w.range_band_thresholds_m = [300.0, 1000.0]
+	w.rof_rpm = 300.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 85,
+			TargetClass.LIGHT: 80,
+			TargetClass.HEAVY: 30,
+			TargetClass.FORTIFIED: 45,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 75,
+			TargetClass.LIGHT: 70,
+			TargetClass.HEAVY: 20,
+			TargetClass.FORTIFIED: 35,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 60,
+			TargetClass.LIGHT: 55,
+			TargetClass.HEAVY: 10,
+			TargetClass.FORTIFIED: 25,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 65,
+		RangeBand.MID: 55,
+		RangeBand.FAR: 40,
+	}
+
+	# 30mm APFSDS: 70mm @ 500m, 60mm @ 1000m
+	w.pen_ke = {
+		RangeBand.NEAR: 14,   # 70mm
+		RangeBand.MID: 12,    # 60mm
+		RangeBand.FAR: 8,     # 40mm
+	}
+
+	w.projectile_speed_mps = 970.0
+	w.projectile_size = 0.4
+
+	return w
+
+
+## 35mm Type 90 (PG99) Twin Autocannon - PGZ-09
+static func create_cw_autocannon_35_chn() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_AUTOCANNON_35_CHN"
+	w.display_name = "35mm Type 90 (PG99)"
+	w.mechanism = Mechanism.KINETIC
+	w.fire_model = FireModel.CONTINUOUS
+	w.threat_class = ThreatClass.AUTOCANNON
+	w.preferred_target = PreferredTarget.ANY
+	w.min_range_m = 0.0
+	w.max_range_m = 4000.0
+	w.range_band_thresholds_m = [500.0, 2000.0]
+	w.rof_rpm = 1100.0  # Twin mount combined
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 90,
+			TargetClass.LIGHT: 85,
+			TargetClass.HEAVY: 35,
+			TargetClass.FORTIFIED: 50,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 80,
+			TargetClass.LIGHT: 75,
+			TargetClass.HEAVY: 25,
+			TargetClass.FORTIFIED: 40,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 65,
+			TargetClass.LIGHT: 60,
+			TargetClass.HEAVY: 15,
+			TargetClass.FORTIFIED: 30,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 75,
+		RangeBand.MID: 65,
+		RangeBand.FAR: 50,
+	}
+
+	# 35mm APDS: 90mm NEAR, 70mm MID
+	w.pen_ke = {
+		RangeBand.NEAR: 18,   # 90mm
+		RangeBand.MID: 14,    # 70mm
+		RangeBand.FAR: 10,    # 50mm
+	}
+
+	w.projectile_speed_mps = 1175.0
+	w.projectile_size = 0.45
+
+	return w
+
+
+## 100mm Gun/Missile Launcher - ZBD-04
+static func create_cw_autocannon_100_chn() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_AUTOCANNON_100_CHN"
+	w.display_name = "100mm Gun-Launcher"
+	w.mechanism = Mechanism.SHAPED_CHARGE
+	w.fire_model = FireModel.DISCRETE
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.min_range_m = 100.0
+	w.max_range_m = 4000.0
+	w.range_band_thresholds_m = [500.0, 2000.0]
+	w.rof_rpm = 10.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 90,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 70,
+			TargetClass.FORTIFIED: 75,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 85,
+			TargetClass.LIGHT: 90,
+			TargetClass.HEAVY: 65,
+			TargetClass.FORTIFIED: 70,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 75,
+			TargetClass.LIGHT: 80,
+			TargetClass.HEAVY: 55,
+			TargetClass.FORTIFIED: 60,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 70,
+		RangeBand.MID: 65,
+		RangeBand.FAR: 55,
+	}
+
+	# 100mm ATGM capability: 600mm
+	w.pen_ce = {
+		RangeBand.NEAR: 120,  # 600mm
+		RangeBand.MID: 120,   # 600mm
+		RangeBand.FAR: 100,   # 500mm (HE-FRAG reduced)
+	}
+
+	w.projectile_speed_mps = 355.0
+	w.projectile_size = 1.0
+
+	return w
+
+
+## HJ-10 (Red Arrow-10) / AFT-10 - Fire-and-forget
+static func create_cw_atgm_hj10() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_ATGM_HJ10"
+	w.display_name = "HJ-10 (Red Arrow-10)"
+	w.mechanism = Mechanism.SHAPED_CHARGE
+	w.fire_model = FireModel.DISCRETE
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.min_range_m = 3000.0  # Long minimum range
+	w.max_range_m = 10000.0
+	w.range_band_thresholds_m = [4000.0, 7000.0]
+	w.rof_rpm = 2.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 100,
+			TargetClass.FORTIFIED: 95,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 100,
+			TargetClass.FORTIFIED: 95,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 95,
+			TargetClass.FORTIFIED: 90,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 60,
+		RangeBand.MID: 55,
+		RangeBand.FAR: 50,
+	}
+
+	# HJ-10: 1400mm RHA post-ERA (pen_ce = 280)
+	w.pen_ce = {
+		RangeBand.NEAR: 280,  # 1400mm
+		RangeBand.MID: 280,   # 1400mm
+		RangeBand.FAR: 280,   # 1400mm
+	}
+
+	w.projectile_speed_mps = 230.0  # Terminal speed
+	w.projectile_size = 1.3
+
+	return w
+
+
+## HJ-9 (Red Arrow-9)
+static func create_cw_atgm_hj9() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_ATGM_HJ9"
+	w.display_name = "HJ-9 (Red Arrow-9)"
+	w.mechanism = Mechanism.SHAPED_CHARGE
+	w.fire_model = FireModel.DISCRETE
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.min_range_m = 100.0
+	w.max_range_m = 5500.0
+	w.range_band_thresholds_m = [1000.0, 3000.0]
+	w.rof_rpm = 3.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 95,
+			TargetClass.FORTIFIED: 90,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 90,
+			TargetClass.FORTIFIED: 85,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 85,
+			TargetClass.FORTIFIED: 80,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 65,
+		RangeBand.MID: 60,
+		RangeBand.FAR: 55,
+	}
+
+	# HJ-9: 1200mm RHA (pen_ce = 240)
+	w.pen_ce = {
+		RangeBand.NEAR: 240,  # 1200mm
+		RangeBand.MID: 240,   # 1200mm
+		RangeBand.FAR: 240,   # 1200mm
+	}
+
+	w.projectile_speed_mps = 300.0
+	w.projectile_size = 1.2
+
+	return w
+
+
+## HJ-8E (Red Arrow-8E) - Tandem HEAT
+static func create_cw_atgm_hj8e() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_ATGM_HJ8E"
+	w.display_name = "HJ-8E (Red Arrow-8E)"
+	w.mechanism = Mechanism.SHAPED_CHARGE
+	w.fire_model = FireModel.DISCRETE
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.min_range_m = 100.0
+	w.max_range_m = 4000.0
+	w.range_band_thresholds_m = [500.0, 2000.0]
+	w.rof_rpm = 3.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 100,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 85,
+			TargetClass.FORTIFIED: 85,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 80,
+			TargetClass.FORTIFIED: 80,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 90,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 70,
+			TargetClass.FORTIFIED: 75,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 65,
+		RangeBand.MID: 60,
+		RangeBand.FAR: 50,
+	}
+
+	# HJ-8E: 1000mm RHA post-ERA (pen_ce = 200)
+	w.pen_ce = {
+		RangeBand.NEAR: 200,  # 1000mm
+		RangeBand.MID: 200,   # 1000mm
+		RangeBand.FAR: 200,   # 1000mm
+	}
+
+	w.projectile_speed_mps = 240.0
+	w.projectile_size = 1.1
+
+	return w
+
+
+## HJ-73 (Red Arrow-73) - Legacy ATGM
+static func create_cw_atgm_hj73() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_ATGM_HJ73"
+	w.display_name = "HJ-73 (Red Arrow-73)"
+	w.mechanism = Mechanism.SHAPED_CHARGE
+	w.fire_model = FireModel.DISCRETE
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.min_range_m = 100.0
+	w.max_range_m = 3000.0
+	w.range_band_thresholds_m = [500.0, 1500.0]
+	w.rof_rpm = 3.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 55,
+			TargetClass.FORTIFIED: 70,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 90,
+			TargetClass.LIGHT: 90,
+			TargetClass.HEAVY: 45,
+			TargetClass.FORTIFIED: 60,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 80,
+			TargetClass.LIGHT: 85,
+			TargetClass.HEAVY: 35,
+			TargetClass.FORTIFIED: 50,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 60,
+		RangeBand.MID: 55,
+		RangeBand.FAR: 45,
+	}
+
+	# HJ-73: 425mm RHA (pen_ce = 85) - first gen, no tandem
+	w.pen_ce = {
+		RangeBand.NEAR: 85,   # 425mm
+		RangeBand.MID: 85,    # 425mm
+		RangeBand.FAR: 85,    # 425mm
+	}
+
+	w.projectile_speed_mps = 120.0
+	w.projectile_size = 1.0
+
+	return w
+
+
+## GP105 Gun-Launched ATGM - Type 15, ZTL-11
+static func create_cw_atgm_gp105() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_ATGM_GP105"
+	w.display_name = "GP105 Gun-Launched ATGM"
+	w.mechanism = Mechanism.SHAPED_CHARGE
+	w.fire_model = FireModel.DISCRETE
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.min_range_m = 500.0
+	w.max_range_m = 5200.0
+	w.range_band_thresholds_m = [1000.0, 3000.0]
+	w.rof_rpm = 3.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 70,
+			TargetClass.FORTIFIED: 75,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 90,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 65,
+			TargetClass.FORTIFIED: 70,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 85,
+			TargetClass.LIGHT: 90,
+			TargetClass.HEAVY: 55,
+			TargetClass.FORTIFIED: 60,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 60,
+		RangeBand.MID: 55,
+		RangeBand.FAR: 50,
+	}
+
+	# GP105: 700mm RHA (pen_ce = 140)
+	w.pen_ce = {
+		RangeBand.NEAR: 140,  # 700mm
+		RangeBand.MID: 140,   # 700mm
+		RangeBand.FAR: 140,   # 700mm
+	}
+
+	w.projectile_speed_mps = 370.0
+	w.projectile_size = 1.1
+
+	return w
+
+
+## 12.7mm QJZ-89 (Type 89 HMG) - AA mount
+static func create_cw_qjz89_aa() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_QJZ89_AA"
+	w.display_name = "12.7mm QJZ-89"
+	w.mechanism = Mechanism.SMALL_ARMS
+	w.fire_model = FireModel.CONTINUOUS
+	w.threat_class = ThreatClass.SMALL_ARMS
+	w.preferred_target = PreferredTarget.SOFT
+	w.min_range_m = 0.0
+	w.max_range_m = 1800.0
+	w.range_band_thresholds_m = [300.0, 800.0]
+	w.rof_rpm = 550.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 80,
+			TargetClass.LIGHT: 45,
+			TargetClass.HEAVY: 5,
+			TargetClass.FORTIFIED: 25,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 70,
+			TargetClass.LIGHT: 35,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 15,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 55,
+			TargetClass.LIGHT: 25,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 10,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 60,
+		RangeBand.MID: 50,
+		RangeBand.FAR: 35,
+	}
+
+	# 12.7mm API: 25mm @ 100m, 20mm @ 500m
+	w.pen_ke = {
+		RangeBand.NEAR: 5,    # 25mm
+		RangeBand.MID: 4,     # 20mm
+		RangeBand.FAR: 3,     # 15mm
+	}
+
+	w.projectile_speed_mps = 850.0
+	w.projectile_size = 0.15
+
+	return w
+
+
+## 7.62mm Type 86 Coaxial MG
+static func create_cw_type86_coax() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_TYPE86_COAX"
+	w.display_name = "7.62mm Type 86"
+	w.mechanism = Mechanism.SMALL_ARMS
+	w.fire_model = FireModel.CONTINUOUS
+	w.threat_class = ThreatClass.SMALL_ARMS
+	w.preferred_target = PreferredTarget.SOFT
+	w.min_range_m = 0.0
+	w.max_range_m = 1000.0
+	w.range_band_thresholds_m = [200.0, 500.0]
+	w.rof_rpm = 700.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 50,
+			TargetClass.LIGHT: 10,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 10,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 40,
+			TargetClass.LIGHT: 5,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 5,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 25,
+			TargetClass.LIGHT: 0,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 0,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 45,
+		RangeBand.MID: 35,
+		RangeBand.FAR: 25,
+	}
+
+	w.projectile_speed_mps = 825.0
+	w.projectile_size = 0.08
+
+	return w
+
+
 ## 全ConcreteWeaponSetを取得
 static func get_all_concrete_weapons() -> Dictionary:
 	return {
@@ -2492,4 +3914,32 @@ static func get_all_concrete_weapons() -> Dictionary:
 		"CW_AGL_MK19": create_cw_agl_mk19(),
 		"CW_M240_COAX": create_cw_m240_coax(),
 		"CW_M2HB": create_cw_m2hb(),
+		# ロシア軍専用
+		"CW_TANK_KE_125_RUS": create_cw_tank_ke_125_rus(),
+		"CW_TANK_KE_125_MANGO": create_cw_tank_ke_125_mango(),
+		"CW_AUTOCANNON_30_RUS": create_cw_autocannon_30_rus(),
+		"CW_AUTOCANNON_100_RUS": create_cw_autocannon_100_rus(),
+		"CW_HMG_KPVT": create_cw_hmg_kpvt(),
+		"CW_PKT_COAX": create_cw_pkt_coax(),
+		"CW_KORD_AA": create_cw_kord_aa(),
+		"CW_ATGM_KORNET": create_cw_atgm_kornet(),
+		"CW_ATGM_REFLEKS": create_cw_atgm_refleks(),
+		"CW_ATGM_KONKURS": create_cw_atgm_konkurs(),
+		"CW_ATGM_BASTION": create_cw_atgm_bastion(),
+		# 中国軍専用
+		"CW_TANK_KE_125_CHN": create_cw_tank_ke_125_chn(),
+		"CW_TANK_KE_125_CHN_STD": create_cw_tank_ke_125_chn_std(),
+		"CW_TANK_KE_125_CHN_OLD": create_cw_tank_ke_125_chn_old(),
+		"CW_TANK_KE_105_CHN": create_cw_tank_ke_105_chn(),
+		"CW_TANK_KE_105_CHN_OLD": create_cw_tank_ke_105_chn_old(),
+		"CW_AUTOCANNON_30_CHN": create_cw_autocannon_30_chn(),
+		"CW_AUTOCANNON_35_CHN": create_cw_autocannon_35_chn(),
+		"CW_AUTOCANNON_100_CHN": create_cw_autocannon_100_chn(),
+		"CW_ATGM_HJ10": create_cw_atgm_hj10(),
+		"CW_ATGM_HJ9": create_cw_atgm_hj9(),
+		"CW_ATGM_HJ8E": create_cw_atgm_hj8e(),
+		"CW_ATGM_HJ73": create_cw_atgm_hj73(),
+		"CW_ATGM_GP105": create_cw_atgm_gp105(),
+		"CW_QJZ89_AA": create_cw_qjz89_aa(),
+		"CW_TYPE86_COAX": create_cw_type86_coax(),
 	}

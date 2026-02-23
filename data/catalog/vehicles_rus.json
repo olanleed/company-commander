@@ -1,8 +1,8 @@
 {
-  "catalog_version": "0.3",
+  "catalog_version": "0.4",
   "nation": "RUS",
   "nation_name": "Russian Federation",
-  "last_updated": "2026-02",
+  "description": "ロシア連邦軍車両カタログ (2026年版)",
   "vehicles": [
     {
       "id": "RUS_T90M",
@@ -31,14 +31,24 @@
         "cross_speed": 1.10
       },
       "main_gun": {
+        "weapon_id": "CW_TANK_KE_125_RUS",
         "caliber_mm": 125,
         "type": "smoothbore",
         "autoloader": true,
+        "ammo_capacity": 40,
         "pen_ke_modifier": 1.05,
         "pen_ce_modifier": 1.10,
         "rof_modifier": 1.10,
-        "accuracy_modifier": 1.00
+        "accuracy_modifier": 1.00,
+        "ammo_types": ["3BM60 Svinets-2 APFSDS", "3BK31 HEAT-FS", "3OF26 HE-Frag"]
       },
+      "atgm": {
+        "weapon_id": "CW_ATGM_REFLEKS",
+        "type": "9M119M Refleks",
+        "range_m": 5000,
+        "count": 4
+      },
+      "secondary_weapons": ["CW_PKT_COAX", "CW_KORD_AA"],
       "protection": {
         "era_equipped": true,
         "era_type": "Relikt",
@@ -46,7 +56,7 @@
         "aps_type": "Arena-M",
         "composite_gen": 3
       },
-      "notes": "最新型T-90、Relikt ERA、Arena-M APS、新型2A46M-5主砲、対KE防護1100-1300mm RHS相当"
+      "notes": "最新型T-90、Relikt ERA、Arena-M APS、新型2A46M-5主砲、3BM60(700mm@2km)"
     },
     {
       "id": "RUS_T90A",
@@ -75,14 +85,24 @@
         "cross_speed": 1.00
       },
       "main_gun": {
+        "weapon_id": "CW_TANK_KE_125_RUS",
         "caliber_mm": 125,
         "type": "smoothbore",
         "autoloader": true,
+        "ammo_capacity": 43,
         "pen_ke_modifier": 1.00,
         "pen_ce_modifier": 1.05,
         "rof_modifier": 1.10,
-        "accuracy_modifier": 0.95
+        "accuracy_modifier": 0.95,
+        "ammo_types": ["3BM42 Mango APFSDS", "3BK29 HEAT-FS", "3OF26 HE-Frag"]
       },
+      "atgm": {
+        "weapon_id": "CW_ATGM_REFLEKS",
+        "type": "9M119 Svir",
+        "range_m": 4000,
+        "count": 4
+      },
+      "secondary_weapons": ["CW_PKT_COAX", "CW_KORD_AA"],
       "protection": {
         "era_equipped": true,
         "era_type": "Kontakt-5",
@@ -119,21 +139,31 @@
         "cross_speed": 1.10
       },
       "main_gun": {
+        "weapon_id": "CW_TANK_KE_125_RUS",
         "caliber_mm": 125,
         "type": "smoothbore",
         "autoloader": true,
+        "ammo_capacity": 38,
         "pen_ke_modifier": 1.05,
         "pen_ce_modifier": 1.05,
         "rof_modifier": 1.10,
-        "accuracy_modifier": 1.00
+        "accuracy_modifier": 1.00,
+        "ammo_types": ["3BM60 Svinets-2 APFSDS", "3BK31 HEAT-FS", "3OF26 HE-Frag"]
       },
+      "atgm": {
+        "weapon_id": "CW_ATGM_REFLEKS",
+        "type": "9M119M Refleks",
+        "range_m": 5000,
+        "count": 4
+      },
+      "secondary_weapons": ["CW_PKT_COAX", "CW_KORD_AA"],
       "protection": {
         "era_equipped": true,
         "era_type": "Relikt",
         "aps_equipped": false,
         "composite_gen": 3
       },
-      "notes": "ガスタービンエンジン搭載、高機動性、Relikt ERA、2A46M-4主砲、Svinets APFSDS対応"
+      "notes": "ガスタービンエンジン搭載、高機動性、Relikt ERA、2A46M-4主砲、3BM60(700mm@2km)"
     },
     {
       "id": "RUS_T72B3M",
@@ -162,21 +192,31 @@
         "cross_speed": 1.05
       },
       "main_gun": {
+        "weapon_id": "CW_TANK_KE_125_RUS",
         "caliber_mm": 125,
         "type": "smoothbore",
         "autoloader": true,
+        "ammo_capacity": 44,
         "pen_ke_modifier": 1.00,
         "pen_ce_modifier": 1.00,
         "rof_modifier": 1.10,
-        "accuracy_modifier": 0.95
+        "accuracy_modifier": 0.95,
+        "ammo_types": ["3BM60 Svinets-2 APFSDS", "3BK31 HEAT-FS", "3OF26 HE-Frag"]
       },
+      "atgm": {
+        "weapon_id": "CW_ATGM_REFLEKS",
+        "type": "9M119M Refleks",
+        "range_m": 5000,
+        "count": 4
+      },
+      "secondary_weapons": ["CW_PKT_COAX", "CW_KORD_AA"],
       "protection": {
         "era_equipped": true,
         "era_type": "Kontakt-5/Relikt",
         "aps_equipped": false,
         "composite_gen": 2
       },
-      "notes": "近代化T-72B3、Svinets APFSDS対応、前面Kontakt-5/側面Relikt ERA"
+      "notes": "近代化T-72B3、3BM60対応、前面Kontakt-5/側面Relikt ERA"
     },
     {
       "id": "RUS_T72B3",
@@ -205,21 +245,31 @@
         "cross_speed": 1.00
       },
       "main_gun": {
+        "weapon_id": "CW_TANK_KE_125_MANGO",
         "caliber_mm": 125,
         "type": "smoothbore",
         "autoloader": true,
+        "ammo_capacity": 44,
         "pen_ke_modifier": 0.95,
         "pen_ce_modifier": 1.00,
         "rof_modifier": 1.10,
-        "accuracy_modifier": 0.90
+        "accuracy_modifier": 0.90,
+        "ammo_types": ["3BM42 Mango APFSDS", "3BK29 HEAT-FS", "3OF26 HE-Frag"]
       },
+      "atgm": {
+        "weapon_id": "CW_ATGM_REFLEKS",
+        "type": "9M119 Svir",
+        "range_m": 4000,
+        "count": 4
+      },
+      "secondary_weapons": ["CW_PKT_COAX", "CW_KORD_AA"],
       "protection": {
         "era_equipped": true,
         "era_type": "Kontakt-5",
         "aps_equipped": false,
         "composite_gen": 2
       },
-      "notes": "T-72B近代化型、Kontakt-5 ERA装備、多数配備"
+      "notes": "T-72B近代化型、Kontakt-5 ERA、3BM42 Mango(500mm@2km)"
     },
     {
       "id": "RUS_BMP3",
@@ -249,20 +299,23 @@
         "cross_speed": 1.05
       },
       "main_gun": {
+        "weapon_id": "CW_AUTOCANNON_100_RUS",
         "caliber_mm": 100,
         "type": "gun_launcher",
         "secondary_caliber_mm": 30,
+        "ammo_capacity": 22,
         "pen_ke_modifier": 1.15,
         "pen_ce_modifier": 1.10,
         "rof_modifier": 0.90,
         "accuracy_modifier": 0.90
       },
       "atgm": {
+        "weapon_id": "CW_ATGM_BASTION",
         "type": "9M117 Bastion",
         "range_m": 4000,
-        "pen_ce": 90,
         "count": 8
       },
+      "secondary_weapons": ["CW_AUTOCANNON_30_RUS", "CW_PKT_COAX"],
       "protection": {
         "era_equipped": false,
         "aps_equipped": false
@@ -297,25 +350,28 @@
         "cross_speed": 1.05
       },
       "main_gun": {
+        "weapon_id": "CW_AUTOCANNON_100_RUS",
         "caliber_mm": 100,
         "type": "gun_launcher",
         "secondary_caliber_mm": 30,
+        "ammo_capacity": 22,
         "pen_ke_modifier": 1.15,
         "pen_ce_modifier": 1.10,
         "rof_modifier": 0.95,
         "accuracy_modifier": 0.95
       },
       "atgm": {
+        "weapon_id": "CW_ATGM_BASTION",
         "type": "9M117M1 Arkan",
         "range_m": 5500,
-        "pen_ce": 95,
         "count": 8
       },
+      "secondary_weapons": ["CW_AUTOCANNON_30_RUS", "CW_PKT_COAX"],
       "protection": {
         "era_equipped": true,
         "aps_equipped": false
       },
-      "notes": "BMP-3近代化型、ERA追加、新型エンジン、改良型射撃統制装置"
+      "notes": "BMP-3近代化型、ERA追加、新型エンジン、改良型FCS"
     },
     {
       "id": "RUS_BMP2",
@@ -345,24 +401,27 @@
         "cross_speed": 1.00
       },
       "main_gun": {
+        "weapon_id": "CW_AUTOCANNON_30_RUS",
         "caliber_mm": 30,
         "type": "autocannon",
+        "ammo_capacity": 500,
         "pen_ke_modifier": 0.95,
         "pen_ce_modifier": 1.00,
         "rof_modifier": 1.00,
         "accuracy_modifier": 0.90
       },
       "atgm": {
-        "type": "9M113 Konkurs",
+        "weapon_id": "CW_ATGM_KONKURS",
+        "type": "9M113M Konkurs-M",
         "range_m": 4000,
-        "pen_ce": 80,
         "count": 4
       },
+      "secondary_weapons": ["CW_PKT_COAX"],
       "protection": {
         "era_equipped": false,
         "aps_equipped": false
       },
-      "notes": "30mm機関砲、Konkurs ATGM搭載、軽量だが脆弱、大量配備"
+      "notes": "30mm 2A42機関砲、Konkurs-M ATGM(800mm)、大量配備"
     },
     {
       "id": "RUS_BRM3K",
@@ -391,18 +450,21 @@
         "cross_speed": 1.05
       },
       "main_gun": {
+        "weapon_id": "CW_AUTOCANNON_30_RUS",
         "caliber_mm": 30,
         "type": "autocannon",
+        "ammo_capacity": 500,
         "pen_ke_modifier": 0.95,
         "pen_ce_modifier": 1.00,
         "rof_modifier": 1.00,
         "accuracy_modifier": 0.95
       },
+      "secondary_weapons": ["CW_PKT_COAX"],
       "protection": {
         "era_equipped": false,
         "aps_equipped": false
       },
-      "notes": "BMP-3ベース偵察車、高性能センサー、熱画像装置、レーダー搭載、水陸両用"
+      "notes": "BMP-3ベース偵察車、高性能センサー、熱画像装置、水陸両用"
     },
     {
       "id": "RUS_BTR82A",
@@ -432,13 +494,16 @@
         "cross_speed": 0.95
       },
       "main_gun": {
+        "weapon_id": "CW_AUTOCANNON_30_RUS",
         "caliber_mm": 30,
         "type": "autocannon",
+        "ammo_capacity": 300,
         "pen_ke_modifier": 0.95,
         "pen_ce_modifier": 1.00,
         "rof_modifier": 1.00,
         "accuracy_modifier": 0.95
       },
+      "secondary_weapons": ["CW_PKT_COAX"],
       "protection": {
         "era_equipped": false,
         "aps_equipped": false
@@ -473,18 +538,21 @@
         "cross_speed": 0.90
       },
       "main_gun": {
+        "weapon_id": "CW_HMG_KPVT",
         "caliber_mm": 14.5,
         "type": "hmg",
+        "ammo_capacity": 500,
         "pen_ke_modifier": 0.80,
         "pen_ce_modifier": 0.80,
         "rof_modifier": 1.00,
         "accuracy_modifier": 0.90
       },
+      "secondary_weapons": ["CW_PKT_COAX"],
       "protection": {
         "era_equipped": false,
         "aps_equipped": false
       },
-      "notes": "8輪装甲車、KPVT 14.5mm重機関銃、大量配備、水陸両用"
+      "notes": "8輪装甲車、KPVT 14.5mm(40mm@NEAR)、大量配備、水陸両用"
     },
     {
       "id": "RUS_MTLB",
@@ -514,8 +582,10 @@
         "cross_speed": 1.10
       },
       "main_gun": {
+        "weapon_id": "CW_PKT_COAX",
         "caliber_mm": 7.62,
         "type": "mmg",
+        "ammo_capacity": 2500,
         "pen_ke_modifier": 0.60,
         "pen_ce_modifier": 0.60,
         "rof_modifier": 1.00,
@@ -554,13 +624,16 @@
         "cross_speed": 0.85
       },
       "main_gun": {
+        "weapon_id": "CW_HMG_KPVT",
         "caliber_mm": 14.5,
         "type": "hmg",
+        "ammo_capacity": 500,
         "pen_ke_modifier": 0.80,
         "pen_ce_modifier": 0.80,
         "rof_modifier": 1.00,
         "accuracy_modifier": 0.85
       },
+      "secondary_weapons": ["CW_PKT_COAX"],
       "protection": {
         "era_equipped": false,
         "aps_equipped": false
@@ -595,8 +668,10 @@
         "cross_speed": 0.80
       },
       "main_gun": {
+        "weapon_id": "CW_PKT_COAX",
         "caliber_mm": 7.62,
         "type": "mmg",
+        "ammo_capacity": 1000,
         "pen_ke_modifier": 0.60,
         "pen_ce_modifier": 0.60,
         "rof_modifier": 1.00,
@@ -850,8 +925,10 @@
         "cross_speed": 1.00
       },
       "main_gun": {
+        "weapon_id": "CW_KORD_AA",
         "caliber_mm": 12.7,
         "type": "hmg",
+        "ammo_capacity": 450,
         "pen_ke_modifier": 0.75,
         "pen_ce_modifier": 0.75,
         "rof_modifier": 1.00,

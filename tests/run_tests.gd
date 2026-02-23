@@ -62,6 +62,21 @@ func run_all_tests() -> void:
 	print("\n[US VehicleCatalog Integration Tests]")
 	test_us_vehicle_catalog_integration()
 
+	print("\n[Russian Army Weapons Tests]")
+	test_russian_army_weapons()
+
+	print("\n[Russian VehicleCatalog Integration Tests]")
+	test_russian_vehicle_catalog_integration()
+
+	print("\n[Chinese Army Weapons Tests]")
+	test_chinese_army_weapons()
+
+	print("\n[Chinese VehicleCatalog Integration Tests]")
+	test_chinese_vehicle_catalog_integration()
+
+	print("\n[Weapon Effectiveness Tests]")
+	test_weapon_effectiveness()
+
 
 # =============================================================================
 # WeaponData Tests
@@ -1509,6 +1524,1077 @@ func test_us_vehicle_catalog_integration() -> void:
 
 
 # =============================================================================
+# Russian Army Weapons Tests
+# =============================================================================
+
+func test_russian_army_weapons() -> void:
+	var WeaponDataClass: GDScript = load("res://scripts/data/weapon_data.gd")
+	var all_weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
+
+	# Test: Russian 125mm 2A46M-5 (3BM60 Svinets-2) exists
+	_current_test = "rus_125mm_2a46m5_exists"
+	assert_true("CW_TANK_KE_125_RUS" in all_weapons)
+	var tank_125_rus: RefCounted = all_weapons["CW_TANK_KE_125_RUS"]
+	assert_eq(tank_125_rus.mechanism, WeaponDataClass.Mechanism.KINETIC)
+	_pass()
+
+	# Test: 3BM60 Svinets-2 penetration (700mm = 140 RHA scale)
+	_current_test = "rus_3bm60_penetration"
+	assert_eq(tank_125_rus.pen_ke[WeaponDataClass.RangeBand.MID], 140)
+	_pass()
+
+	# Test: 3BM60 vs standard 125mm
+	_current_test = "rus_125mm_vs_standard"
+	var tank_125_std: RefCounted = all_weapons["CW_TANK_KE_125"]
+	assert_gt(tank_125_rus.pen_ke[WeaponDataClass.RangeBand.MID],
+			  tank_125_std.pen_ke[WeaponDataClass.RangeBand.MID])
+	_pass()
+
+	# Test: 3BM42 Mango exists
+	_current_test = "rus_125mm_mango_exists"
+	assert_true("CW_TANK_KE_125_MANGO" in all_weapons)
+	_pass()
+
+	# Test: 3BM42 Mango lower than 3BM60
+	_current_test = "rus_3bm42_lower_than_3bm60"
+	var mango: RefCounted = all_weapons["CW_TANK_KE_125_MANGO"]
+	assert_gt(tank_125_rus.pen_ke[WeaponDataClass.RangeBand.MID],
+			  mango.pen_ke[WeaponDataClass.RangeBand.MID])
+	_pass()
+
+	# Test: 30mm 2A42/2A72 exists
+	_current_test = "rus_30mm_2a42_exists"
+	assert_true("CW_AUTOCANNON_30_RUS" in all_weapons)
+	_pass()
+
+	# Test: 100mm 2A70 exists
+	_current_test = "rus_100mm_2a70_exists"
+	assert_true("CW_AUTOCANNON_100_RUS" in all_weapons)
+	_pass()
+
+	# Test: KPVT 14.5mm exists
+	_current_test = "rus_kpvt_exists"
+	assert_true("CW_HMG_KPVT" in all_weapons)
+	_pass()
+
+	# Test: PKT coax exists
+	_current_test = "rus_pkt_coax_exists"
+	assert_true("CW_PKT_COAX" in all_weapons)
+	_pass()
+
+	# Test: Kord AA exists
+	_current_test = "rus_kord_aa_exists"
+	assert_true("CW_KORD_AA" in all_weapons)
+	_pass()
+
+	# Test: Kornet ATGM exists
+	_current_test = "rus_kornet_atgm_exists"
+	assert_true("CW_ATGM_KORNET" in all_weapons)
+	_pass()
+
+	# Test: Kornet penetration (1200mm = 240 RHA scale)
+	_current_test = "rus_kornet_penetration"
+	var kornet: RefCounted = all_weapons["CW_ATGM_KORNET"]
+	assert_eq(kornet.pen_ce[WeaponDataClass.RangeBand.MID], 240)
+	_pass()
+
+	# Test: Refleks exists
+	_current_test = "rus_refleks_exists"
+	assert_true("CW_ATGM_REFLEKS" in all_weapons)
+	_pass()
+
+	# Test: Refleks penetration (900mm = 180 RHA scale)
+	_current_test = "rus_refleks_penetration"
+	var refleks: RefCounted = all_weapons["CW_ATGM_REFLEKS"]
+	assert_eq(refleks.pen_ce[WeaponDataClass.RangeBand.MID], 180)
+	_pass()
+
+	# Test: Konkurs exists
+	_current_test = "rus_konkurs_exists"
+	assert_true("CW_ATGM_KONKURS" in all_weapons)
+	_pass()
+
+	# Test: Bastion exists
+	_current_test = "rus_bastion_exists"
+	assert_true("CW_ATGM_BASTION" in all_weapons)
+	_pass()
+
+	# Test: Kornet > Refleks > Konkurs penetration order
+	_current_test = "rus_atgm_pen_order"
+	var konkurs: RefCounted = all_weapons["CW_ATGM_KONKURS"]
+	assert_gt(kornet.pen_ce[WeaponDataClass.RangeBand.MID],
+			  refleks.pen_ce[WeaponDataClass.RangeBand.MID])
+	assert_gt(refleks.pen_ce[WeaponDataClass.RangeBand.MID],
+			  konkurs.pen_ce[WeaponDataClass.RangeBand.MID])
+	_pass()
+
+	# Test: Russian weapons count (11 weapons)
+	_current_test = "rus_weapons_count"
+	var rus_weapon_ids: Array = [
+		"CW_TANK_KE_125_RUS",
+		"CW_TANK_KE_125_MANGO",
+		"CW_AUTOCANNON_30_RUS",
+		"CW_AUTOCANNON_100_RUS",
+		"CW_HMG_KPVT",
+		"CW_PKT_COAX",
+		"CW_KORD_AA",
+		"CW_ATGM_KORNET",
+		"CW_ATGM_REFLEKS",
+		"CW_ATGM_KONKURS",
+		"CW_ATGM_BASTION",
+	]
+	var rus_count: int = 0
+	for weapon_id in rus_weapon_ids:
+		if weapon_id in all_weapons:
+			rus_count += 1
+	assert_eq(rus_count, 11)
+	_pass()
+
+	# Test: M829A4 vs 3BM60 (M829A4 should be slightly superior)
+	_current_test = "m829a4_vs_3bm60"
+	var m829a4: RefCounted = all_weapons["CW_TANK_KE_120_USA"]
+	assert_gt(m829a4.pen_ke[WeaponDataClass.RangeBand.MID],
+			  tank_125_rus.pen_ke[WeaponDataClass.RangeBand.MID])
+	_pass()
+
+
+# =============================================================================
+# Russian VehicleCatalog Integration Tests
+# =============================================================================
+
+func test_russian_vehicle_catalog_integration() -> void:
+	var ElementFactoryClass: GDScript = load("res://scripts/data/element_factory.gd")
+
+	# Initialize vehicle catalog
+	ElementFactoryClass.init_vehicle_catalog()
+
+	# Test: T-90M weapon assignment
+	_current_test = "t90m_has_weapons"
+	var t90m = ElementFactoryClass.create_element_with_vehicle(
+		"RUS_T90M",
+		1,  # GameEnums.Faction.RED
+		Vector2(0, 0),
+		0.0
+	)
+	assert_true(t90m.weapons.size() > 0)
+	_pass()
+
+	# Test: T-90M main weapon is 125mm 3BM60
+	_current_test = "t90m_main_weapon_is_125mm_rus"
+	assert_true(t90m.primary_weapon != null)
+	assert_eq(t90m.primary_weapon.id, "CW_TANK_KE_125_RUS")
+	_pass()
+
+	# Test: T-90M has Refleks ATGM
+	_current_test = "t90m_has_refleks"
+	var has_refleks := false
+	for weapon in t90m.weapons:
+		if weapon.id == "CW_ATGM_REFLEKS":
+			has_refleks = true
+			break
+	assert_true(has_refleks)
+	_pass()
+
+	# Test: T-90M has PKT and Kord
+	_current_test = "t90m_secondary_weapons"
+	var has_pkt := false
+	var has_kord := false
+	for weapon in t90m.weapons:
+		if weapon.id == "CW_PKT_COAX":
+			has_pkt = true
+		elif weapon.id == "CW_KORD_AA":
+			has_kord = true
+	assert_true(has_pkt)
+	assert_true(has_kord)
+	_pass()
+
+	# Test: T-72B3 uses Mango (3BM42)
+	_current_test = "t72b3_uses_mango"
+	var t72b3 = ElementFactoryClass.create_element_with_vehicle(
+		"RUS_T72B3",
+		1,
+		Vector2(100, 0),
+		0.0
+	)
+	assert_true(t72b3.primary_weapon != null)
+	assert_eq(t72b3.primary_weapon.id, "CW_TANK_KE_125_MANGO")
+	_pass()
+
+	# Test: BMP-3 has 100mm 2A70
+	_current_test = "bmp3_has_100mm"
+	var bmp3 = ElementFactoryClass.create_element_with_vehicle(
+		"RUS_BMP3",
+		1,
+		Vector2(200, 0),
+		0.0
+	)
+	assert_true(bmp3.primary_weapon != null)
+	assert_eq(bmp3.primary_weapon.id, "CW_AUTOCANNON_100_RUS")
+	_pass()
+
+	# Test: BMP-3 has Bastion ATGM
+	_current_test = "bmp3_has_bastion"
+	var has_bastion := false
+	for weapon in bmp3.weapons:
+		if weapon.id == "CW_ATGM_BASTION":
+			has_bastion = true
+			break
+	assert_true(has_bastion)
+	_pass()
+
+	# Test: BMP-2 has Konkurs ATGM
+	_current_test = "bmp2_has_konkurs"
+	var bmp2 = ElementFactoryClass.create_element_with_vehicle(
+		"RUS_BMP2",
+		1,
+		Vector2(300, 0),
+		0.0
+	)
+	var has_konkurs := false
+	for weapon in bmp2.weapons:
+		if weapon.id == "CW_ATGM_KONKURS":
+			has_konkurs = true
+			break
+	assert_true(has_konkurs)
+	_pass()
+
+	# Test: BTR-82A has 30mm 2A72
+	_current_test = "btr82a_has_30mm"
+	var btr82a = ElementFactoryClass.create_element_with_vehicle(
+		"RUS_BTR82A",
+		1,
+		Vector2(400, 0),
+		0.0
+	)
+	assert_true(btr82a.primary_weapon != null)
+	assert_eq(btr82a.primary_weapon.id, "CW_AUTOCANNON_30_RUS")
+	_pass()
+
+	# Test: BTR-80 has KPVT 14.5mm
+	_current_test = "btr80_has_kpvt"
+	var btr80 = ElementFactoryClass.create_element_with_vehicle(
+		"RUS_BTR80",
+		1,
+		Vector2(500, 0),
+		0.0
+	)
+	assert_true(btr80.primary_weapon != null)
+	assert_eq(btr80.primary_weapon.id, "CW_HMG_KPVT")
+	_pass()
+
+	# Test: T-90M weapon count (4: main + atgm + pkt + kord)
+	_current_test = "t90m_weapon_count"
+	assert_eq(t90m.weapons.size(), 4)
+	_pass()
+
+	# Test: BMP-3 weapon count (4: 100mm + bastion + 30mm + pkt)
+	_current_test = "bmp3_weapon_count"
+	assert_eq(bmp3.weapons.size(), 4)
+	_pass()
+
+	# Reset ID counters for other tests
+	ElementFactoryClass.reset_id_counters()
+
+
+# =============================================================================
+# Chinese Army Weapons Tests
+# =============================================================================
+
+func test_chinese_army_weapons() -> void:
+	var WeaponDataClass: GDScript = load("res://scripts/data/weapon_data.gd")
+	var all_weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
+
+	# Test: 125mm DTC10-125 exists
+	_current_test = "chn_125mm_dtc10_exists"
+	assert_true("CW_TANK_KE_125_CHN" in all_weapons)
+	_pass()
+
+	# Test: DTC10-125 penetration (800mm @ 2km = 160)
+	_current_test = "chn_dtc10_penetration"
+	var dtc10: RefCounted = all_weapons["CW_TANK_KE_125_CHN"]
+	assert_eq(dtc10.pen_ke[WeaponDataClass.RangeBand.MID], 160)
+	_pass()
+
+	# Test: 125mm DTW-125 II exists
+	_current_test = "chn_125mm_dtw125ii_exists"
+	assert_true("CW_TANK_KE_125_CHN_STD" in all_weapons)
+	_pass()
+
+	# Test: DTW-125 II penetration (700mm = 140)
+	_current_test = "chn_dtw125ii_penetration"
+	var dtw125ii: RefCounted = all_weapons["CW_TANK_KE_125_CHN_STD"]
+	assert_eq(dtw125ii.pen_ke[WeaponDataClass.RangeBand.MID], 140)
+	_pass()
+
+	# Test: 125mm DTW-125 old exists
+	_current_test = "chn_125mm_old_exists"
+	assert_true("CW_TANK_KE_125_CHN_OLD" in all_weapons)
+	_pass()
+
+	# Test: 105mm ZPL-151 exists
+	_current_test = "chn_105mm_zpl151_exists"
+	assert_true("CW_TANK_KE_105_CHN" in all_weapons)
+	_pass()
+
+	# Test: 105mm ZPL-151 penetration (500mm = 100)
+	_current_test = "chn_105mm_penetration"
+	var zpl151: RefCounted = all_weapons["CW_TANK_KE_105_CHN"]
+	assert_eq(zpl151.pen_ke[WeaponDataClass.RangeBand.MID], 100)
+	_pass()
+
+	# Test: 105mm Type 83 exists
+	_current_test = "chn_105mm_old_exists"
+	assert_true("CW_TANK_KE_105_CHN_OLD" in all_weapons)
+	_pass()
+
+	# Test: 30mm ZPT-99 exists
+	_current_test = "chn_30mm_zpt99_exists"
+	assert_true("CW_AUTOCANNON_30_CHN" in all_weapons)
+	_pass()
+
+	# Test: 35mm Type 90 exists
+	_current_test = "chn_35mm_type90_exists"
+	assert_true("CW_AUTOCANNON_35_CHN" in all_weapons)
+	_pass()
+
+	# Test: 100mm gun-launcher exists
+	_current_test = "chn_100mm_gun_launcher_exists"
+	assert_true("CW_AUTOCANNON_100_CHN" in all_weapons)
+	_pass()
+
+	# Test: HJ-10 exists
+	_current_test = "chn_hj10_exists"
+	assert_true("CW_ATGM_HJ10" in all_weapons)
+	_pass()
+
+	# Test: HJ-10 penetration (1400mm = 280)
+	_current_test = "chn_hj10_penetration"
+	var hj10: RefCounted = all_weapons["CW_ATGM_HJ10"]
+	assert_eq(hj10.pen_ce[WeaponDataClass.RangeBand.MID], 280)
+	_pass()
+
+	# Test: HJ-9 exists
+	_current_test = "chn_hj9_exists"
+	assert_true("CW_ATGM_HJ9" in all_weapons)
+	_pass()
+
+	# Test: HJ-9 penetration (1200mm = 240)
+	_current_test = "chn_hj9_penetration"
+	var hj9: RefCounted = all_weapons["CW_ATGM_HJ9"]
+	assert_eq(hj9.pen_ce[WeaponDataClass.RangeBand.MID], 240)
+	_pass()
+
+	# Test: HJ-8E exists
+	_current_test = "chn_hj8e_exists"
+	assert_true("CW_ATGM_HJ8E" in all_weapons)
+	_pass()
+
+	# Test: HJ-8E penetration (1000mm = 200)
+	_current_test = "chn_hj8e_penetration"
+	var hj8e: RefCounted = all_weapons["CW_ATGM_HJ8E"]
+	assert_eq(hj8e.pen_ce[WeaponDataClass.RangeBand.MID], 200)
+	_pass()
+
+	# Test: HJ-73 exists
+	_current_test = "chn_hj73_exists"
+	assert_true("CW_ATGM_HJ73" in all_weapons)
+	_pass()
+
+	# Test: HJ-73 penetration (425mm = 85)
+	_current_test = "chn_hj73_penetration"
+	var hj73: RefCounted = all_weapons["CW_ATGM_HJ73"]
+	assert_eq(hj73.pen_ce[WeaponDataClass.RangeBand.MID], 85)
+	_pass()
+
+	# Test: GP105 exists
+	_current_test = "chn_gp105_exists"
+	assert_true("CW_ATGM_GP105" in all_weapons)
+	_pass()
+
+	# Test: GP105 penetration (700mm = 140)
+	_current_test = "chn_gp105_penetration"
+	var gp105: RefCounted = all_weapons["CW_ATGM_GP105"]
+	assert_eq(gp105.pen_ce[WeaponDataClass.RangeBand.MID], 140)
+	_pass()
+
+	# Test: QJZ-89 exists
+	_current_test = "chn_qjz89_exists"
+	assert_true("CW_QJZ89_AA" in all_weapons)
+	_pass()
+
+	# Test: Type 86 coax exists
+	_current_test = "chn_type86_coax_exists"
+	assert_true("CW_TYPE86_COAX" in all_weapons)
+	_pass()
+
+	# Test: DTC10 > DTW-125 II
+	_current_test = "chn_dtc10_higher_than_dtw125ii"
+	assert_gt(dtc10.pen_ke[WeaponDataClass.RangeBand.MID], dtw125ii.pen_ke[WeaponDataClass.RangeBand.MID])
+	_pass()
+
+	# Test: ATGM hierarchy HJ-10 > HJ-9 > HJ-8E > GP105 > HJ-73
+	_current_test = "chn_atgm_hierarchy"
+	assert_gt(hj10.pen_ce[WeaponDataClass.RangeBand.MID], hj9.pen_ce[WeaponDataClass.RangeBand.MID])
+	assert_gt(hj9.pen_ce[WeaponDataClass.RangeBand.MID], hj8e.pen_ce[WeaponDataClass.RangeBand.MID])
+	assert_gt(hj8e.pen_ce[WeaponDataClass.RangeBand.MID], gp105.pen_ce[WeaponDataClass.RangeBand.MID])
+	assert_gt(gp105.pen_ce[WeaponDataClass.RangeBand.MID], hj73.pen_ce[WeaponDataClass.RangeBand.MID])
+	_pass()
+
+	# Test: DTC10 vs M829A4 (DTC10 higher)
+	_current_test = "chn_dtc10_vs_m829a4"
+	var m829a4: RefCounted = all_weapons["CW_TANK_KE_120_USA"]
+	assert_gt(dtc10.pen_ke[WeaponDataClass.RangeBand.MID], m829a4.pen_ke[WeaponDataClass.RangeBand.MID])
+	_pass()
+
+	# Test: DTC10 vs 3BM60 (DTC10 higher)
+	_current_test = "chn_dtc10_vs_3bm60"
+	var svinets: RefCounted = all_weapons["CW_TANK_KE_125_RUS"]
+	assert_gt(dtc10.pen_ke[WeaponDataClass.RangeBand.MID], svinets.pen_ke[WeaponDataClass.RangeBand.MID])
+	_pass()
+
+	# Test: HJ-10 vs Kornet (HJ-10 higher)
+	_current_test = "chn_hj10_vs_kornet"
+	var kornet: RefCounted = all_weapons["CW_ATGM_KORNET"]
+	assert_gt(hj10.pen_ce[WeaponDataClass.RangeBand.MID], kornet.pen_ce[WeaponDataClass.RangeBand.MID])
+	_pass()
+
+	# Test: Chinese weapons count (15)
+	_current_test = "chn_weapons_count"
+	var chn_weapon_ids: Array = [
+		"CW_TANK_KE_125_CHN",
+		"CW_TANK_KE_125_CHN_STD",
+		"CW_TANK_KE_125_CHN_OLD",
+		"CW_TANK_KE_105_CHN",
+		"CW_TANK_KE_105_CHN_OLD",
+		"CW_AUTOCANNON_30_CHN",
+		"CW_AUTOCANNON_35_CHN",
+		"CW_AUTOCANNON_100_CHN",
+		"CW_ATGM_HJ10",
+		"CW_ATGM_HJ9",
+		"CW_ATGM_HJ8E",
+		"CW_ATGM_HJ73",
+		"CW_ATGM_GP105",
+		"CW_QJZ89_AA",
+		"CW_TYPE86_COAX",
+	]
+	var chn_count: int = 0
+	for weapon_id in chn_weapon_ids:
+		if weapon_id in all_weapons:
+			chn_count += 1
+	assert_eq(chn_count, 15)
+	_pass()
+
+
+func test_chinese_vehicle_catalog_integration() -> void:
+	var ElementFactoryClass: GDScript = load("res://scripts/data/element_factory.gd")
+
+	# Initialize vehicle catalog
+	ElementFactoryClass.init_vehicle_catalog()
+
+	# Test: Type 99A weapon assignment
+	_current_test = "type99a_has_weapons"
+	var type99a = ElementFactoryClass.create_element_with_vehicle(
+		"CHN_Type99A",
+		1,  # GameEnums.Faction.RED
+		Vector2(0, 0),
+		0.0
+	)
+	assert_true(type99a.weapons.size() > 0)
+	_pass()
+
+	# Test: Type 99A main weapon is DTC10-125
+	_current_test = "type99a_main_weapon_is_dtc10"
+	assert_true(type99a.primary_weapon != null)
+	assert_eq(type99a.primary_weapon.id, "CW_TANK_KE_125_CHN")
+	_pass()
+
+	# Test: Type 99A has Type 86 coax and QJZ-89
+	_current_test = "type99a_secondary_weapons"
+	var has_type86 := false
+	var has_qjz89 := false
+	for weapon in type99a.weapons:
+		if weapon.id == "CW_TYPE86_COAX":
+			has_type86 = true
+		elif weapon.id == "CW_QJZ89_AA":
+			has_qjz89 = true
+	assert_true(has_type86)
+	assert_true(has_qjz89)
+	_pass()
+
+	# Test: Type 99 uses DTW-125 II
+	_current_test = "type99_uses_dtw125ii"
+	var type99 = ElementFactoryClass.create_element_with_vehicle(
+		"CHN_Type99",
+		1,
+		Vector2(100, 0),
+		0.0
+	)
+	assert_true(type99.primary_weapon != null)
+	assert_eq(type99.primary_weapon.id, "CW_TANK_KE_125_CHN_STD")
+	_pass()
+
+	# Test: Type 96A uses DTW-125 II
+	_current_test = "type96a_uses_dtw125ii"
+	var type96a = ElementFactoryClass.create_element_with_vehicle(
+		"CHN_Type96A",
+		1,
+		Vector2(200, 0),
+		0.0
+	)
+	assert_true(type96a.primary_weapon != null)
+	assert_eq(type96a.primary_weapon.id, "CW_TANK_KE_125_CHN_STD")
+	_pass()
+
+	# Test: Type 96 uses DTW-125 old
+	_current_test = "type96_uses_dtw125_old"
+	var type96 = ElementFactoryClass.create_element_with_vehicle(
+		"CHN_Type96",
+		1,
+		Vector2(300, 0),
+		0.0
+	)
+	assert_true(type96.primary_weapon != null)
+	assert_eq(type96.primary_weapon.id, "CW_TANK_KE_125_CHN_OLD")
+	_pass()
+
+	# Test: Type 15 has ZPL-151
+	_current_test = "type15_has_zpl151"
+	var type15 = ElementFactoryClass.create_element_with_vehicle(
+		"CHN_Type15",
+		1,
+		Vector2(400, 0),
+		0.0
+	)
+	assert_true(type15.primary_weapon != null)
+	assert_eq(type15.primary_weapon.id, "CW_TANK_KE_105_CHN")
+	_pass()
+
+	# Test: Type 15 has GP105 ATGM
+	_current_test = "type15_has_gp105"
+	var has_gp105 := false
+	for weapon in type15.weapons:
+		if weapon.id == "CW_ATGM_GP105":
+			has_gp105 = true
+			break
+	assert_true(has_gp105)
+	_pass()
+
+	# Test: ZBD-04A has 30mm ZPT-99
+	_current_test = "zbd04a_has_30mm"
+	var zbd04a = ElementFactoryClass.create_element_with_vehicle(
+		"CHN_ZBD04A",
+		1,
+		Vector2(500, 0),
+		0.0
+	)
+	assert_true(zbd04a.primary_weapon != null)
+	assert_eq(zbd04a.primary_weapon.id, "CW_AUTOCANNON_30_CHN")
+	_pass()
+
+	# Test: ZBD-04A has HJ-8E ATGM
+	_current_test = "zbd04a_has_hj8e"
+	var has_hj8e := false
+	for weapon in zbd04a.weapons:
+		if weapon.id == "CW_ATGM_HJ8E":
+			has_hj8e = true
+			break
+	assert_true(has_hj8e)
+	_pass()
+
+	# Test: ZBD-04 has 100mm gun-launcher
+	_current_test = "zbd04_has_100mm"
+	var zbd04 = ElementFactoryClass.create_element_with_vehicle(
+		"CHN_ZBD04",
+		1,
+		Vector2(600, 0),
+		0.0
+	)
+	assert_true(zbd04.primary_weapon != null)
+	assert_eq(zbd04.primary_weapon.id, "CW_AUTOCANNON_100_CHN")
+	_pass()
+
+	# Test: ZBD-09 has HJ-73 ATGM
+	_current_test = "zbd09_has_hj73"
+	var zbd09 = ElementFactoryClass.create_element_with_vehicle(
+		"CHN_ZBD09",
+		1,
+		Vector2(700, 0),
+		0.0
+	)
+	var has_hj73 := false
+	for weapon in zbd09.weapons:
+		if weapon.id == "CW_ATGM_HJ73":
+			has_hj73 = true
+			break
+	assert_true(has_hj73)
+	_pass()
+
+	# Test: PGZ-09 has 35mm Type 90
+	_current_test = "pgz09_has_35mm"
+	var pgz09 = ElementFactoryClass.create_element_with_vehicle(
+		"CHN_PGZ09",
+		1,
+		Vector2(800, 0),
+		0.0
+	)
+	assert_true(pgz09.primary_weapon != null)
+	assert_eq(pgz09.primary_weapon.id, "CW_AUTOCANNON_35_CHN")
+	_pass()
+
+	# Test: ZTL-11 has 105mm Type 83
+	_current_test = "ztl11_has_105mm_old"
+	var ztl11 = ElementFactoryClass.create_element_with_vehicle(
+		"CHN_ZTL11",
+		1,
+		Vector2(900, 0),
+		0.0
+	)
+	assert_true(ztl11.primary_weapon != null)
+	assert_eq(ztl11.primary_weapon.id, "CW_TANK_KE_105_CHN_OLD")
+	_pass()
+
+	# Test: ZTL-11 has GP105 ATGM
+	_current_test = "ztl11_has_gp105"
+	var has_gp105_ztl11 := false
+	for weapon in ztl11.weapons:
+		if weapon.id == "CW_ATGM_GP105":
+			has_gp105_ztl11 = true
+			break
+	assert_true(has_gp105_ztl11)
+	_pass()
+
+	# Test: Type 99A weapon count (3: main + type86 + qjz89)
+	_current_test = "type99a_weapon_count"
+	assert_eq(type99a.weapons.size(), 3)
+	_pass()
+
+	# Test: ZBD-04A weapon count (3: main + atgm + coax)
+	_current_test = "zbd04a_weapon_count"
+	assert_eq(zbd04a.weapons.size(), 3)
+	_pass()
+
+	# Reset ID counters for other tests
+	ElementFactoryClass.reset_id_counters()
+
+
+# =============================================================================
+# Weapon Effectiveness Tests (Penetration Matrix)
+# =============================================================================
+
+## Calculate penetration probability using sigmoid formula
+func _calc_pen_prob(penetration: int, armor: int) -> float:
+	var diff := float(penetration - armor)
+	var x := diff / 15.0  # PENETRATION_SIGMOID_SCALE
+	return 1.0 / (1.0 + exp(-x))
+
+
+func test_weapon_effectiveness() -> void:
+	# Armor values from element_data.gd:
+	# MBT: Front 140 KE/CE, Side 40/24, Rear 16/8
+	# IFV: Front 30/40, Side 10/12, Rear 6/6
+	# APC: Front 6/5, Side 3/3
+	# Light Tank: Front 60/70, Side 20/20
+	# SP Arty: Front 12/10
+	# AA: Front 14/12
+
+	# Penetration probability thresholds:
+	# diff >= +30: ~88% (effective)
+	# diff = 0: 50%
+	# diff <= -30: ~12% (ineffective)
+
+	const PENETRATE := 0.75  # 75%+ = "can penetrate"
+	const NO_PENETRATE := 0.25  # 25%- = "cannot penetrate"
+
+	# =========================================================================
+	# MBT Front (140 KE/CE) Tests
+	# =========================================================================
+
+	_current_test = "mbt_front_vs_dtc10_125mm"
+	# DTC10-125 (160 KE) vs MBT front (140 KE): diff = +20 -> ~79%
+	assert_gt(_calc_pen_prob(160, 140), PENETRATE)
+	_pass()
+
+	_current_test = "mbt_front_vs_m829a4_120mm"
+	# M829A4 (150 KE) vs MBT front (140 KE): diff = +10 -> ~66%
+	assert_gt(_calc_pen_prob(150, 140), 0.5)
+	_pass()
+
+	_current_test = "mbt_front_vs_3bm60_125mm"
+	# 3BM60 (140 KE) vs MBT front (140 KE): diff = 0 -> 50%
+	assert_almost_eq(_calc_pen_prob(140, 140), 0.5, 0.05)
+	_pass()
+
+	_current_test = "mbt_front_vs_mango_125mm"
+	# 3BM42 Mango (100 KE) vs MBT front (140 KE): diff = -40 -> ~7%
+	assert_lt(_calc_pen_prob(100, 140), NO_PENETRATE)
+	_pass()
+
+	_current_test = "mbt_front_vs_105mm_apfsds"
+	# 105mm (100 KE) vs MBT front (140 KE): diff = -40 -> ~7%
+	assert_lt(_calc_pen_prob(100, 140), NO_PENETRATE)
+	_pass()
+
+	_current_test = "mbt_front_vs_30mm_autocannon"
+	# 30mm (12 KE) vs MBT front (140 KE): diff = -128 -> ~0%
+	assert_lt(_calc_pen_prob(12, 140), 0.01)
+	_pass()
+
+	_current_test = "mbt_front_vs_kornet_atgm"
+	# Kornet (240 CE) vs MBT front (140 CE): diff = +100 -> ~99.9%
+	assert_gt(_calc_pen_prob(240, 140), 0.99)
+	_pass()
+
+	_current_test = "mbt_front_vs_hj10_atgm"
+	# HJ-10 (280 CE) vs MBT front (140 CE): diff = +140 -> ~99.99%
+	assert_gt(_calc_pen_prob(280, 140), 0.99)
+	_pass()
+
+	_current_test = "mbt_front_vs_javelin_atgm"
+	# Javelin (180 CE) vs MBT front (140 CE): diff = +40 -> ~93%
+	assert_gt(_calc_pen_prob(180, 140), 0.9)
+	_pass()
+
+	_current_test = "mbt_front_vs_rpg_heat"
+	# RPG (60 CE) vs MBT front (140 CE): diff = -80 -> ~0.5%
+	assert_lt(_calc_pen_prob(60, 140), 0.01)
+	_pass()
+
+	# =========================================================================
+	# MBT Side (40 KE, 24 CE) Tests
+	# =========================================================================
+
+	_current_test = "mbt_side_vs_30mm_autocannon"
+	# 30mm (12 KE) vs MBT side (40 KE): diff = -28 -> ~13%
+	assert_lt(_calc_pen_prob(12, 40), NO_PENETRATE)
+	_pass()
+
+	_current_test = "mbt_side_vs_100mm_gun_launcher"
+	# 100mm (120 CE) vs MBT side (24 CE): diff = +96 -> ~99.8%
+	assert_gt(_calc_pen_prob(120, 24), 0.99)
+	_pass()
+
+	_current_test = "mbt_side_vs_rpg_heat"
+	# RPG (60 CE) vs MBT side (24 CE): diff = +36 -> ~92%
+	assert_gt(_calc_pen_prob(60, 24), 0.9)
+	_pass()
+
+	_current_test = "mbt_side_vs_hj73_atgm"
+	# HJ-73 (85 CE) vs MBT side (24 CE): diff = +61 -> ~98%
+	assert_gt(_calc_pen_prob(85, 24), 0.95)
+	_pass()
+
+	# =========================================================================
+	# MBT Rear (16 KE, 8 CE) Tests
+	# =========================================================================
+
+	_current_test = "mbt_rear_vs_30mm_autocannon"
+	# 30mm (12 KE) vs MBT rear (16 KE): diff = -4 -> ~43%
+	var prob := _calc_pen_prob(12, 16)
+	assert_gt(prob, 0.3)
+	assert_lt(prob, 0.6)
+	_pass()
+
+	_current_test = "mbt_rear_vs_rpg_heat"
+	# RPG (60 CE) vs MBT rear (8 CE): diff = +52 -> ~97%
+	assert_gt(_calc_pen_prob(60, 8), 0.95)
+	_pass()
+
+	# =========================================================================
+	# IFV Front (30 KE, 40 CE) Tests
+	# =========================================================================
+
+	_current_test = "ifv_front_vs_30mm_at_mid"
+	# 30mm (12 KE) vs IFV front (30 KE): diff = -18 -> ~23%
+	assert_lt(_calc_pen_prob(12, 30), NO_PENETRATE)
+	_pass()
+
+	_current_test = "ifv_front_vs_30mm_at_near"
+	# 30mm NEAR (14 KE) vs IFV front (30 KE): diff = -16 -> ~26%
+	assert_gt(_calc_pen_prob(14, 30), 0.2)
+	_pass()
+
+	_current_test = "ifv_front_vs_125mm_apfsds"
+	# 125mm (140 KE) vs IFV front (30 KE): diff = +110 -> ~99.9%
+	assert_gt(_calc_pen_prob(140, 30), 0.99)
+	_pass()
+
+	_current_test = "ifv_front_vs_rpg_heat"
+	# RPG (60 CE) vs IFV front (40 CE): diff = +20 -> ~79%
+	assert_gt(_calc_pen_prob(60, 40), PENETRATE)
+	_pass()
+
+	_current_test = "ifv_front_vs_atgm"
+	# Any ATGM (85+ CE) vs IFV front (40 CE): diff = +45+ -> ~95%+
+	assert_gt(_calc_pen_prob(85, 40), 0.9)
+	_pass()
+
+	# =========================================================================
+	# IFV Side (10 KE, 12 CE) Tests
+	# =========================================================================
+
+	_current_test = "ifv_side_vs_30mm_autocannon"
+	# 30mm (12 KE) vs IFV side (10 KE): diff = +2 -> ~53%
+	assert_gt(_calc_pen_prob(12, 10), 0.5)
+	_pass()
+
+	_current_test = "ifv_side_vs_145mm_kpvt"
+	# 14.5mm KPVT (8 KE) vs IFV side (10 KE): diff = -2 -> ~47%
+	assert_gt(_calc_pen_prob(8, 10), 0.4)
+	_pass()
+
+	_current_test = "ifv_side_vs_127mm_hmg"
+	# 12.7mm HMG (5 KE) vs IFV side (10 KE): diff = -5 -> ~42%
+	assert_gt(_calc_pen_prob(5, 10), 0.35)
+	_pass()
+
+	# =========================================================================
+	# APC Front (6 KE, 5 CE) Tests
+	# =========================================================================
+
+	_current_test = "apc_front_vs_127mm_hmg"
+	# 12.7mm HMG (5 KE) vs APC front (6 KE): diff = -1 -> ~48%
+	assert_gt(_calc_pen_prob(5, 6), 0.4)
+	_pass()
+
+	_current_test = "apc_front_vs_30mm_autocannon"
+	# 30mm (12 KE) vs APC front (6 KE): diff = +6 -> ~60%
+	assert_gt(_calc_pen_prob(12, 6), 0.55)
+	_pass()
+
+	_current_test = "apc_front_vs_rpg_heat"
+	# RPG (60 CE) vs APC front (5 CE): diff = +55 -> ~98%
+	assert_gt(_calc_pen_prob(60, 5), 0.95)
+	_pass()
+
+	_current_test = "apc_side_vs_127mm_hmg"
+	# 12.7mm HMG (5 KE) vs APC side (3 KE): diff = +2 -> ~53%
+	assert_gt(_calc_pen_prob(5, 3), 0.5)
+	_pass()
+
+	# =========================================================================
+	# Light Tank Front (60 KE, 70 CE) Tests
+	# =========================================================================
+
+	_current_test = "light_tank_front_vs_30mm"
+	# 30mm (12 KE) vs Light tank front (60 KE): diff = -48 -> ~4%
+	assert_lt(_calc_pen_prob(12, 60), 0.1)
+	_pass()
+
+	_current_test = "light_tank_front_vs_105mm"
+	# 105mm (100 KE) vs Light tank front (60 KE): diff = +40 -> ~93%
+	assert_gt(_calc_pen_prob(100, 60), 0.9)
+	_pass()
+
+	_current_test = "light_tank_front_vs_125mm"
+	# 125mm (140 KE) vs Light tank front (60 KE): diff = +80 -> ~99.5%
+	assert_gt(_calc_pen_prob(140, 60), 0.99)
+	_pass()
+
+	_current_test = "light_tank_front_vs_rpg"
+	# RPG (60 CE) vs Light tank front (70 CE): diff = -10 -> ~34%
+	assert_lt(_calc_pen_prob(60, 70), 0.5)
+	_pass()
+
+	_current_test = "light_tank_front_vs_kornet"
+	# Kornet (240 CE) vs Light tank front (70 CE): diff = +170 -> ~99.99%
+	assert_gt(_calc_pen_prob(240, 70), 0.99)
+	_pass()
+
+	_current_test = "light_tank_side_vs_30mm"
+	# 30mm (12 KE) vs Light tank side (20 KE): diff = -8 -> ~37%
+	assert_gt(_calc_pen_prob(12, 20), 0.3)
+	_pass()
+
+	# =========================================================================
+	# SP Artillery Front (12 KE, 10 CE) Tests
+	# =========================================================================
+
+	_current_test = "sp_arty_front_vs_30mm"
+	# 30mm (12 KE) vs SP Arty front (12 KE): diff = 0 -> 50%
+	assert_almost_eq(_calc_pen_prob(12, 12), 0.5, 0.05)
+	_pass()
+
+	_current_test = "sp_arty_front_vs_rpg"
+	# RPG (60 CE) vs SP Arty front (10 CE): diff = +50 -> ~96%
+	assert_gt(_calc_pen_prob(60, 10), 0.95)
+	_pass()
+
+	# =========================================================================
+	# AA Systems Front (14 KE, 12 CE) Tests
+	# =========================================================================
+
+	_current_test = "aa_front_vs_30mm"
+	# 30mm (12 KE) vs AA front (14 KE): diff = -2 -> ~47%
+	assert_gt(_calc_pen_prob(12, 14), 0.4)
+	_pass()
+
+	# =========================================================================
+	# ATGM Effectiveness Matrix vs MBT Front (140 CE)
+	# =========================================================================
+
+	_current_test = "atgm_matrix_vs_mbt_front"
+	var mbt_front_ce := 140
+	# HJ-10 (280 CE): should always penetrate
+	assert_gt(_calc_pen_prob(280, mbt_front_ce), 0.99)
+	# Kornet (240 CE): should always penetrate
+	assert_gt(_calc_pen_prob(240, mbt_front_ce), 0.99)
+	# HJ-9 (240 CE): should always penetrate
+	assert_gt(_calc_pen_prob(240, mbt_front_ce), 0.99)
+	# HJ-8E (200 CE): should penetrate
+	assert_gt(_calc_pen_prob(200, mbt_front_ce), 0.95)
+	# Javelin (180 CE): should penetrate
+	assert_gt(_calc_pen_prob(180, mbt_front_ce), 0.9)
+	# GP105 (140 CE): 50/50
+	assert_almost_eq(_calc_pen_prob(140, mbt_front_ce), 0.5, 0.05)
+	# HJ-73 (85 CE): should struggle
+	assert_lt(_calc_pen_prob(85, mbt_front_ce), 0.05)
+	_pass()
+
+	# =========================================================================
+	# Tank Gun Hierarchy Tests
+	# =========================================================================
+
+	_current_test = "tank_gun_hierarchy_vs_mbt"
+	var mbt_front_ke := 140
+	# DTC10 > M829A4 > 3BM60 > Mango
+	var dtc10 := _calc_pen_prob(160, mbt_front_ke)
+	var m829a4 := _calc_pen_prob(150, mbt_front_ke)
+	var bm60 := _calc_pen_prob(140, mbt_front_ke)
+	var mango := _calc_pen_prob(100, mbt_front_ke)
+	assert_gt(dtc10, m829a4)
+	assert_gt(m829a4, bm60)
+	assert_gt(bm60, mango)
+	_pass()
+
+	# =========================================================================
+	# Autocannon Effectiveness by Range (30mm vs IFV front 30 KE)
+	# =========================================================================
+
+	_current_test = "30mm_effectiveness_by_range"
+	var ifv_front_ke := 30
+	var near := _calc_pen_prob(14, ifv_front_ke)  # NEAR: 14 KE
+	var mid := _calc_pen_prob(12, ifv_front_ke)   # MID: 12 KE
+	var far := _calc_pen_prob(8, ifv_front_ke)    # FAR: 8 KE
+	assert_gt(near, mid)
+	assert_gt(mid, far)
+	_pass()
+
+	# =========================================================================
+	# HMG Effectiveness Tests
+	# =========================================================================
+
+	_current_test = "hmg_127mm_vs_targets"
+	# vs APC (6 KE): marginal
+	assert_gt(_calc_pen_prob(5, 6), 0.4)
+	# vs IFV (30 KE): no chance
+	assert_lt(_calc_pen_prob(5, 30), 0.2)
+	# vs MBT (140 KE): impossible
+	assert_lt(_calc_pen_prob(5, 140), 0.01)
+	_pass()
+
+	_current_test = "hmg_145mm_vs_targets"
+	# vs APC (6 KE): good
+	assert_gt(_calc_pen_prob(8, 6), 0.5)
+	# vs IFV side (10 KE): marginal
+	assert_gt(_calc_pen_prob(8, 10), 0.4)
+	# vs IFV front (30 KE): no
+	assert_lt(_calc_pen_prob(8, 30), 0.2)
+	_pass()
+
+	# =========================================================================
+	# Summary: What CAN Penetrate MBT Front
+	# =========================================================================
+
+	_current_test = "summary_can_penetrate_mbt_front"
+	var mbt_f := 140
+	assert_gt(_calc_pen_prob(280, mbt_f), 0.75)  # HJ-10
+	assert_gt(_calc_pen_prob(240, mbt_f), 0.75)  # Kornet
+	assert_gt(_calc_pen_prob(200, mbt_f), 0.75)  # HJ-8E
+	assert_gt(_calc_pen_prob(180, mbt_f), 0.75)  # Javelin
+	assert_gt(_calc_pen_prob(160, mbt_f), 0.75)  # DTC10-125
+	_pass()
+
+	# =========================================================================
+	# Summary: What CANNOT Penetrate MBT Front
+	# =========================================================================
+
+	_current_test = "summary_cannot_penetrate_mbt_front"
+	assert_lt(_calc_pen_prob(100, mbt_f), 0.25)  # Mango
+	assert_lt(_calc_pen_prob(85, mbt_f), 0.25)   # HJ-73
+	assert_lt(_calc_pen_prob(60, mbt_f), 0.25)   # RPG
+	assert_lt(_calc_pen_prob(12, mbt_f), 0.01)   # 30mm
+	assert_lt(_calc_pen_prob(5, mbt_f), 0.01)    # 12.7mm
+	_pass()
+
+	# =========================================================================
+	# What Threatens Each Target Class
+	# =========================================================================
+
+	_current_test = "threats_to_mbt"
+	# Front: only best weapons
+	assert_gt(_calc_pen_prob(160, 140), 0.5)  # DTC10
+	assert_gt(_calc_pen_prob(150, 140), 0.5)  # M829A4
+	# Side: more options
+	assert_gt(_calc_pen_prob(60, 24), 0.9)    # RPG CE vs MBT side CE
+	assert_gt(_calc_pen_prob(85, 24), 0.9)    # HJ-73
+	# Rear: even autocannons
+	assert_gt(_calc_pen_prob(12, 16), 0.4)    # 30mm
+	_pass()
+
+	_current_test = "threats_to_ifv"
+	# AT weapons
+	assert_gt(_calc_pen_prob(60, 40), 0.75)   # RPG vs IFV front CE
+	assert_gt(_calc_pen_prob(85, 40), 0.9)    # ATGM
+	# Tank guns overkill
+	assert_gt(_calc_pen_prob(100, 30), 0.99)  # 105mm
+	assert_gt(_calc_pen_prob(140, 30), 0.99)  # 125mm
+	# Autocannons on side
+	assert_gt(_calc_pen_prob(12, 10), 0.5)    # 30mm vs IFV side
+	_pass()
+
+	_current_test = "threats_to_apc"
+	# Nearly everything threatens APC
+	assert_gt(_calc_pen_prob(5, 6), 0.4)      # 12.7mm
+	assert_gt(_calc_pen_prob(12, 6), 0.59)    # 30mm (calc: ~0.599)
+	assert_gt(_calc_pen_prob(60, 5), 0.97)    # RPG (calc: ~0.975)
+	_pass()
+
+	# =========================================================================
+	# Vehicle Combat Scenarios
+	# =========================================================================
+
+	_current_test = "type99a_vs_m1a2_front"
+	# Type 99A DTC10 (160 KE) vs M1A2 front (assume 155 KE with ERA)
+	assert_gt(_calc_pen_prob(160, 155), 0.5)
+	_pass()
+
+	_current_test = "t90m_vs_type99a_front"
+	# T-90M 3BM60 (140 KE) vs Type 99A front (assume 145 KE with ERA)
+	assert_gt(_calc_pen_prob(140, 145), 0.4)
+	_pass()
+
+	_current_test = "m1a2_vs_t90m_front"
+	# M1A2 M829A4 (150 KE) vs T-90M front (assume 150 KE with Relikt)
+	assert_almost_eq(_calc_pen_prob(150, 150), 0.5, 0.05)
+	_pass()
+
+	_current_test = "bradley_vs_bmp3_front"
+	# 25mm Bushmaster (10 KE) vs BMP-3 front (30 KE): diff = -20 -> ~21%
+	assert_lt(_calc_pen_prob(10, 30), NO_PENETRATE)
+	_pass()
+
+	_current_test = "bmp3_vs_bradley_side"
+	# BMP-3 30mm (12 KE) vs Bradley side (10 KE): diff = +2 -> ~53%
+	assert_gt(_calc_pen_prob(12, 10), 0.5)
+	_pass()
+
+	_current_test = "zbd04a_vs_btr82a_front"
+	# ZBD-04A 30mm (12 KE) vs BTR-82A front (8 KE): diff = +4 -> ~57%
+	assert_gt(_calc_pen_prob(12, 8), 0.55)
+	_pass()
+
+
+# =============================================================================
 # Assertions
 # =============================================================================
 
@@ -1527,6 +2613,10 @@ func assert_false(condition: bool) -> void:
 func assert_gt(value: Variant, threshold: Variant) -> void:
 	if value <= threshold:
 		_fail("Expected > %s but got %s" % [threshold, value])
+
+func assert_lt(value: Variant, threshold: Variant) -> void:
+	if value >= threshold:
+		_fail("Expected < %s but got %s" % [threshold, value])
 
 func assert_almost_eq(actual: float, expected: float, tolerance: float) -> void:
 	if abs(actual - expected) > tolerance:
