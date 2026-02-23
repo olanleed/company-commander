@@ -272,8 +272,11 @@ func _draw_tracers() -> void:
 		if progress >= 1.0:
 			continue
 
-		# 武器別のトレーサー設定を取得
-		var tracer_config := _get_tracer_config(event.weapon_mechanism)
+		# 射手と目標間の距離を計算
+		var distance := event.shooter_pos.distance_to(event.target_pos)
+
+		# 武器別のトレーサー設定を取得（距離を考慮）
+		var tracer_config := _get_tracer_config(event.weapon_mechanism, distance)
 		var tracer_color: Color = tracer_config.color
 		var tracer_width: float = tracer_config.width
 		var tracer_length: float = tracer_config.length
@@ -284,61 +287,67 @@ func _draw_tracers() -> void:
 		var direction := (event.target_pos - event.shooter_pos).normalized()
 		var bullet_pos: Vector2 = event.shooter_pos.lerp(event.target_pos, bullet_progress)
 
-		# トレーサーを描画
-		var tracer_start := bullet_pos - direction * tracer_length
-		var alpha := 1.0 - progress
-		var color := Color(tracer_color.r, tracer_color.g, tracer_color.b, tracer_color.a * alpha)
+		# トレーサーを描画（弾丸が到達前のみ）
+		if bullet_progress < 1.0:
+			var tracer_start := bullet_pos - direction * tracer_length
+			var alpha := 1.0 - bullet_progress * 0.5  # 到達に近づくにつれ薄くなる
+			var color := Color(tracer_color.r, tracer_color.g, tracer_color.b, tracer_color.a * alpha)
 
-		# 武器によって描画スタイルを変更
-		match event.weapon_mechanism:
-			WeaponData.Mechanism.BLAST_FRAG:
-				# 爆発物は弧を描く軌道
-				_draw_arcing_tracer(event.shooter_pos, event.target_pos, bullet_progress, color, tracer_width)
-			WeaponData.Mechanism.SHAPED_CHARGE:
-				# 成形炸薬は炎の尾を引く
-				_draw_rocket_tracer(tracer_start, bullet_pos, direction, color, tracer_width)
-			_:
-				# 通常の直線トレーサー
-				draw_line(tracer_start, bullet_pos, color, tracer_width)
+			# 武器によって描画スタイルを変更
+			match event.weapon_mechanism:
+				WeaponData.Mechanism.BLAST_FRAG:
+					# 爆発物は弧を描く軌道
+					_draw_arcing_tracer(event.shooter_pos, event.target_pos, bullet_progress, color, tracer_width)
+				WeaponData.Mechanism.SHAPED_CHARGE:
+					# 成形炸薬は炎の尾を引く
+					_draw_rocket_tracer(tracer_start, bullet_pos, direction, color, tracer_width)
+				_:
+					# 通常の直線トレーサー
+					draw_line(tracer_start, bullet_pos, color, tracer_width)
 
 
 ## 武器別トレーサー設定を取得
-func _get_tracer_config(mechanism: WeaponData.Mechanism) -> Dictionary:
+## 距離を考慮して速度を調整（遠距離でもトレーサーが見えるように）
+func _get_tracer_config(mechanism: WeaponData.Mechanism, distance: float = 500.0) -> Dictionary:
+	# 距離に応じた速度スケール（遠いほど遅くする）
+	# 基準距離500mで1.0、2000mで0.5程度になるよう調整
+	var distance_scale := clampf(500.0 / maxf(distance, 100.0), 0.3, 2.0)
+
 	match mechanism:
 		WeaponData.Mechanism.SMALL_ARMS:
 			return {
 				"color": TRACER_SMALL_ARMS_COLOR,
 				"width": TRACER_SMALL_ARMS_WIDTH,
 				"length": TRACER_SMALL_ARMS_LENGTH,
-				"speed": 4.0  # 高速
+				"speed": 4.0 * distance_scale  # 高速
 			}
 		WeaponData.Mechanism.KINETIC:
 			return {
 				"color": TRACER_KINETIC_COLOR,
 				"width": TRACER_KINETIC_WIDTH,
 				"length": TRACER_KINETIC_LENGTH,
-				"speed": 6.0  # 超高速
+				"speed": 5.0 * distance_scale  # 超高速（視認性のため少し遅く）
 			}
 		WeaponData.Mechanism.SHAPED_CHARGE:
 			return {
 				"color": TRACER_SHAPED_COLOR,
 				"width": TRACER_SHAPED_WIDTH,
 				"length": TRACER_SHAPED_LENGTH,
-				"speed": 2.5  # ロケットは少し遅め
+				"speed": 2.5 * distance_scale  # ロケットは少し遅め
 			}
 		WeaponData.Mechanism.BLAST_FRAG:
 			return {
 				"color": TRACER_BLAST_COLOR,
 				"width": TRACER_BLAST_WIDTH,
 				"length": TRACER_BLAST_LENGTH,
-				"speed": 2.0  # 曲射は遅め
+				"speed": 2.0 * distance_scale  # 曲射は遅め
 			}
 		_:
 			return {
 				"color": TRACER_COLOR,
 				"width": TRACER_WIDTH,
 				"length": TRACER_LENGTH,
-				"speed": 3.0
+				"speed": 3.0 * distance_scale
 			}
 
 

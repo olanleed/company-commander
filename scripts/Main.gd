@@ -786,6 +786,8 @@ func _update_combat(tick: int, dt: float) -> void:
 				)
 				is_valid = result_armor.is_valid
 				d_supp = result_armor.d_supp
+				# 可視化用にd_dmgを保持（装甲ダメージはapply_vehicle_damageで処理）
+				d_dmg = result_armor.d_dmg
 
 				# CONTINUOUS武器（機関砲等）: 累積ダメージモデル
 				if result_armor.is_continuous:
@@ -800,7 +802,6 @@ func _update_combat(tick: int, dt: float) -> void:
 							tick
 						)
 						target.accumulated_armor_damage -= 1.0
-					# d_dmgは0のままにして重複適用を防ぐ
 				else:
 					# DISCRETE武器: 離散ヒットモデル（p_hitでダメージ発生を判定）
 					var roll := randf()
@@ -813,6 +814,8 @@ func _update_combat(tick: int, dt: float) -> void:
 							result_armor.exposure,
 							tick
 						)
+				# 装甲ダメージはapply_vehicle_damageで処理済み
+				# apply_damageでは抑圧のみ適用（d_dmgは可視化用に保持、apply_d_dmgで0にする）
 
 			else:
 				# 非装甲目標: 従来の計算
@@ -824,9 +827,19 @@ func _update_combat(tick: int, dt: float) -> void:
 				d_dmg = result.d_dmg
 
 		if is_valid:
+			# 可視化用の値を保存（apply_damageで使う値とは別）
+			var visual_d_dmg := d_dmg
+			var visual_d_supp := d_supp
+
+			# 装甲目標の場合、d_dmgはapply_vehicle_damageで処理済みなので0にする
+			# （二重適用を防ぐ）
+			var apply_d_dmg := d_dmg
+			if target.is_armored_vehicle():
+				apply_d_dmg = 0.0  # 装甲ダメージはapply_vehicle_damageで処理済み
+
 			# 抑圧とダメージを適用（threat_classを渡して車両の抑圧上限を適用）
 			var threat_class := selected_weapon.threat_class if selected_weapon else WeaponData.ThreatClass.SMALL_ARMS
-			combat_system.apply_damage(target, d_supp, d_dmg, tick, threat_class)
+			combat_system.apply_damage(target, d_supp, apply_d_dmg, tick, threat_class)
 
 			elements_under_fire[target.id] = true
 			shooter.last_fire_tick = tick
@@ -836,7 +849,7 @@ func _update_combat(tick: int, dt: float) -> void:
 			# 戦闘可視化
 			# 有効な射撃は命中扱い（継続的なダメージ/抑圧）
 			# 抑圧のみの場合も射線は実線で表示
-			var is_hit := (d_dmg > 0.0 or d_supp > 0.0)
+			var is_hit := (visual_d_dmg > 0.0 or visual_d_supp > 0.0)
 			var weapon_mechanism := selected_weapon.mechanism if selected_weapon else WeaponData.Mechanism.SMALL_ARMS
 			if combat_visualizer:
 				combat_visualizer.add_fire_event(
@@ -845,8 +858,8 @@ func _update_combat(tick: int, dt: float) -> void:
 					shooter.position,
 					target.position,
 					shooter.faction,
-					d_dmg,
-					d_supp,
+					visual_d_dmg,
+					visual_d_supp,
 					is_hit,
 					weapon_mechanism
 				)
@@ -1317,15 +1330,16 @@ func _select_target(shooter: ElementData.ElementInstance, _tick: int) -> Element
 		return null
 	# RETURN_FIREの場合は被弾時のみ射撃（現在は簡略化してFIRE_AT_WILLと同じ）
 
-	# 最も近い敵を選択
+	# 最も近い敵を選択（距離ベースの比較）
 	var best_target: ElementData.ElementInstance = null
-	var best_priority := -1.0
+	var best_distance := INF
 
 	for target in fireable_targets:
+		if not target:
+			continue
 		var distance := shooter.position.distance_to(target.position)
-		var priority := 1000.0 - distance
-		if priority > best_priority:
-			best_priority = priority
+		if distance < best_distance:
+			best_distance = distance
 			best_target = target
 
 	return best_target

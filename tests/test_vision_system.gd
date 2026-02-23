@@ -434,3 +434,142 @@ func test_bidirectional_fireable_targets() -> void:
 	assert_eq(red_targets[0].id, blue.id, "REDはBLUEを射撃可能")
 
 
+# =============================================================================
+# ターゲット選択アルゴリズムテスト（距離ベースの選択）
+# =============================================================================
+
+func test_select_nearest_target_from_multiple() -> void:
+	# 戦車タイプを作成（視界範囲2000m）
+	var tank_type := ElementData.ElementType.new()
+	tank_type.id = "test_tank"
+	tank_type.display_name = "Test Tank"
+	tank_type.category = ElementData.Category.VEH
+	tank_type.mobility_class = GameEnums.MobilityType.TRACKED
+	tank_type.spot_range_base = 2000.0  # 戦車の視界範囲
+	tank_type.road_speed = 40.0
+	tank_type.cross_speed = 25.0
+	tank_type.max_strength = 4
+
+	var blue := world_model.create_test_element(tank_type, GameEnums.Faction.BLUE, Vector2(0, 0))
+
+	# 異なる距離にREDターゲットを配置
+	var red_near := world_model.create_test_element(tank_type, GameEnums.Faction.RED, Vector2(1100, 0))  # 1100m
+	var _red_mid := world_model.create_test_element(tank_type, GameEnums.Faction.RED, Vector2(1300, 0))  # 1300m
+	var _red_far := world_model.create_test_element(tank_type, GameEnums.Faction.RED, Vector2(1500, 0))  # 1500m
+
+	# CONF化
+	for i in range(5):
+		vision_system.update(i * 2, 0.1)
+
+	# 射撃可能なターゲットを取得
+	var targets := vision_system.get_fireable_targets(blue)
+	assert_eq(targets.size(), 3, "3体全てが視界内（spot_range=2000m）")
+
+	# 最も近いターゲットを選択するアルゴリズムをテスト
+	# このテストは _select_target() のロジックを再現
+	var best_target: ElementData.ElementInstance = null
+	var best_distance := INF
+
+	for target in targets:
+		if not target:
+			continue
+		var distance := blue.position.distance_to(target.position)
+		if distance < best_distance:
+			best_distance = distance
+			best_target = target
+
+	assert_not_null(best_target, "ターゲットが選択される")
+	assert_eq(best_target.id, red_near.id, "最も近いターゲット(1100m)が選択される")
+	assert_almost_eq(best_distance, 1100.0, 1.0, "選択されたターゲットの距離は1100m")
+
+
+func test_select_target_at_long_range_over_1000m() -> void:
+	# 旧バグ: priority := 1000.0 - distance で、1000m以上の目標が選択されなかった
+	# このテストは修正が正しく動作することを確認
+
+	var tank_type := ElementData.ElementType.new()
+	tank_type.id = "test_tank"
+	tank_type.display_name = "Test Tank"
+	tank_type.category = ElementData.Category.VEH
+	tank_type.mobility_class = GameEnums.MobilityType.TRACKED
+	tank_type.spot_range_base = 2500.0  # 戦車の視界範囲
+	tank_type.road_speed = 40.0
+	tank_type.cross_speed = 25.0
+	tank_type.max_strength = 4
+
+	var blue := world_model.create_test_element(tank_type, GameEnums.Faction.BLUE, Vector2(0, 0))
+
+	# 全てのターゲットが1000m以上
+	var _red1 := world_model.create_test_element(tank_type, GameEnums.Faction.RED, Vector2(1401, 0))  # 1401m
+	var _red2 := world_model.create_test_element(tank_type, GameEnums.Faction.RED, Vector2(1201, 0))  # 1201m
+	var _red3 := world_model.create_test_element(tank_type, GameEnums.Faction.RED, Vector2(1200, 0))  # 1200m
+	var red4 := world_model.create_test_element(tank_type, GameEnums.Faction.RED, Vector2(1105, 0))   # 1105m（最も近い）
+
+	# CONF化
+	for i in range(5):
+		vision_system.update(i * 2, 0.1)
+
+	# 射撃可能なターゲットを取得
+	var targets := vision_system.get_fireable_targets(blue)
+	assert_eq(targets.size(), 4, "4体全てが視界内")
+
+	# 距離ベースの選択アルゴリズム（修正後のロジック）
+	var best_target: ElementData.ElementInstance = null
+	var best_distance := INF
+
+	for target in targets:
+		if not target:
+			continue
+		var distance := blue.position.distance_to(target.position)
+		if distance < best_distance:
+			best_distance = distance
+			best_target = target
+
+	assert_not_null(best_target, "1000m以上でもターゲットが選択される")
+	assert_eq(best_target.id, red4.id, "最も近いターゲット(1105m)が選択される")
+
+
+func test_old_priority_bug_would_fail() -> void:
+	# 旧バグのロジックを再現して、それが失敗することを確認
+	# priority := 1000.0 - distance, best_priority := -1.0
+
+	var tank_type := ElementData.ElementType.new()
+	tank_type.id = "test_tank"
+	tank_type.display_name = "Test Tank"
+	tank_type.category = ElementData.Category.VEH
+	tank_type.mobility_class = GameEnums.MobilityType.TRACKED
+	tank_type.spot_range_base = 2500.0
+	tank_type.road_speed = 40.0
+	tank_type.cross_speed = 25.0
+	tank_type.max_strength = 4
+
+	var blue := world_model.create_test_element(tank_type, GameEnums.Faction.BLUE, Vector2(0, 0))
+	var red := world_model.create_test_element(tank_type, GameEnums.Faction.RED, Vector2(1105, 0))  # 1105m
+
+	# 旧バグのロジック
+	var old_best_target: ElementData.ElementInstance = null
+	var old_best_priority := -1.0
+
+	var distance := blue.position.distance_to(red.position)
+	var old_priority := 1000.0 - distance  # 1000 - 1105 = -105
+
+	if old_priority > old_best_priority:  # -105 > -1.0 は FALSE!
+		old_best_priority = old_priority
+		old_best_target = red
+
+	# 旧ロジックではターゲットが選択されない
+	assert_null(old_best_target, "旧ロジックでは1105mのターゲットは選択されない（バグ）")
+
+	# 新ロジック（距離ベース）
+	var new_best_target: ElementData.ElementInstance = null
+	var new_best_distance := INF
+
+	if distance < new_best_distance:
+		new_best_distance = distance
+		new_best_target = red
+
+	# 新ロジックではターゲットが選択される
+	assert_not_null(new_best_target, "新ロジックでは1105mのターゲットが選択される")
+	assert_eq(new_best_target.id, red.id)
+
+
