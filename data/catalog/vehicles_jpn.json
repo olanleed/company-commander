@@ -1,7 +1,8 @@
 {
-  "catalog_version": "0.3",
+  "catalog_version": "0.4",
   "nation": "JPN",
   "nation_name": "Japan",
+  "description": "陸上自衛隊車両カタログ (2026年版)",
   "vehicles": [
     {
       "id": "JPN_Type10",
@@ -24,14 +25,20 @@
         "cross_speed": 0.95
       },
       "main_gun": {
+        "weapon_id": "CW_TANK_KE_120_JGSDF",
         "caliber_mm": 120,
         "type": "smoothbore",
-        "autoloader": false,
+        "barrel_length": 44,
+        "autoloader": true,
+        "ammo_capacity": 36,
+        "ready_rounds": 14,
         "pen_ke_modifier": 1.10,
         "pen_ce_modifier": 1.00,
         "rof_modifier": 1.00,
-        "accuracy_modifier": 1.15
+        "accuracy_modifier": 1.15,
+        "ammo_types": ["10式APFSDS", "10式HEAT-MP"]
       },
+      "secondary_weapons": ["CW_COAX_MG", "CW_HMG"],
       "protection": {
         "era_equipped": false,
         "aps_equipped": false,
@@ -43,7 +50,7 @@
         "engine_hp": 1200,
         "max_speed_kmh": 70
       },
-      "notes": "世界最高クラスのFCS、C4I統合、軽量44t、モジュラー装甲"
+      "notes": "世界最高クラスのFCS、C4I統合、軽量44t、モジュラー装甲、10式APFSDS(575mm@2km)"
     },
     {
       "id": "JPN_Type90",
@@ -66,14 +73,20 @@
         "cross_speed": 1.00
       },
       "main_gun": {
+        "weapon_id": "CW_TANK_KE_120_JGSDF",
         "caliber_mm": 120,
         "type": "smoothbore",
+        "barrel_length": 44,
         "autoloader": true,
-        "pen_ke_modifier": 1.00,
+        "ammo_capacity": 40,
+        "ready_rounds": 18,
+        "pen_ke_modifier": 0.95,
         "pen_ce_modifier": 1.00,
         "rof_modifier": 1.20,
-        "accuracy_modifier": 1.05
+        "accuracy_modifier": 1.05,
+        "ammo_types": ["JM33 APFSDS", "91式HEAT-MP"]
       },
+      "secondary_weapons": ["CW_COAX_MG", "CW_HMG"],
       "protection": {
         "era_equipped": false,
         "aps_equipped": false,
@@ -85,7 +98,7 @@
         "engine_hp": 1500,
         "max_speed_kmh": 70
       },
-      "notes": "自動装填装置搭載、北海道配備、順次退役中だが2026年現役"
+      "notes": "自動装填装置搭載、北海道配備、JM33 APFSDS(470mm@2km)、順次退役中だが2026年現役"
     },
     {
       "id": "JPN_Type89",
@@ -108,20 +121,28 @@
         "cross_speed": 1.00
       },
       "main_gun": {
+        "weapon_id": "CW_AUTOCANNON_35_JGSDF",
         "caliber_mm": 35,
         "type": "autocannon",
         "dual_feed": true,
-        "pen_ke_modifier": 1.05,
+        "ammo_capacity": 400,
+        "pen_ke_modifier": 1.00,
         "pen_ce_modifier": 1.00,
         "rof_modifier": 1.00,
-        "accuracy_modifier": 1.00
+        "accuracy_modifier": 1.00,
+        "ammo_types": ["35mm APDS", "35mm SAPHEI"]
       },
       "atgm": {
-        "type": "Type79",
+        "weapon_id": "CW_ATGM_79MAT",
+        "type": "Type79_Heavy_MAT",
+        "guidance": "SACLOS",
         "range_m": 4000,
-        "pen_ce": 85,
-        "count": 2
+        "pen_ce": 110,
+        "ready_count": 2,
+        "reserve_count": 4,
+        "tandem_warhead": true
       },
+      "secondary_weapons": ["CW_COAX_MG"],
       "protection": {
         "era_equipped": false,
         "aps_equipped": false
@@ -133,7 +154,7 @@
         "engine_hp": 600,
         "max_speed_kmh": 70
       },
-      "notes": "35mm機関砲、79式対舟艇対戦車誘導弾搭載、履帯式IFV"
+      "notes": "35mm機関砲(APDS: 95mm@1km)、79式重MAT(タンデムHEAT: 550mm)搭載、履帯式IFV"
     },
     {
       "id": "JPN_Type24_IFV",
@@ -187,7 +208,7 @@
       "id": "JPN_Type16",
       "display_name": "16式機動戦闘車",
       "display_name_en": "Type 16 MCV",
-      "base_archetype": "RECON_VEH",
+      "base_archetype": "LIGHT_TANK",
       "mobility_class": "WHEELED",
       "era": "2010s",
       "unit_count": 4,
@@ -204,14 +225,20 @@
         "cross_speed": 0.90
       },
       "main_gun": {
+        "weapon_id": "CW_TANK_KE_105_JGSDF",
         "caliber_mm": 105,
         "type": "rifled",
+        "barrel_length": 52,
         "autoloader": false,
-        "pen_ke_modifier": 0.85,
-        "pen_ce_modifier": 0.90,
+        "ammo_capacity": 40,
+        "ready_rounds": 8,
+        "pen_ke_modifier": 1.00,
+        "pen_ce_modifier": 1.00,
         "rof_modifier": 1.00,
-        "accuracy_modifier": 1.10
+        "accuracy_modifier": 1.10,
+        "ammo_types": ["93式APFSDS", "105mm HEAT", "105mm HEP"]
       },
+      "secondary_weapons": ["CW_COAX_MG", "CW_HMG"],
       "protection": {
         "era_equipped": false,
         "aps_equipped": false
@@ -222,7 +249,7 @@
         "engine_hp": 570,
         "max_speed_kmh": 100
       },
-      "notes": "105mm砲搭載8輪装甲車、高い戦略機動性、即応機動連隊配備"
+      "notes": "52口径105mm砲搭載8輪装甲車、93式APFSDS(350mm@2km)、高い戦略機動性、即応機動連隊配備"
     },
     {
       "id": "JPN_Type87_RCV",
@@ -245,14 +272,18 @@
         "cross_speed": 0.80
       },
       "main_gun": {
+        "weapon_id": "CW_AUTOCANNON_25_JGSDF",
         "caliber_mm": 25,
         "type": "autocannon",
         "dual_feed": false,
-        "pen_ke_modifier": 0.90,
-        "pen_ce_modifier": 0.90,
+        "ammo_capacity": 400,
+        "pen_ke_modifier": 1.00,
+        "pen_ce_modifier": 1.00,
         "rof_modifier": 1.00,
-        "accuracy_modifier": 1.00
+        "accuracy_modifier": 1.00,
+        "ammo_types": ["25mm APDS-T", "25mm HEI-T"]
       },
+      "secondary_weapons": ["CW_COAX_MG"],
       "protection": {
         "era_equipped": false,
         "aps_equipped": false
@@ -263,7 +294,7 @@
         "engine_hp": 305,
         "max_speed_kmh": 100
       },
-      "notes": "25mm機関砲、6輪偵察車、順次25式に更新中"
+      "notes": "25mm機関砲(APDS-T: 55mm@1km)、6輪偵察車、順次25式に更新中"
     },
     {
       "id": "JPN_Type25_RCV",

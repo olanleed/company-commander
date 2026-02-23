@@ -42,6 +42,12 @@ class VehicleConfig:
 		"accuracy_modifier": 1.0,
 	}
 
+	## ATGM設定（対戦車ミサイル）
+	var atgm: Dictionary = {}
+
+	## 副武装リスト（weapon_idの配列）
+	var secondary_weapons: Array = []
+
 	## 防護設定
 	var protection: Dictionary = {
 		"era_equipped": false,
@@ -165,6 +171,16 @@ func _parse_vehicle_config(data: Dictionary, nation: String) -> VehicleConfig:
 		var prot: Dictionary = data.protection
 		for key in prot:
 			config.protection[key] = prot[key]
+
+	# atgm
+	if data.has("atgm"):
+		var atgm_data: Dictionary = data.atgm
+		for key in atgm_data:
+			config.atgm[key] = atgm_data[key]
+
+	# secondary_weapons
+	if data.has("secondary_weapons"):
+		config.secondary_weapons = data.secondary_weapons
 
 	return config
 
@@ -296,6 +312,92 @@ func _apply_armor_modifiers(
 				element_type.armor_ce[WeaponData.ArmorZone.REAR] *
 				vehicle_config.get_modifier("armor_ce_rear")
 			)
+
+# =============================================================================
+# ElementInstance への武器適用
+# =============================================================================
+
+## ElementInstanceにVehicleConfigの武器を適用
+## これによりJSONカタログのweapon_idが実際の武器オブジェクトに変換される
+func apply_weapons_to_element(
+	element: ElementData.ElementInstance,
+	vehicle_config: VehicleConfig
+) -> void:
+	if not element or not vehicle_config:
+		return
+
+	# 武器リストをクリア
+	element.weapons.clear()
+	element.primary_weapon = null
+	element.current_weapon = null
+
+	# 全武器を取得
+	var all_weapons: Dictionary = WeaponData.get_all_concrete_weapons()
+
+	# 主砲（main_gun）
+	if vehicle_config.main_gun.has("weapon_id"):
+		var weapon_id: String = vehicle_config.main_gun["weapon_id"]
+		if weapon_id in all_weapons:
+			# 武器の複製を作成（modifier適用のため）
+			var main_weapon: WeaponData.WeaponType = _duplicate_weapon(all_weapons[weapon_id])
+			# modifier適用
+			apply_to_weapon(main_weapon, vehicle_config)
+			element.weapons.append(main_weapon)
+			element.primary_weapon = main_weapon
+			element.current_weapon = main_weapon
+
+	# ATGM（対戦車ミサイル）
+	if vehicle_config.atgm.has("weapon_id"):
+		var atgm_id: String = vehicle_config.atgm["weapon_id"]
+		if atgm_id in all_weapons:
+			var atgm_weapon: WeaponData.WeaponType = _duplicate_weapon(all_weapons[atgm_id])
+			element.weapons.append(atgm_weapon)
+
+	# 副武装（secondary_weapons）
+	for weapon_entry in vehicle_config.secondary_weapons:
+		var weapon_id: String = ""
+		if weapon_entry is String:
+			weapon_id = weapon_entry
+		elif weapon_entry is Dictionary and weapon_entry.has("weapon_id"):
+			weapon_id = weapon_entry["weapon_id"]
+
+		if weapon_id != "" and weapon_id in all_weapons:
+			var secondary_weapon: WeaponData.WeaponType = _duplicate_weapon(all_weapons[weapon_id])
+			element.weapons.append(secondary_weapon)
+
+
+## 武器を複製（modifier適用用）
+func _duplicate_weapon(original: WeaponData.WeaponType) -> WeaponData.WeaponType:
+	var dup := WeaponData.WeaponType.new()
+	dup.id = original.id
+	dup.display_name = original.display_name
+	dup.mechanism = original.mechanism
+	dup.fire_model = original.fire_model
+	dup.min_range_m = original.min_range_m
+	dup.max_range_m = original.max_range_m
+	dup.range_band_thresholds_m = original.range_band_thresholds_m.duplicate()
+	dup.threat_class = original.threat_class
+	dup.preferred_target = original.preferred_target
+	dup.ammo_endurance_min = original.ammo_endurance_min
+	dup.rof_rpm = original.rof_rpm
+	dup.sigma_hit_m = original.sigma_hit_m
+	dup.direct_hit_radius_m = original.direct_hit_radius_m
+	dup.shock_radius_m = original.shock_radius_m
+	dup.setup_time_sec = original.setup_time_sec
+	dup.displace_time_sec = original.displace_time_sec
+	dup.requires_observer = original.requires_observer
+	dup.blast_radius_m = original.blast_radius_m
+	dup.projectile_speed_mps = original.projectile_speed_mps
+	dup.projectile_size = original.projectile_size
+
+	# Dictionaryの複製
+	dup.lethality = original.lethality.duplicate(true)
+	dup.suppression_power = original.suppression_power.duplicate(true)
+	dup.pen_ke = original.pen_ke.duplicate(true)
+	dup.pen_ce = original.pen_ce.duplicate(true)
+
+	return dup
+
 
 # =============================================================================
 # WeaponType へのmodifier適用

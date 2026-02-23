@@ -172,6 +172,16 @@ static func _equip_weapons_with_vehicle(
 	archetype_id: String,
 	vehicle_config
 ) -> void:
+	# VehicleCatalogのweapon_id指定があればそれを優先
+	if vehicle_config.main_gun.has("weapon_id") or vehicle_config.atgm.has("weapon_id") or vehicle_config.secondary_weapons.size() > 0:
+		# VehicleCatalogから武装を適用
+		_vehicle_catalog.apply_weapons_to_element(element, vehicle_config)
+		# current_weaponを設定
+		if element.weapons.size() > 0:
+			element.current_weapon = element.weapons[0]
+		return
+
+	# フォールバック: ARCHETYPE_WEAPONSから武装を装備
 	if archetype_id not in ARCHETYPE_WEAPONS:
 		return
 

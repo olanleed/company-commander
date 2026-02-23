@@ -19,6 +19,9 @@ extends RefCounted
 
 # GameConstantsを直接参照（エイリアスはGodot 4.6.1で非対応）
 
+# ProtectionDataをpreload（ERA/APS計算用）
+const _ProtectionData: GDScript = preload("res://scripts/data/protection_data.gd")
+
 # =============================================================================
 # 戦闘効果結果
 # =============================================================================
@@ -912,6 +915,131 @@ func get_vehicle_speed_multiplier(element: ElementData.ElementInstance) -> float
 
 
 # =============================================================================
+# ERA/APS 統合 (Phase 5)
+# =============================================================================
+
+## 目標のProtectionProfileを取得
+## vehicle_idがある場合はvehicle_catalogから、ない場合はアーキタイプから推測
+func _get_protection_profile(target: ElementData.ElementInstance):
+	if not target.element_type:
+		return _ProtectionData.create_soft_skin()
+
+	# vehicle_idがある場合はカタログから詳細情報を取得
+	# TODO: VehicleCatalogとの連携（現状はアーキタイプベース）
+
+	# アーキタイプベースの防護プロファイル推測
+	var armor_class: int = target.element_type.armor_class
+
+	match armor_class:
+		0:
+			# ソフトスキン（歩兵、トラック等）
+			return _ProtectionData.create_soft_skin()
+		1:
+			# 軽装甲（APC等）
+			return _ProtectionData.create_light_armor()
+		2:
+			# 中装甲（IFV等）- RED=ロシア、BLUE=NATO
+			if target.faction == GameEnums.Faction.RED:
+				return _ProtectionData.create_ifv_front_rus()
+			else:
+				return _ProtectionData.create_ifv_front_nato()
+		_:
+			# 重装甲（MBT）- RED=ロシア、BLUE=NATO
+			if target.faction == GameEnums.Faction.RED:
+				return _ProtectionData.create_mbt_front_rus()
+			else:
+				return _ProtectionData.create_mbt_front_nato()
+
+
+## ERA/複合装甲を含む有効装甲を計算
+## 返り値: { "armor_ke": int, "armor_ce": int, "armor_ce_vs_tandem": int }
+func _calculate_effective_armor(
+	target: ElementData.ElementInstance,
+	aspect: WeaponData.ArmorZone
+) -> Dictionary:
+	var result: Dictionary = {
+		"armor_ke": 0,
+		"armor_ce": 0,
+		"armor_ce_vs_tandem": 0,
+	}
+
+	if not target.element_type:
+		return result
+
+	# 基本装甲値を取得
+	var base_ke: int = 0
+	var base_ce: int = 0
+	if aspect in target.element_type.armor_ke:
+		base_ke = target.element_type.armor_ke[aspect]
+	if aspect in target.element_type.armor_ce:
+		base_ce = target.element_type.armor_ce[aspect]
+
+	# ProtectionProfileを取得
+	var profile = _get_protection_profile(target)
+
+	# 複合装甲ボーナスを適用
+	var composite_bonus: Dictionary = _ProtectionData.COMPOSITE_BONUS.get(profile.composite_gen, { "ke_mult": 1.0, "ce_mult": 1.0 })
+	var ke_mult: float = composite_bonus.get("ke_mult", 1.0)
+	var ce_mult: float = composite_bonus.get("ce_mult", 1.0)
+
+	# ERAボーナスを取得
+	var era_ke: int = profile.get_era_bonus_ke()
+	var era_ce: int = profile.get_era_bonus_ce()
+
+	# 有効装甲 = 基本装甲 × 複合ボーナス + ERA
+	result.armor_ke = int(float(base_ke) * ke_mult) + era_ke
+	result.armor_ce = int(float(base_ce) * ce_mult) + era_ce
+	result.armor_ce_vs_tandem = int(float(base_ce) * ce_mult)  # タンデムはERAを無視
+
+	return result
+
+
+## APS迎撃判定を行う
+## 返り値: true = 迎撃成功（攻撃無効）, false = 迎撃失敗
+func _check_aps_intercept(
+	target: ElementData.ElementInstance,
+	weapon: WeaponData.WeaponType
+) -> bool:
+	var profile = _get_protection_profile(target)
+
+	if not profile.has_aps():
+		return false
+
+	# 脅威タイプを判定
+	var threat_type: String = "rpg"  # デフォルト
+
+	match weapon.mechanism:
+		WeaponData.Mechanism.SHAPED_CHARGE:
+			# ATGM判定（射程で判断）
+			if weapon.max_range_m >= 2000.0:
+				threat_type = "atgm"
+			else:
+				threat_type = "rpg"
+		WeaponData.Mechanism.KINETIC:
+			threat_type = "apfsds"
+		_:
+			return false  # 他の武器タイプはAPS対象外
+
+	# 迎撃ロール
+	return profile.roll_aps_intercept(threat_type)
+
+
+## ArmorZoneを文字列に変換（_ProtectionData.ZONE_MULTIPLIERS用）
+func _armor_zone_to_string(zone: WeaponData.ArmorZone) -> String:
+	match zone:
+		WeaponData.ArmorZone.FRONT:
+			return "front"
+		WeaponData.ArmorZone.SIDE:
+			return "side"
+		WeaponData.ArmorZone.REAR:
+			return "rear"
+		WeaponData.ArmorZone.TOP:
+			return "top"
+		_:
+			return "front"
+
+
+# =============================================================================
 # v0.1R: アスペクトアングル
 # =============================================================================
 
@@ -985,6 +1113,7 @@ func calculate_penetration_probability(
 
 ## v0.1R: 装甲目標に対する貫徹確率を取得
 ## 武器のpen_ke/pen_ceと目標のarmor_ke/armor_ceを比較
+## Phase 5: ERA/APS計算を統合（シグネチャは変更なし）
 func get_penetration_probability(
 	shooter: ElementData.ElementInstance,
 	target: ElementData.ElementInstance,
@@ -996,6 +1125,15 @@ func get_penetration_probability(
 	if not target.element_type or target.element_type.armor_class == 0:
 		return 1.0
 
+	# APS迎撃判定（CE弾頭のみ）
+	if weapon.mechanism == WeaponData.Mechanism.SHAPED_CHARGE:
+		if _check_aps_intercept(target, weapon):
+			# APS迎撃成功 → 貫徹確率0
+			return 0.0
+
+	# ERA/複合装甲を含む有効装甲を計算
+	var effective_armor: Dictionary = _calculate_effective_armor(target, aspect)
+
 	# 武器メカニズムに応じた貫徹力と装甲を取得
 	var penetration: int = 0
 	var armor: int = 0
@@ -1003,12 +1141,15 @@ func get_penetration_probability(
 	match weapon.mechanism:
 		WeaponData.Mechanism.KINETIC:
 			penetration = weapon.get_pen_ke(distance_m)
-			if aspect in target.element_type.armor_ke:
-				armor = target.element_type.armor_ke[aspect]
+			armor = effective_armor.armor_ke
 		WeaponData.Mechanism.SHAPED_CHARGE:
 			penetration = weapon.get_pen_ce(distance_m)
-			if aspect in target.element_type.armor_ce:
-				armor = target.element_type.armor_ce[aspect]
+			# タンデム弾頭判定（武器IDで判断）
+			if weapon.id == "CW_ATGM_BEAMRIDE" or weapon.id == "CW_ATGM":
+				# タンデム弾頭はERAを無視
+				armor = effective_armor.armor_ce_vs_tandem
+			else:
+				armor = effective_armor.armor_ce
 		WeaponData.Mechanism.SMALL_ARMS:
 			# 小火器は装甲に対して貫通不可
 			if target.element_type.armor_class >= 1:

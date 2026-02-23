@@ -767,6 +767,214 @@ class ElementArchetypes:
 		# ソフトスキン（装甲なし）
 		return t
 
+	## LIGHT_TANK: 軽戦車小隊（4両=1ユニット）
+	## Type 15/M8 AGS相当
+	## 105mm主砲、中装甲、高機動性
+	static func create_light_tank() -> ElementType:
+		var t := ElementType.new()
+		t.id = "LIGHT_TANK"
+		t.display_name = "Light Tank Platoon"
+		t.category = Category.VEH
+		t.symbol_type = SymbolType.ARMOR_TANK
+		t.armor_class = 2  # Medium (軽戦車なのでMBTより軽い)
+		t.mobility_class = GameEnums.MobilityType.TRACKED
+		t.road_speed = 14.0  # MBTより高速
+		t.cross_speed = 10.0
+		t.base_strength = 4
+		t.max_strength = 4
+		t.spot_range_base = 750.0
+		t.spot_range_moving = 550.0
+		# v0.1R: 中装甲（MBTより脆弱）
+		t.armor_ke = {
+			WeaponData.ArmorZone.FRONT: 60,   # 300mm RHA - 30mmに耐える
+			WeaponData.ArmorZone.SIDE: 20,    # 100mm RHA
+			WeaponData.ArmorZone.REAR: 10,    # 50mm RHA
+			WeaponData.ArmorZone.TOP: 4,      # 20mm RHA
+		}
+		t.armor_ce = {
+			WeaponData.ArmorZone.FRONT: 70,   # 350mm RHA - ATGM/LAWで貫通
+			WeaponData.ArmorZone.SIDE: 20,    # 100mm RHA
+			WeaponData.ArmorZone.REAR: 8,     # 40mm RHA
+			WeaponData.ArmorZone.TOP: 3,      # 15mm RHA
+		}
+		return t
+
+	## MLRS: 多連装ロケット砲（2両=1ユニット）
+	## MLRS/BM-21相当
+	## 面制圧能力、軽装甲
+	static func create_mlrs() -> ElementType:
+		var t := ElementType.new()
+		t.id = "MLRS"
+		t.display_name = "MLRS"
+		t.category = Category.WEAP
+		t.symbol_type = SymbolType.FS_ARTILLERY
+		t.armor_class = 1  # Light
+		t.mobility_class = GameEnums.MobilityType.WHEELED
+		t.road_speed = 12.0
+		t.cross_speed = 6.0
+		t.base_strength = 2
+		t.max_strength = 2
+		t.spot_range_base = 400.0
+		t.spot_range_moving = 250.0
+		# 軽装甲
+		t.armor_ke = {
+			WeaponData.ArmorZone.FRONT: 6,
+			WeaponData.ArmorZone.SIDE: 4,
+			WeaponData.ArmorZone.REAR: 3,
+			WeaponData.ArmorZone.TOP: 2,
+		}
+		t.armor_ce = {
+			WeaponData.ArmorZone.FRONT: 5,
+			WeaponData.ArmorZone.SIDE: 3,
+			WeaponData.ArmorZone.REAR: 2,
+			WeaponData.ArmorZone.TOP: 1,
+		}
+		return t
+
+	## ENGINEER_VEH: 工兵車両（2両=1ユニット）
+	## CEV/地雷処理車相当
+	## 障害処理能力、中装甲
+	static func create_engineer_veh() -> ElementType:
+		var t := ElementType.new()
+		t.id = "ENGINEER_VEH"
+		t.display_name = "Engineer Vehicle"
+		t.category = Category.ENG
+		t.symbol_type = SymbolType.INF_ENGINEER
+		t.armor_class = 2  # Medium
+		t.mobility_class = GameEnums.MobilityType.TRACKED
+		t.road_speed = 10.0
+		t.cross_speed = 5.0
+		t.base_strength = 2
+		t.max_strength = 2
+		t.spot_range_base = 400.0
+		t.spot_range_moving = 250.0
+		# 中装甲
+		t.armor_ke = {
+			WeaponData.ArmorZone.FRONT: 20,
+			WeaponData.ArmorZone.SIDE: 10,
+			WeaponData.ArmorZone.REAR: 6,
+			WeaponData.ArmorZone.TOP: 4,
+		}
+		t.armor_ce = {
+			WeaponData.ArmorZone.FRONT: 18,
+			WeaponData.ArmorZone.SIDE: 8,
+			WeaponData.ArmorZone.REAR: 5,
+			WeaponData.ArmorZone.TOP: 3,
+		}
+		return t
+
+	## EW_VEH: 電子戦車両（1両=1ユニット）
+	## 電子妨害/情報収集能力
+	static func create_ew_veh() -> ElementType:
+		var t := ElementType.new()
+		t.id = "EW_VEH"
+		t.display_name = "EW Vehicle"
+		t.category = Category.REC
+		t.symbol_type = SymbolType.CMD_HQ  # 専用シンボルがないため流用
+		t.armor_class = 1  # Light
+		t.mobility_class = GameEnums.MobilityType.WHEELED
+		t.road_speed = 14.0
+		t.cross_speed = 7.0
+		t.base_strength = 1
+		t.max_strength = 1
+		t.spot_range_base = 1200.0  # 高性能センサー
+		t.spot_range_moving = 900.0
+		# 軽装甲
+		t.armor_ke = {
+			WeaponData.ArmorZone.FRONT: 6,
+			WeaponData.ArmorZone.SIDE: 4,
+			WeaponData.ArmorZone.REAR: 3,
+			WeaponData.ArmorZone.TOP: 2,
+		}
+		t.armor_ce = {
+			WeaponData.ArmorZone.FRONT: 5,
+			WeaponData.ArmorZone.SIDE: 3,
+			WeaponData.ArmorZone.REAR: 2,
+			WeaponData.ArmorZone.TOP: 1,
+		}
+		return t
+
+	## ISR_VEH: ISR車両（1両=1ユニット）
+	## 偵察/監視車両、UAV制御車両
+	static func create_isr_veh() -> ElementType:
+		var t := ElementType.new()
+		t.id = "ISR_VEH"
+		t.display_name = "ISR Vehicle"
+		t.category = Category.REC
+		t.symbol_type = SymbolType.RECON_UAV
+		t.armor_class = 0  # Soft
+		t.mobility_class = GameEnums.MobilityType.WHEELED
+		t.road_speed = 16.0
+		t.cross_speed = 8.0
+		t.base_strength = 1
+		t.max_strength = 1
+		t.spot_range_base = 1500.0  # 非常に高性能センサー/UAV
+		t.spot_range_moving = 1000.0
+		# ソフトスキン
+		return t
+
+	## MEDICAL_VEH: 衛生車両（2両=1ユニット）
+	## 戦場救護、後送能力
+	static func create_medical_veh() -> ElementType:
+		var t := ElementType.new()
+		t.id = "MEDICAL_VEH"
+		t.display_name = "Medical Vehicle"
+		t.category = Category.LOG
+		t.symbol_type = SymbolType.SUP_MEDEVAC
+		t.armor_class = 1  # Light
+		t.mobility_class = GameEnums.MobilityType.WHEELED
+		t.road_speed = 16.0
+		t.cross_speed = 8.0
+		t.base_strength = 2
+		t.max_strength = 2
+		t.spot_range_base = 300.0
+		t.spot_range_moving = 200.0
+		# 軽装甲
+		t.armor_ke = {
+			WeaponData.ArmorZone.FRONT: 6,
+			WeaponData.ArmorZone.SIDE: 4,
+			WeaponData.ArmorZone.REAR: 3,
+			WeaponData.ArmorZone.TOP: 2,
+		}
+		t.armor_ce = {
+			WeaponData.ArmorZone.FRONT: 5,
+			WeaponData.ArmorZone.SIDE: 3,
+			WeaponData.ArmorZone.REAR: 2,
+			WeaponData.ArmorZone.TOP: 1,
+		}
+		return t
+
+	## CBRN_VEH: NBC偵察車両（1両=1ユニット）
+	## 化学/生物/放射線検知能力
+	static func create_cbrn_veh() -> ElementType:
+		var t := ElementType.new()
+		t.id = "CBRN_VEH"
+		t.display_name = "CBRN Recon"
+		t.category = Category.REC
+		t.symbol_type = SymbolType.INF_RECON
+		t.armor_class = 1  # Light（NBC密閉車両）
+		t.mobility_class = GameEnums.MobilityType.WHEELED
+		t.road_speed = 14.0
+		t.cross_speed = 7.0
+		t.base_strength = 1
+		t.max_strength = 1
+		t.spot_range_base = 600.0
+		t.spot_range_moving = 400.0
+		# 軽装甲
+		t.armor_ke = {
+			WeaponData.ArmorZone.FRONT: 8,
+			WeaponData.ArmorZone.SIDE: 5,
+			WeaponData.ArmorZone.REAR: 4,
+			WeaponData.ArmorZone.TOP: 3,
+		}
+		t.armor_ce = {
+			WeaponData.ArmorZone.FRONT: 6,
+			WeaponData.ArmorZone.SIDE: 4,
+			WeaponData.ArmorZone.REAR: 3,
+			WeaponData.ArmorZone.TOP: 2,
+		}
+		return t
+
 	## 全アーキタイプを取得
 	static func get_all_archetypes() -> Dictionary:
 		return {
@@ -774,6 +982,7 @@ class ElementArchetypes:
 			"INF_AT": create_inf_at(),
 			"INF_MG": create_inf_mg(),
 			"TANK_PLT": create_tank_plt(),
+			"LIGHT_TANK": create_light_tank(),
 			"IFV_PLT": create_ifv_plt(),
 			"APC_PLT": create_apc_plt(),
 			"LIGHT_VEH": create_light_veh(),
@@ -783,8 +992,14 @@ class ElementArchetypes:
 			"MORTAR_SEC": create_mortar_sec(),
 			"SP_MORTAR": create_sp_mortar(),
 			"SP_ARTILLERY": create_sp_artillery(),
+			"MLRS": create_mlrs(),
 			"SPAAG": create_spaag(),
 			"SAM_VEH": create_sam_veh(),
+			"ENGINEER_VEH": create_engineer_veh(),
+			"EW_VEH": create_ew_veh(),
+			"ISR_VEH": create_isr_veh(),
+			"MEDICAL_VEH": create_medical_veh(),
+			"CBRN_VEH": create_cbrn_veh(),
 			"LOG_TRUCK": create_log_truck(),
 			"CMD_HQ": create_cmd_hq(),
 		}
@@ -796,6 +1011,7 @@ class ElementArchetypes:
 			"INF_AT": return create_inf_at()
 			"INF_MG": return create_inf_mg()
 			"TANK_PLT": return create_tank_plt()
+			"LIGHT_TANK": return create_light_tank()
 			"IFV_PLT": return create_ifv_plt()
 			"APC_PLT": return create_apc_plt()
 			"LIGHT_VEH": return create_light_veh()
@@ -805,8 +1021,14 @@ class ElementArchetypes:
 			"MORTAR_SEC": return create_mortar_sec()
 			"SP_MORTAR": return create_sp_mortar()
 			"SP_ARTILLERY": return create_sp_artillery()
+			"MLRS": return create_mlrs()
 			"SPAAG": return create_spaag()
 			"SAM_VEH": return create_sam_veh()
+			"ENGINEER_VEH": return create_engineer_veh()
+			"EW_VEH": return create_ew_veh()
+			"ISR_VEH": return create_isr_veh()
+			"MEDICAL_VEH": return create_medical_veh()
+			"CBRN_VEH": return create_cbrn_veh()
 			"LOG_TRUCK": return create_log_truck()
 			"CMD_HQ": return create_cmd_hq()
 			_: return create_inf_line()  # デフォルト
