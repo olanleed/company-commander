@@ -56,6 +56,12 @@ func run_all_tests() -> void:
 	print("\n[VehicleCatalog Integration Tests]")
 	test_vehicle_catalog_integration()
 
+	print("\n[US Army Weapons Tests]")
+	test_us_army_weapons()
+
+	print("\n[US VehicleCatalog Integration Tests]")
+	test_us_vehicle_catalog_integration()
+
 
 # =============================================================================
 # WeaponData Tests
@@ -1232,6 +1238,270 @@ func test_vehicle_catalog_integration() -> void:
 
 	_current_test = "type89_weapon_count"
 	assert_eq(type89.weapons.size(), 3)  # 35mm + 79MAT + COAX_MG
+	_pass()
+
+	# Reset ID counters for other tests
+	ElementFactoryClass.reset_id_counters()
+
+
+# =============================================================================
+# US Army Weapons Tests
+# =============================================================================
+
+func test_us_army_weapons() -> void:
+	var WeaponDataClass: GDScript = load("res://scripts/data/weapon_data.gd")
+	var all_weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
+
+	# Test: US Army 120mm M256 tank gun exists (M829A4)
+	_current_test = "usa_120mm_m256_exists"
+	assert_true("CW_TANK_KE_120_USA" in all_weapons)
+	var tank_120_usa: RefCounted = all_weapons["CW_TANK_KE_120_USA"]
+	assert_eq(tank_120_usa.mechanism, WeaponDataClass.Mechanism.KINETIC)
+	assert_eq(tank_120_usa.max_range_m, 3500.0)  # M1 Abrams effective range
+	_pass()
+
+	# Test: M829A4 APFSDS penetration (750mm = 150 RHA scale at 2km)
+	_current_test = "usa_m829a4_penetration"
+	assert_eq(tank_120_usa.pen_ke[WeaponDataClass.RangeBand.MID], 150)  # 750mm @ 2km
+	assert_eq(tank_120_usa.pen_ke[WeaponDataClass.RangeBand.NEAR], 160)  # 800mm close range
+	_pass()
+
+	# Test: US 120mm vs standard 120mm (M829A4 is superior)
+	_current_test = "usa_120mm_vs_standard"
+	var tank_120_std: RefCounted = all_weapons["CW_TANK_KE"]
+	assert_gt(tank_120_usa.pen_ke[WeaponDataClass.RangeBand.MID],
+			  tank_120_std.pen_ke[WeaponDataClass.RangeBand.MID])
+	_pass()
+
+	# Test: M830A1 MPAT HEAT exists
+	_current_test = "usa_m830a1_mpat_exists"
+	assert_true("CW_TANK_HEAT_USA" in all_weapons)
+	var tank_heat_usa: RefCounted = all_weapons["CW_TANK_HEAT_USA"]
+	assert_eq(tank_heat_usa.mechanism, WeaponDataClass.Mechanism.SHAPED_CHARGE)
+	# M830A1: 350mm = 70 RHA scale
+	assert_eq(tank_heat_usa.pen_ce[WeaponDataClass.RangeBand.MID], 70)
+	_pass()
+
+	# Test: M242 Bushmaster 25mm autocannon (M919 DU APFSDS-T)
+	_current_test = "usa_m242_bushmaster_exists"
+	assert_true("CW_AUTOCANNON_25_USA" in all_weapons)
+	var ac_25_usa: RefCounted = all_weapons["CW_AUTOCANNON_25_USA"]
+	# M919 DU: 90mm = 18 RHA scale
+	assert_eq(ac_25_usa.pen_ke[WeaponDataClass.RangeBand.MID], 18)
+	assert_eq(ac_25_usa.max_range_m, 2500.0)  # Bradley effective range
+	_pass()
+
+	# Test: XM813 30mm autocannon (Stryker Dragoon)
+	_current_test = "usa_xm813_30mm_exists"
+	assert_true("CW_AUTOCANNON_30_USA" in all_weapons)
+	var ac_30_usa: RefCounted = all_weapons["CW_AUTOCANNON_30_USA"]
+	# 30mm APFSDS-T: 90mm = 18 RHA scale
+	assert_eq(ac_30_usa.pen_ke[WeaponDataClass.RangeBand.MID], 18)
+	assert_eq(ac_30_usa.max_range_m, 3000.0)  # Stryker Dragoon range
+	_pass()
+
+	# Test: TOW-2B ATGM
+	_current_test = "usa_tow2b_atgm_exists"
+	assert_true("CW_ATGM_TOW2B" in all_weapons)
+	var tow2b: RefCounted = all_weapons["CW_ATGM_TOW2B"]
+	assert_eq(tow2b.mechanism, WeaponDataClass.Mechanism.SHAPED_CHARGE)
+	assert_eq(tow2b.max_range_m, 4500.0)  # TOW-2B Aero range
+	# TOW-2B EFP top attack: 300mm = 60 RHA scale
+	assert_eq(tow2b.pen_ce[WeaponDataClass.RangeBand.MID], 60)
+	_pass()
+
+	# Test: FGM-148 Javelin
+	_current_test = "usa_javelin_exists"
+	assert_true("CW_ATGM_JAVELIN" in all_weapons)
+	var javelin: RefCounted = all_weapons["CW_ATGM_JAVELIN"]
+	assert_eq(javelin.max_range_m, 2500.0)  # Javelin standard range
+	# Javelin tandem HEAT: 800mm = 160 RHA scale
+	assert_eq(javelin.pen_ce[WeaponDataClass.RangeBand.MID], 160)
+	# High lethality vs heavy (top attack)
+	var leth_heavy: int = javelin.lethality[WeaponDataClass.RangeBand.NEAR][WeaponDataClass.TargetClass.HEAVY]
+	assert_eq(leth_heavy, 100)
+	_pass()
+
+	# Test: MK19 40mm AGL
+	_current_test = "usa_mk19_agl_exists"
+	assert_true("CW_AGL_MK19" in all_weapons)
+	var mk19: RefCounted = all_weapons["CW_AGL_MK19"]
+	assert_eq(mk19.mechanism, WeaponDataClass.Mechanism.BLAST_FRAG)
+	assert_eq(mk19.max_range_m, 1600.0)  # Effective range
+	# M430 HEDP: 75mm = 15 RHA scale
+	assert_eq(mk19.pen_ce[WeaponDataClass.RangeBand.MID], 15)
+	_pass()
+
+	# Test: M240C coaxial MG
+	_current_test = "usa_m240c_coax_exists"
+	assert_true("CW_M240_COAX" in all_weapons)
+	var m240: RefCounted = all_weapons["CW_M240_COAX"]
+	assert_eq(m240.mechanism, WeaponDataClass.Mechanism.SMALL_ARMS)
+	assert_eq(m240.max_range_m, 1500.0)  # Effective range
+	_pass()
+
+	# Test: M2HB .50 Cal HMG
+	_current_test = "usa_m2hb_hmg_exists"
+	assert_true("CW_M2HB" in all_weapons)
+	var m2hb: RefCounted = all_weapons["CW_M2HB"]
+	assert_eq(m2hb.mechanism, WeaponDataClass.Mechanism.SMALL_ARMS)  # HMG is classified as SMALL_ARMS
+	assert_eq(m2hb.max_range_m, 1800.0)  # Effective range
+	# .50 BMG AP: 25mm = 5 RHA scale at close range
+	assert_eq(m2hb.pen_ke[WeaponDataClass.RangeBand.NEAR], 5)
+	_pass()
+
+	# Test: US Army weapon count (9 weapons)
+	_current_test = "usa_weapons_count"
+	var usa_weapon_ids: Array = [
+		"CW_TANK_KE_120_USA",
+		"CW_TANK_HEAT_USA",
+		"CW_AUTOCANNON_25_USA",
+		"CW_AUTOCANNON_30_USA",
+		"CW_ATGM_TOW2B",
+		"CW_ATGM_JAVELIN",
+		"CW_AGL_MK19",
+		"CW_M240_COAX",
+		"CW_M2HB",
+	]
+	var usa_count: int = 0
+	for weapon_id in usa_weapon_ids:
+		if weapon_id in all_weapons:
+			usa_count += 1
+	assert_eq(usa_count, 9)
+	_pass()
+
+	# Test: Javelin higher penetration than TOW-2B
+	_current_test = "javelin_higher_pen_than_tow2b"
+	var tow2b_pen: int = all_weapons["CW_ATGM_TOW2B"].pen_ce[WeaponDataClass.RangeBand.MID]
+	var javelin_pen: int = all_weapons["CW_ATGM_JAVELIN"].pen_ce[WeaponDataClass.RangeBand.MID]
+	assert_gt(javelin_pen, tow2b_pen)
+	_pass()
+
+	# Test: M829A4 superior to JGSDF Type 10 APFSDS
+	_current_test = "m829a4_vs_type10_apfsds"
+	var jgsdf_120: RefCounted = all_weapons["CW_TANK_KE_120_JGSDF"]
+	assert_gt(tank_120_usa.pen_ke[WeaponDataClass.RangeBand.MID],
+			  jgsdf_120.pen_ke[WeaponDataClass.RangeBand.MID])
+	_pass()
+
+
+# =============================================================================
+# US VehicleCatalog Integration Tests
+# =============================================================================
+
+func test_us_vehicle_catalog_integration() -> void:
+	var ElementFactoryClass: GDScript = load("res://scripts/data/element_factory.gd")
+
+	# Initialize vehicle catalog
+	ElementFactoryClass.init_vehicle_catalog()
+
+	# Test: M1A2 SEPv3 weapon assignment
+	_current_test = "m1a2_sepv3_has_weapons"
+	var m1a2_sepv3 = ElementFactoryClass.create_element_with_vehicle(
+		"USA_M1A2_SEPv3",
+		0,  # GameEnums.Faction.BLUE
+		Vector2(0, 0),
+		0.0
+	)
+	assert_true(m1a2_sepv3.weapons.size() > 0)
+	_pass()
+
+	# Test: M1A2 SEPv3 main weapon is 120mm M256 (M829A4)
+	_current_test = "m1a2_sepv3_main_weapon_is_120mm_usa"
+	assert_true(m1a2_sepv3.primary_weapon != null)
+	assert_eq(m1a2_sepv3.primary_weapon.id, "CW_TANK_KE_120_USA")
+	_pass()
+
+	# Test: M1A2 SEPv3 has M240 coax and M2HB
+	_current_test = "m1a2_sepv3_secondary_weapons"
+	var has_m240 := false
+	var has_m2hb := false
+	for weapon in m1a2_sepv3.weapons:
+		if weapon.id == "CW_M240_COAX":
+			has_m240 = true
+		elif weapon.id == "CW_M2HB":
+			has_m2hb = true
+	assert_true(has_m240)
+	assert_true(has_m2hb)
+	_pass()
+
+	# Test: M2A4 Bradley weapon assignment
+	_current_test = "m2a4_bradley_has_weapons"
+	var m2a4 = ElementFactoryClass.create_element_with_vehicle(
+		"USA_M2A4_Bradley",
+		0,
+		Vector2(100, 0),
+		0.0
+	)
+	assert_true(m2a4.weapons.size() > 0)
+	_pass()
+
+	# Test: M2A4 Bradley main weapon is M242 25mm
+	_current_test = "m2a4_bradley_main_weapon_is_25mm"
+	assert_true(m2a4.primary_weapon != null)
+	assert_eq(m2a4.primary_weapon.id, "CW_AUTOCANNON_25_USA")
+	_pass()
+
+	# Test: M2A4 Bradley has TOW-2B ATGM
+	_current_test = "m2a4_bradley_has_tow2b"
+	var has_tow2b := false
+	for weapon in m2a4.weapons:
+		if weapon.id == "CW_ATGM_TOW2B":
+			has_tow2b = true
+			break
+	assert_true(has_tow2b)
+	_pass()
+
+	# Test: Stryker Dragoon weapon assignment
+	_current_test = "stryker_dragoon_has_weapons"
+	var stryker_dragoon = ElementFactoryClass.create_element_with_vehicle(
+		"USA_Stryker_Dragoon",  # Correct ID from catalog
+		0,
+		Vector2(200, 0),
+		0.0
+	)
+	assert_true(stryker_dragoon.weapons.size() > 0)
+	_pass()
+
+	# Test: Stryker Dragoon main weapon is XM813 30mm
+	_current_test = "stryker_dragoon_main_weapon_is_30mm"
+	assert_true(stryker_dragoon.primary_weapon != null)
+	assert_eq(stryker_dragoon.primary_weapon.id, "CW_AUTOCANNON_30_USA")
+	_pass()
+
+	# Test: Weapon counts
+	_current_test = "m1a2_sepv3_weapon_count"
+	assert_eq(m1a2_sepv3.weapons.size(), 3)  # 120mm + M240 + M2HB
+	_pass()
+
+	_current_test = "m2a4_bradley_weapon_count"
+	assert_eq(m2a4.weapons.size(), 3)  # 25mm + TOW-2B + M240
+	_pass()
+
+	_current_test = "stryker_dragoon_weapon_count"
+	assert_eq(stryker_dragoon.weapons.size(), 1)  # 30mm only (no secondary in catalog)
+	_pass()
+
+	# Test: Stryker ICV (basic)
+	_current_test = "stryker_icv_has_weapons"
+	var stryker_icv = ElementFactoryClass.create_element_with_vehicle(
+		"USA_Stryker_ICV",  # Correct ID from catalog
+		0,
+		Vector2(300, 0),
+		0.0
+	)
+	assert_true(stryker_icv.weapons.size() > 0)
+	_pass()
+
+	# Test: JLTV weapon assignment
+	_current_test = "jltv_has_weapons"
+	var jltv = ElementFactoryClass.create_element_with_vehicle(
+		"USA_JLTV_GP",  # Correct ID from catalog
+		0,
+		Vector2(400, 0),
+		0.0
+	)
+	assert_true(jltv.weapons.size() > 0)
 	_pass()
 
 	# Reset ID counters for other tests

@@ -1926,6 +1926,524 @@ static func create_cw_atgm_beamride() -> WeaponType:
 	return w
 
 
+# =============================================================================
+# 米軍専用武器
+# =============================================================================
+
+## CW_TANK_KE_120_USA: M1 Abrams 120mm M256砲（M829A4 APFSDS）
+## M829A4: 推定750mm @ 2km (DU弾、対ERA/APS設計)
+## M829A3: 推定675mm @ 2km
+## RHA換算スケール: 100 = 500mm RHA
+static func create_cw_tank_ke_120_usa() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_TANK_KE_120_USA"
+	w.display_name = "120mm M256 (M829A4)"
+	w.mechanism = Mechanism.KINETIC
+	w.fire_model = FireModel.DISCRETE
+	w.min_range_m = 50.0
+	w.max_range_m = 3500.0  # M829A4は4km+有効
+	w.range_band_thresholds_m = [500.0, 1500.0]
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.ammo_endurance_min = 12.0  # 42発搭載
+	w.rof_rpm = 7.0  # 手動装填（6-8発/分）
+	w.sigma_hit_m = 1.0  # 高精度FCS
+	w.direct_hit_radius_m = 2.0
+	w.shock_radius_m = 5.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 60,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 100,
+			TargetClass.FORTIFIED: 90,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 50,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 98,
+			TargetClass.FORTIFIED: 85,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 40,
+			TargetClass.LIGHT: 98,
+			TargetClass.HEAVY: 95,
+			TargetClass.FORTIFIED: 75,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 50,
+		RangeBand.MID: 45,
+		RangeBand.FAR: 40,
+	}
+
+	# M829A4: 750mm = 150 (RHA scale) - 最高クラスのKE弾
+	w.pen_ke = {
+		RangeBand.NEAR: 160,  # 800mm RHA相当（近距離）
+		RangeBand.MID: 150,   # 750mm RHA相当（2km）
+		RangeBand.FAR: 140,   # 700mm RHA相当（3km+）
+	}
+
+	w.projectile_speed_mps = 1750.0
+	w.projectile_size = 4.0
+
+	return w
+
+
+## CW_TANK_HEAT_USA: M1 Abrams 120mm M830A1 MPAT
+## M830A1: 350mm HEAT、1400m/s、対ヘリ可能
+static func create_cw_tank_heat_usa() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_TANK_HEAT_USA"
+	w.display_name = "120mm M830A1 MPAT"
+	w.mechanism = Mechanism.SHAPED_CHARGE
+	w.fire_model = FireModel.DISCRETE
+	w.min_range_m = 50.0
+	w.max_range_m = 2500.0
+	w.range_band_thresholds_m = [500.0, 1500.0]
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ANY  # 対ヘリ可
+	w.ammo_endurance_min = 8.0
+	w.rof_rpm = 7.0
+	w.sigma_hit_m = 1.5
+	w.direct_hit_radius_m = 2.5
+	w.shock_radius_m = 8.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 75,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 65,  # MBT正面には不十分
+			TargetClass.FORTIFIED: 90,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 65,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 55,
+			TargetClass.FORTIFIED: 85,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 50,
+			TargetClass.LIGHT: 85,
+			TargetClass.HEAVY: 45,
+			TargetClass.FORTIFIED: 75,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 55,
+		RangeBand.MID: 50,
+		RangeBand.FAR: 45,
+	}
+
+	# M830A1: 350mm = 70 (RHA scale)
+	w.pen_ce = {
+		RangeBand.NEAR: 70,
+		RangeBand.MID: 70,
+		RangeBand.FAR: 70,
+	}
+
+	w.projectile_speed_mps = 1400.0  # 高速HEAT
+	w.projectile_size = 4.0
+
+	return w
+
+
+## CW_AUTOCANNON_25_USA: M242 Bushmaster 25mm（M919 DU APFSDS）
+## M919 APFSDS-T: 推定90mm @ 1km (DU弾、対BMP)
+## M791 APDS-T: 55mm @ 1km (タングステン)
+static func create_cw_autocannon_25_usa() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_AUTOCANNON_25_USA"
+	w.display_name = "25mm M242 (M919)"
+	w.mechanism = Mechanism.KINETIC
+	w.fire_model = FireModel.CONTINUOUS
+	w.min_range_m = 0.0
+	w.max_range_m = 2500.0
+	w.range_band_thresholds_m = [400.0, 1200.0]
+	w.threat_class = ThreatClass.AUTOCANNON
+	w.preferred_target = PreferredTarget.ANY
+	w.ammo_endurance_min = 8.0  # 300発即応
+	w.rof_rpm = 200.0  # 可変100-200発/分
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 85,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 15,  # MBTには効果薄
+			TargetClass.FORTIFIED: 50,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 70,
+			TargetClass.LIGHT: 90,
+			TargetClass.HEAVY: 10,
+			TargetClass.FORTIFIED: 40,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 55,
+			TargetClass.LIGHT: 80,
+			TargetClass.HEAVY: 5,
+			TargetClass.FORTIFIED: 30,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 65,
+		RangeBand.MID: 55,
+		RangeBand.FAR: 45,
+	}
+
+	# M919 DU APFSDS: 推定90mm = 18 (RHA scale)
+	w.pen_ke = {
+		RangeBand.NEAR: 20,  # 100mm RHA相当
+		RangeBand.MID: 18,   # 90mm RHA相当
+		RangeBand.FAR: 14,   # 70mm RHA相当
+	}
+
+	w.projectile_speed_mps = 1385.0  # M919
+	w.projectile_size = 1.0
+
+	return w
+
+
+## CW_AUTOCANNON_30_USA: XM813 30mm Bushmaster II（Stryker Dragoon）
+## MK258 APFSDS-T: 55mm @ 1km (60°)
+static func create_cw_autocannon_30_usa() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_AUTOCANNON_30_USA"
+	w.display_name = "30mm XM813"
+	w.mechanism = Mechanism.KINETIC
+	w.fire_model = FireModel.CONTINUOUS
+	w.min_range_m = 0.0
+	w.max_range_m = 3000.0  # 精密射撃3km
+	w.range_band_thresholds_m = [500.0, 1500.0]
+	w.threat_class = ThreatClass.AUTOCANNON
+	w.preferred_target = PreferredTarget.ANY
+	w.ammo_endurance_min = 8.0
+	w.rof_rpm = 200.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 90,
+			TargetClass.LIGHT: 98,
+			TargetClass.HEAVY: 20,
+			TargetClass.FORTIFIED: 55,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 75,
+			TargetClass.LIGHT: 92,
+			TargetClass.HEAVY: 15,
+			TargetClass.FORTIFIED: 45,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 60,
+			TargetClass.LIGHT: 85,
+			TargetClass.HEAVY: 10,
+			TargetClass.FORTIFIED: 35,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 70,
+		RangeBand.MID: 60,
+		RangeBand.FAR: 50,
+	}
+
+	# MK258 APFSDS: 55mm @ 60° = 約14 (RHA scale)
+	# 垂直換算でより高い
+	w.pen_ke = {
+		RangeBand.NEAR: 22,  # 110mm RHA相当
+		RangeBand.MID: 18,   # 90mm RHA相当
+		RangeBand.FAR: 14,   # 70mm RHA相当
+	}
+
+	w.projectile_speed_mps = 1405.0
+	w.projectile_size = 1.2
+
+	return w
+
+
+## CW_ATGM_TOW2B: BGM-71F TOW-2B（トップアタック）
+## デュアルEFP、射程3750m（Aero: 4500m）
+## トップアタック: 推定300mm
+static func create_cw_atgm_tow2b() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_ATGM_TOW2B"
+	w.display_name = "TOW-2B"
+	w.mechanism = Mechanism.SHAPED_CHARGE
+	w.fire_model = FireModel.DISCRETE
+	w.min_range_m = 65.0  # 最小射程
+	w.max_range_m = 4500.0  # TOW-2B Aero
+	w.range_band_thresholds_m = [1000.0, 2500.0]
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.ammo_endurance_min = 2.0  # 2発搭載（Bradley）
+	w.rof_rpm = 2.0  # SACLOS誘導
+	w.sigma_hit_m = 0.8
+	w.direct_hit_radius_m = 1.5
+	w.shock_radius_m = 6.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 50,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 95,  # トップアタックでMBT有効
+			TargetClass.FORTIFIED: 70,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 45,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 90,
+			TargetClass.FORTIFIED: 65,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 35,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 85,
+			TargetClass.FORTIFIED: 60,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 45,
+		RangeBand.MID: 40,
+		RangeBand.FAR: 35,
+	}
+
+	# TOW-2B トップアタック: 300mm = 60 (RHA scale)
+	# デュアルEFPで屋根装甲を貫通
+	w.pen_ce = {
+		RangeBand.NEAR: 60,
+		RangeBand.MID: 60,
+		RangeBand.FAR: 60,
+	}
+
+	w.projectile_speed_mps = 300.0
+	w.projectile_size = 5.0
+
+	return w
+
+
+## CW_ATGM_JAVELIN: FGM-148 Javelin（Fire-and-Forget、トップアタック）
+## タンデムHEAT: 800mm、射程2500m
+static func create_cw_atgm_javelin() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_ATGM_JAVELIN"
+	w.display_name = "FGM-148 Javelin"
+	w.mechanism = Mechanism.SHAPED_CHARGE
+	w.fire_model = FireModel.DISCRETE
+	w.min_range_m = 65.0  # 最小射程
+	w.max_range_m = 2500.0  # 標準射程（実証4km）
+	w.range_band_thresholds_m = [500.0, 1500.0]
+	w.threat_class = ThreatClass.AT
+	w.preferred_target = PreferredTarget.ARMOR
+	w.ammo_endurance_min = 1.5  # 携行数限定
+	w.rof_rpm = 1.5  # Fire-and-Forget
+	w.sigma_hit_m = 0.5  # IIR誘導で高精度
+	w.direct_hit_radius_m = 1.5
+	w.shock_radius_m = 8.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 55,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 100,  # トップアタックでMBT確殺
+			TargetClass.FORTIFIED: 90,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 50,
+			TargetClass.LIGHT: 100,
+			TargetClass.HEAVY: 98,
+			TargetClass.FORTIFIED: 85,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 40,
+			TargetClass.LIGHT: 95,
+			TargetClass.HEAVY: 95,
+			TargetClass.FORTIFIED: 80,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 50,
+		RangeBand.MID: 45,
+		RangeBand.FAR: 40,
+	}
+
+	# タンデムHEAT: 800mm = 160 (RHA scale)
+	w.pen_ce = {
+		RangeBand.NEAR: 160,
+		RangeBand.MID: 160,
+		RangeBand.FAR: 160,
+	}
+
+	w.projectile_speed_mps = 140.0
+	w.projectile_size = 4.5
+
+	return w
+
+
+## CW_AGL_MK19: MK19 40mm自動擲弾銃
+## HEDP: 75mm貫徹、射程1600m
+static func create_cw_agl_mk19() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_AGL_MK19"
+	w.display_name = "MK19 40mm AGL"
+	w.mechanism = Mechanism.BLAST_FRAG
+	w.fire_model = FireModel.CONTINUOUS
+	w.min_range_m = 75.0  # 安全距離
+	w.max_range_m = 1600.0  # 有効射程
+	w.range_band_thresholds_m = [300.0, 800.0]
+	w.threat_class = ThreatClass.HE_FRAG
+	w.preferred_target = PreferredTarget.SOFT
+	w.ammo_endurance_min = 6.0
+	w.rof_rpm = 350.0  # 325-375発/分
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 80,
+			TargetClass.HEAVY: 10,
+			TargetClass.FORTIFIED: 70,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 85,
+			TargetClass.LIGHT: 70,
+			TargetClass.HEAVY: 5,
+			TargetClass.FORTIFIED: 60,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 70,
+			TargetClass.LIGHT: 55,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 45,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 85,
+		RangeBand.MID: 75,
+		RangeBand.FAR: 60,
+	}
+
+	# HEDP: 75mm = 15 (RHA scale)
+	w.pen_ce = {
+		RangeBand.NEAR: 15,
+		RangeBand.MID: 15,
+		RangeBand.FAR: 15,
+	}
+
+	w.blast_radius_m = 5.0  # 殺傷5m、負傷15m
+	w.projectile_speed_mps = 241.0
+	w.projectile_size = 1.5
+
+	return w
+
+
+## CW_M240_COAX: M240C 7.62mm同軸機関銃
+static func create_cw_m240_coax() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_M240_COAX"
+	w.display_name = "M240C 7.62mm Coax"
+	w.mechanism = Mechanism.SMALL_ARMS
+	w.fire_model = FireModel.CONTINUOUS
+	w.min_range_m = 0.0
+	w.max_range_m = 1500.0  # 実用射程
+	w.range_band_thresholds_m = [200.0, 600.0]
+	w.threat_class = ThreatClass.SMALL_ARMS
+	w.preferred_target = PreferredTarget.SOFT
+	w.ammo_endurance_min = 15.0
+	w.rof_rpm = 750.0  # 650-950発/分
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 85,
+			TargetClass.LIGHT: 25,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 20,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 65,
+			TargetClass.LIGHT: 15,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 10,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 45,
+			TargetClass.LIGHT: 5,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 5,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 70,
+		RangeBand.MID: 55,
+		RangeBand.FAR: 40,
+	}
+
+	w.projectile_speed_mps = 853.0
+	w.projectile_size = 0.3
+
+	return w
+
+
+## CW_M2HB: M2HB 12.7mm重機関銃
+static func create_cw_m2hb() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_M2HB"
+	w.display_name = "M2HB .50 Cal"
+	w.mechanism = Mechanism.SMALL_ARMS
+	w.fire_model = FireModel.CONTINUOUS
+	w.min_range_m = 0.0
+	w.max_range_m = 1800.0  # 有効射程
+	w.range_band_thresholds_m = [300.0, 900.0]
+	w.threat_class = ThreatClass.SMALL_ARMS
+	w.preferred_target = PreferredTarget.SOFT
+	w.ammo_endurance_min = 10.0
+	w.rof_rpm = 550.0  # 450-600発/分
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 55,
+			TargetClass.HEAVY: 5,
+			TargetClass.FORTIFIED: 40,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 80,
+			TargetClass.LIGHT: 40,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 30,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 60,
+			TargetClass.LIGHT: 25,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 20,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 80,
+		RangeBand.MID: 65,
+		RangeBand.FAR: 50,
+	}
+
+	# 12.7mm AP: 19mm @ 1370m
+	w.pen_ke = {
+		RangeBand.NEAR: 5,   # 25mm
+		RangeBand.MID: 4,    # 20mm
+		RangeBand.FAR: 3,    # 15mm
+	}
+
+	w.projectile_speed_mps = 890.0
+	w.projectile_size = 0.5
+
+	return w
+
+
 ## 全ConcreteWeaponSetを取得
 static func get_all_concrete_weapons() -> Dictionary:
 	return {
@@ -1964,4 +2482,14 @@ static func get_all_concrete_weapons() -> Dictionary:
 		"CW_ATGM_79MAT": create_cw_atgm_79mat(),
 		"CW_ATGM_MMPM": create_cw_atgm_mmpm(),
 		"CW_ATGM_01LMAT": create_cw_atgm_01lmat(),
+		# 米軍専用
+		"CW_TANK_KE_120_USA": create_cw_tank_ke_120_usa(),
+		"CW_TANK_HEAT_USA": create_cw_tank_heat_usa(),
+		"CW_AUTOCANNON_25_USA": create_cw_autocannon_25_usa(),
+		"CW_AUTOCANNON_30_USA": create_cw_autocannon_30_usa(),
+		"CW_ATGM_TOW2B": create_cw_atgm_tow2b(),
+		"CW_ATGM_JAVELIN": create_cw_atgm_javelin(),
+		"CW_AGL_MK19": create_cw_agl_mk19(),
+		"CW_M240_COAX": create_cw_m240_coax(),
+		"CW_M2HB": create_cw_m2hb(),
 	}
