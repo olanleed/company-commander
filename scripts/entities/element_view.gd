@@ -133,6 +133,11 @@ func update_contact_state(state: GameEnums.ContactState, est_pos: Vector2 = Vect
 
 ## 視界状態に応じた表示更新
 func _update_visibility() -> void:
+	# 搭乗中の歩兵は非表示
+	if element and element.is_embarked:
+		visible = false
+		return
+
 	if _is_friendly:
 		# 味方は常に表示
 		visible = true

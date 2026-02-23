@@ -47,7 +47,7 @@ const CATEGORY_COMMANDS := {
 	},
 	"IFV": {
 		315: {"name": "Unload", "type": GameEnums.OrderType.UNLOAD, "enabled": true},  # NE: Unload
-		45: {"name": "Load", "type": GameEnums.OrderType.LOAD, "enabled": true},   # SE: Load
+		45: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},   # SE: 空き（将来用）
 		135: {"name": "Reverse", "type": GameEnums.OrderType.RETREAT, "enabled": true},  # SW: Reverse
 		180: {"name": "Smoke", "type": GameEnums.OrderType.SMOKE, "enabled": true},  # W: Smoke
 	},
@@ -61,7 +61,7 @@ const CATEGORY_COMMANDS := {
 	"INFANTRY": {
 		315: {"name": "Fast", "type": GameEnums.OrderType.MOVE_FAST, "enabled": true},  # NE: Fast Move
 		45: {"name": "Ambush", "type": GameEnums.OrderType.AMBUSH, "enabled": true},   # SE: Ambush
-		135: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},  # SW: 空き（将来: Dig In）
+		135: {"name": "Dig In", "type": GameEnums.OrderType.DIG_IN, "enabled": true},  # SW: Dig In（塹壕構築）
 		180: {"name": "Board", "type": GameEnums.OrderType.LOAD, "enabled": true},  # W: Board（乗車）
 	},
 	"RECON": {

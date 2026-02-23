@@ -95,6 +95,12 @@ func run_all_tests() -> void:
 	print("\n[Tank Commands Tests]")
 	test_tank_commands()
 
+	print("\n[Transport System Tests]")
+	test_transport_system()
+
+	print("\n[Infantry Commands Tests]")
+	test_infantry_commands()
+
 
 # =============================================================================
 # WeaponData Tests
@@ -3191,6 +3197,14 @@ func assert_almost_eq(actual: float, expected: float, tolerance: float) -> void:
 	if abs(actual - expected) > tolerance:
 		_fail("Expected ~%s (±%s) but got %s" % [expected, tolerance, actual])
 
+func assert_null(value: Variant) -> void:
+	if value != null:
+		_fail("Expected null but got %s" % str(value))
+
+func assert_not_null(value: Variant) -> void:
+	if value == null:
+		_fail("Expected non-null but got null")
+
 func _pass() -> void:
 	print("  ✓ %s" % _current_test)
 	_tests_passed += 1
@@ -3511,4 +3525,735 @@ func test_tank_commands() -> void:
 	# 初期状態でis_reversingとbreak_contact_smoke_requestedが存在することを確認
 	assert_false(tank5.is_reversing)
 	assert_false(tank5.break_contact_smoke_requested)
+	_pass()
+
+
+# =============================================================================
+# Transport System Tests
+# =============================================================================
+
+func test_transport_system() -> void:
+	var TransportSystemClass: GDScript = load("res://scripts/systems/transport_system.gd")
+	var ElementDataClass: GDScript = load("res://scripts/data/element_data.gd")
+
+	var transport_system = TransportSystemClass.new()
+
+	# ========================================
+	# テスト用のユニットタイプを作成
+	# ========================================
+	var ifv_type = ElementDataClass.ElementType.new()
+	ifv_type.id = "IFV_PLT"
+	ifv_type.max_strength = 4
+	ifv_type.armor_class = 2
+	ifv_type.category = ElementDataClass.Category.VEH
+	ifv_type.can_transport_infantry = true
+	ifv_type.transport_capacity = 30
+
+	var inf_type = ElementDataClass.ElementType.new()
+	inf_type.id = "INF_LINE"
+	inf_type.max_strength = 30
+	inf_type.armor_class = 0
+	inf_type.category = ElementDataClass.Category.INF
+
+	# ========================================
+	# テスト: IFVに輸送能力がある
+	# ========================================
+	_current_test = "ifv_has_transport_capability"
+	assert_true(ifv_type.can_transport_infantry)
+	assert_eq(ifv_type.transport_capacity, 30)
+	_pass()
+
+	# ========================================
+	# テスト: 初期搭乗
+	# ========================================
+	_current_test = "embark_initial_sets_flags"
+	var ifv = ElementDataClass.ElementInstance.new(ifv_type)
+	ifv.id = "test_ifv_1"
+	ifv.faction = GameEnums.Faction.BLUE
+	ifv.position = Vector2(500, 500)
+
+	var infantry = ElementDataClass.ElementInstance.new(inf_type)
+	infantry.id = "test_inf_1"
+	infantry.faction = GameEnums.Faction.BLUE
+	infantry.position = Vector2(100, 100)  # 離れた位置
+
+	transport_system.embark_initial(ifv, infantry)
+
+	assert_eq(ifv.embarked_infantry_id, "test_inf_1")
+	assert_true(infantry.is_embarked)
+	assert_eq(infantry.transport_vehicle_id, "test_ifv_1")
+	assert_eq(infantry.position, ifv.position)  # 車両と同じ位置
+	_pass()
+
+	# ========================================
+	# テスト: 歩兵搭乗確認
+	# ========================================
+	_current_test = "has_embarked_infantry"
+	assert_true(transport_system.has_embarked_infantry(ifv))
+	_pass()
+
+	# ========================================
+	# テスト: 歩兵乗車中確認
+	# ========================================
+	_current_test = "is_infantry_embarked"
+	assert_true(transport_system.is_infantry_embarked(infantry))
+	_pass()
+
+	# ========================================
+	# テスト: 下車 (WorldModelなし)
+	# ========================================
+	_current_test = "unload_without_world_model"
+	# WorldModelがないので歩兵を取得できない
+	var result = transport_system.unload_infantry(ifv, Vector2(550, 550))
+	assert_null(result)
+	# embarked_infantry_idはクリアされる（存在しない歩兵への参照なので）
+	assert_eq(ifv.embarked_infantry_id, "")
+	_pass()
+
+	# ========================================
+	# テスト: 搭乗歩兵なしで下車
+	# ========================================
+	_current_test = "unload_no_infantry"
+	var ifv2 = ElementDataClass.ElementInstance.new(ifv_type)
+	ifv2.id = "test_ifv_2"
+	ifv2.faction = GameEnums.Faction.BLUE
+	ifv2.position = Vector2(500, 500)
+	ifv2.embarked_infantry_id = ""  # 歩兵なし
+
+	result = transport_system.unload_infantry(ifv2, Vector2(550, 550))
+	assert_null(result)
+	_pass()
+
+	# ========================================
+	# テスト: 輸送能力なし
+	# ========================================
+	_current_test = "unload_no_transport_capability"
+	var tank_type = ElementDataClass.ElementType.new()
+	tank_type.id = "TANK_PLT"
+	tank_type.can_transport_infantry = false
+
+	var tank = ElementDataClass.ElementInstance.new(tank_type)
+	tank.id = "test_tank"
+	tank.embarked_infantry_id = "some_id"
+
+	result = transport_system.unload_infantry(tank, Vector2(550, 550))
+	assert_null(result)
+	_pass()
+
+	# ========================================
+	# テスト: 下車位置の計算
+	# ========================================
+	_current_test = "unload_offset_distance_constant"
+	# 下車時のオフセット距離定数を確認
+	# NOTE: 衝突検出範囲(52.5m)より遠くに配置するため60mに変更
+	assert_eq(TransportSystemClass.UNLOAD_OFFSET_DISTANCE, 60.0)
+	_pass()
+
+	# ========================================
+	# テスト: 乗車距離定数
+	# ========================================
+	_current_test = "board_range_constant"
+	# NOTE: 衝突回避による位置ずれを考慮して75mに変更（v0.2.4）
+	assert_eq(TransportSystemClass.BOARD_RANGE, 75.0)
+	_pass()
+
+	# ========================================
+	# テスト: ElementInstanceの搭乗プロパティ
+	# ========================================
+	_current_test = "element_has_transport_properties"
+	var test_element = ElementDataClass.ElementInstance.new(inf_type)
+	# 初期状態で搭乗関連プロパティが存在することを確認
+	assert_eq(test_element.embarked_infantry_id, "")
+	assert_eq(test_element.transport_vehicle_id, "")
+	assert_false(test_element.is_embarked)
+	assert_eq(test_element.boarding_target_id, "")
+	assert_eq(test_element.unloading_target_pos, Vector2.ZERO)
+	assert_eq(test_element.awaiting_boarding_id, "")
+	_pass()
+
+	# ========================================
+	# テスト: ElementTypeの輸送能力プロパティ
+	# ========================================
+	_current_test = "element_type_has_transport_properties"
+	var test_type = ElementDataClass.ElementType.new()
+	# 初期状態で輸送能力プロパティが存在することを確認
+	assert_false(test_type.can_transport_infantry)
+	assert_eq(test_type.transport_capacity, 0)
+	_pass()
+
+	# ========================================
+	# テスト: WorldModelを使用した完全な乗降サイクル
+	# ========================================
+	_current_test = "full_board_unload_cycle_with_world_model"
+	var WorldModelClass: GDScript = load("res://scripts/core/world_model.gd")
+	var test_world_model = WorldModelClass.new()
+
+	# 新しいTransportSystemとIFV/歩兵を作成
+	var ts = TransportSystemClass.new()
+	ts.setup(test_world_model)
+
+	var ifv_type2 = ElementDataClass.ElementType.new()
+	ifv_type2.id = "IFV_PLT"
+	ifv_type2.can_transport_infantry = true
+	ifv_type2.transport_capacity = 30
+	ifv_type2.category = ElementDataClass.Category.VEH
+
+	var inf_type2 = ElementDataClass.ElementType.new()
+	inf_type2.id = "INF_LINE"
+	inf_type2.category = ElementDataClass.Category.INF
+
+	var test_ifv = ElementDataClass.ElementInstance.new(ifv_type2)
+	test_ifv.id = "test_ifv_cycle"
+	test_ifv.faction = GameEnums.Faction.BLUE
+	test_ifv.position = Vector2(500, 500)
+	test_ifv.facing = 0.0
+
+	var test_inf = ElementDataClass.ElementInstance.new(inf_type2)
+	test_inf.id = "test_inf_cycle"
+	test_inf.faction = GameEnums.Faction.BLUE
+	test_inf.position = Vector2(500, 500)
+
+	# WorldModelに追加
+	test_world_model.add_element(test_ifv)
+	test_world_model.add_element(test_inf)
+
+	# 初期搭乗
+	ts.embark_initial(test_ifv, test_inf)
+	assert_eq(test_ifv.embarked_infantry_id, "test_inf_cycle")
+	assert_true(test_inf.is_embarked)
+
+	# 下車
+	var unloaded_inf = ts.unload_infantry(test_ifv, Vector2(600, 500))
+	assert_not_null(unloaded_inf)
+	assert_eq(unloaded_inf.id, "test_inf_cycle")
+	assert_false(unloaded_inf.is_embarked)
+	assert_eq(test_ifv.embarked_infantry_id, "")
+
+	# 歩兵の位置を確認（IFVから約60m離れているはず）
+	var distance_after_unload = unloaded_inf.position.distance_to(test_ifv.position)
+	assert_almost_eq(distance_after_unload, 60.0, 1.0)
+
+	_pass()
+
+	# ========================================
+	# テスト: 下車後に再乗車可能
+	# ========================================
+	_current_test = "can_board_after_unload"
+	# find_available_transportで車両を見つける
+	var found_transport = ts.find_available_transport(unloaded_inf)
+	assert_not_null(found_transport)
+	assert_eq(found_transport.id, "test_ifv_cycle")
+
+	# 乗車実行
+	var board_result = ts.board_infantry(unloaded_inf, found_transport)
+	assert_true(board_result)
+	assert_true(unloaded_inf.is_embarked)
+	assert_eq(found_transport.embarked_infantry_id, "test_inf_cycle")
+	_pass()
+
+	# ========================================
+	# テスト: start_unload_infantry（歩いて下車）
+	# ========================================
+	_current_test = "start_unload_infantry_sets_unloading_target"
+	# 再度搭乗状態を設定
+	unloaded_inf.is_embarked = true
+	unloaded_inf.transport_vehicle_id = found_transport.id
+	found_transport.embarked_infantry_id = unloaded_inf.id
+	unloaded_inf.position = found_transport.position
+
+	# start_unload_infantryで下車開始
+	var started_inf = ts.start_unload_infantry(found_transport, Vector2(700, 500))
+	assert_not_null(started_inf)
+	assert_eq(started_inf.id, "test_inf_cycle")
+	assert_false(started_inf.is_embarked)
+	# 歩兵は車両位置からスタート
+	assert_eq(started_inf.position, found_transport.position)
+	# 下車目標位置が設定されている
+	assert_true(started_inf.unloading_target_pos != Vector2.ZERO)
+	# IFVから約60m離れた位置が目標
+	var target_dist = started_inf.unloading_target_pos.distance_to(found_transport.position)
+	assert_almost_eq(target_dist, 60.0, 1.0)
+	_pass()
+
+	# ========================================
+	# テスト: 乗車待機中フラグ (awaiting_boarding_id)
+	# ========================================
+	_current_test = "awaiting_boarding_id_flag"
+	var ifv_for_await = ElementDataClass.ElementInstance.new(ifv_type2)
+	ifv_for_await.id = "test_ifv_await"
+	ifv_for_await.faction = GameEnums.Faction.BLUE
+	ifv_for_await.position = Vector2(600, 600)
+
+	var inf_for_await = ElementDataClass.ElementInstance.new(inf_type2)
+	inf_for_await.id = "test_inf_await"
+	inf_for_await.faction = GameEnums.Faction.BLUE
+	inf_for_await.position = Vector2(650, 600)
+
+	# 初期状態では空
+	assert_eq(ifv_for_await.awaiting_boarding_id, "")
+	assert_eq(inf_for_await.boarding_target_id, "")
+
+	# 乗車待機状態を設定
+	ifv_for_await.awaiting_boarding_id = inf_for_await.id
+	inf_for_await.boarding_target_id = ifv_for_await.id
+
+	assert_eq(ifv_for_await.awaiting_boarding_id, "test_inf_await")
+	assert_eq(inf_for_await.boarding_target_id, "test_ifv_await")
+	_pass()
+
+	# ========================================
+	# テスト: 衝突回避ペア判定関数
+	# ========================================
+	_current_test = "is_boarding_pair_function"
+	var MovementSystemClass: GDScript = load("res://scripts/systems/movement_system.gd")
+	var movement_sys = MovementSystemClass.new()
+
+	# 乗車待機中の車両と乗車移動中の歩兵はペア
+	var is_pair = movement_sys._is_boarding_pair(ifv_for_await, inf_for_await)
+	assert_true(is_pair)
+
+	# 逆順でもペア
+	is_pair = movement_sys._is_boarding_pair(inf_for_await, ifv_for_await)
+	assert_true(is_pair)
+
+	# フラグをクリアしても、味方歩兵と輸送車両は衝突回避しない（乗車のため）
+	ifv_for_await.awaiting_boarding_id = ""
+	inf_for_await.boarding_target_id = ""
+	is_pair = movement_sys._is_boarding_pair(ifv_for_await, inf_for_await)
+	assert_true(is_pair)  # 味方歩兵と輸送車両は常にペア扱い
+
+	# 敵同士なら衝突回避する
+	inf_for_await.faction = GameEnums.Faction.RED
+	is_pair = movement_sys._is_boarding_pair(ifv_for_await, inf_for_await)
+	assert_false(is_pair)  # 敵はペアではない
+	_pass()
+
+	# ========================================
+	# テスト: 下車移動目標位置のクリア
+	# ========================================
+	_current_test = "unloading_target_pos_clear"
+	var inf_unloading = ElementDataClass.ElementInstance.new(inf_type2)
+	inf_unloading.id = "test_inf_unloading"
+	inf_unloading.unloading_target_pos = Vector2(700, 700)
+	inf_unloading.is_moving = true
+
+	# 移動中は目標位置が設定されている
+	assert_true(inf_unloading.unloading_target_pos != Vector2.ZERO)
+
+	# 移動完了をシミュレート
+	inf_unloading.is_moving = false
+	inf_unloading.unloading_target_pos = Vector2.ZERO  # Main.gdの_update_unloadingがクリア
+
+	assert_eq(inf_unloading.unloading_target_pos, Vector2.ZERO)
+	_pass()
+
+	# ========================================
+	# テスト: _is_friendly_infantry_transport_pair関数
+	# ========================================
+	_current_test = "is_friendly_infantry_transport_pair"
+
+	# 味方歩兵と味方輸送車両はtrue
+	var ifv_friendly = ElementDataClass.ElementInstance.new(ifv_type2)
+	ifv_friendly.id = "test_ifv_friendly"
+	ifv_friendly.faction = GameEnums.Faction.BLUE
+
+	var inf_friendly = ElementDataClass.ElementInstance.new(inf_type2)
+	inf_friendly.id = "test_inf_friendly"
+	inf_friendly.faction = GameEnums.Faction.BLUE
+
+	var is_friendly_pair = movement_sys._is_friendly_infantry_transport_pair(ifv_friendly, inf_friendly)
+	assert_true(is_friendly_pair)
+
+	# 逆順でもtrue
+	is_friendly_pair = movement_sys._is_friendly_infantry_transport_pair(inf_friendly, ifv_friendly)
+	assert_true(is_friendly_pair)
+
+	# 敵同士はfalse
+	inf_friendly.faction = GameEnums.Faction.RED
+	is_friendly_pair = movement_sys._is_friendly_infantry_transport_pair(ifv_friendly, inf_friendly)
+	assert_false(is_friendly_pair)
+
+	# 歩兵を元に戻す
+	inf_friendly.faction = GameEnums.Faction.BLUE
+	_pass()
+
+	# ========================================
+	# テスト: 輸送能力のない車両と歩兵はペアではない
+	# ========================================
+	_current_test = "non_transport_vehicle_not_pair"
+
+	# 輸送能力のない車両タイプを作成
+	var mbt_type_no_transport = ElementDataClass.ElementType.new()
+	mbt_type_no_transport.id = "MBT_T90"
+	mbt_type_no_transport.category = ElementDataClass.Category.VEH
+	mbt_type_no_transport.can_transport_infantry = false  # 輸送能力なし
+
+	var mbt_no_transport = ElementDataClass.ElementInstance.new(mbt_type_no_transport)
+	mbt_no_transport.id = "test_mbt_no_transport"
+	mbt_no_transport.faction = GameEnums.Faction.BLUE
+
+	# 戦車と歩兵はペアではない（輸送能力がないため）
+	var is_mbt_pair = movement_sys._is_friendly_infantry_transport_pair(mbt_no_transport, inf_friendly)
+	assert_false(is_mbt_pair)
+
+	# 逆順でも同じ
+	is_mbt_pair = movement_sys._is_friendly_infantry_transport_pair(inf_friendly, mbt_no_transport)
+	assert_false(is_mbt_pair)
+	_pass()
+
+	# ========================================
+	# テスト: 歩兵同士はペアではない
+	# ========================================
+	_current_test = "infantry_to_infantry_not_pair"
+
+	var inf_friendly2 = ElementDataClass.ElementInstance.new(inf_type2)
+	inf_friendly2.id = "test_inf_friendly2"
+	inf_friendly2.faction = GameEnums.Faction.BLUE
+
+	# 歩兵同士はペアではない
+	var is_inf_pair = movement_sys._is_friendly_infantry_transport_pair(inf_friendly, inf_friendly2)
+	assert_false(is_inf_pair)
+	_pass()
+
+	# ========================================
+	# テスト: 車両同士はペアではない
+	# ========================================
+	_current_test = "vehicle_to_vehicle_not_pair"
+
+	var ifv_friendly2 = ElementDataClass.ElementInstance.new(ifv_type2)
+	ifv_friendly2.id = "test_ifv_friendly2"
+	ifv_friendly2.faction = GameEnums.Faction.BLUE
+
+	# 車両同士はペアではない
+	var is_veh_pair = movement_sys._is_friendly_infantry_transport_pair(ifv_friendly, ifv_friendly2)
+	assert_false(is_veh_pair)
+	_pass()
+
+	# ========================================
+	# テスト: 下車移動中は衝突回避対象外
+	# ========================================
+	_current_test = "unloading_infantry_excluded_from_collision"
+
+	var inf_unloading2 = ElementDataClass.ElementInstance.new(inf_type2)
+	inf_unloading2.id = "test_inf_unloading2"
+	inf_unloading2.faction = GameEnums.Faction.BLUE
+	inf_unloading2.unloading_target_pos = Vector2(700, 700)  # 下車移動中
+
+	var ifv_unloading_source = ElementDataClass.ElementInstance.new(ifv_type2)
+	ifv_unloading_source.id = "test_ifv_unloading_source"
+	ifv_unloading_source.faction = GameEnums.Faction.BLUE
+
+	# 下車移動中の歩兵と輸送車両は衝突回避しない
+	var is_unloading_pair = movement_sys._is_boarding_pair(inf_unloading2, ifv_unloading_source)
+	assert_true(is_unloading_pair)
+	_pass()
+
+	# ========================================
+	# テスト: 乗車移動中の歩兵と目標車両
+	# ========================================
+	_current_test = "boarding_infantry_with_target_vehicle"
+
+	var inf_boarding = ElementDataClass.ElementInstance.new(inf_type2)
+	inf_boarding.id = "test_inf_boarding"
+	inf_boarding.faction = GameEnums.Faction.BLUE
+	inf_boarding.boarding_target_id = "test_ifv_target"
+
+	var ifv_target = ElementDataClass.ElementInstance.new(ifv_type2)
+	ifv_target.id = "test_ifv_target"
+	ifv_target.faction = GameEnums.Faction.BLUE
+	ifv_target.awaiting_boarding_id = "test_inf_boarding"
+
+	# 乗車移動中の歩兵と待機中の車両はペア
+	var is_boarding_pair = movement_sys._is_boarding_pair(inf_boarding, ifv_target)
+	assert_true(is_boarding_pair)
+
+	# 逆順でもペア
+	is_boarding_pair = movement_sys._is_boarding_pair(ifv_target, inf_boarding)
+	assert_true(is_boarding_pair)
+	_pass()
+
+	# ========================================
+	# テスト: 複数の歩兵が同じ車両に乗車しようとした場合
+	# ========================================
+	_current_test = "multiple_infantry_same_vehicle"
+
+	var inf_boarding2 = ElementDataClass.ElementInstance.new(inf_type2)
+	inf_boarding2.id = "test_inf_boarding2"
+	inf_boarding2.faction = GameEnums.Faction.BLUE
+	inf_boarding2.boarding_target_id = "test_ifv_target"  # 同じ車両を目標
+
+	# 2人目の歩兵も車両とペアになる（衝突回避しない）
+	# ただし、awaiting_boarding_idは1人目のIDなので、
+	# 2人目はフラグマッチではなく、友好ペアとしてマッチする
+	var is_second_boarding_pair = movement_sys._is_boarding_pair(inf_boarding2, ifv_target)
+	assert_true(is_second_boarding_pair)
+	_pass()
+
+	# ========================================
+	# テスト: 遠距離からのBoard検索（BOARD_SEARCH_RANGE）
+	# ========================================
+	_current_test = "board_search_range_constant"
+
+	# 検索範囲定数が存在することを確認
+	assert_true(TransportSystemClass.BOARD_SEARCH_RANGE > TransportSystemClass.BOARD_RANGE)
+	# 遠距離検索範囲は500m程度を想定
+	assert_true(TransportSystemClass.BOARD_SEARCH_RANGE >= 500.0)
+	_pass()
+
+	# ========================================
+	# テスト: find_transport_in_range関数（遠距離検索）
+	# ========================================
+	_current_test = "find_transport_in_range_far_distance"
+
+	# 遠距離（200m）に車両を配置
+	var ifv_far = ElementDataClass.ElementInstance.new(ifv_type2)
+	ifv_far.id = "test_ifv_far"
+	ifv_far.faction = GameEnums.Faction.BLUE
+	ifv_far.position = Vector2(800, 600)  # 歩兵から200m離れた位置
+
+	var inf_far = ElementDataClass.ElementInstance.new(inf_type2)
+	inf_far.id = "test_inf_far"
+	inf_far.faction = GameEnums.Faction.BLUE
+	inf_far.position = Vector2(600, 600)  # 基準位置
+
+	# WorldModelに追加
+	var test_world_model_far: WorldModel = WorldModelClass.new()
+	test_world_model_far.add_element(ifv_far)
+	test_world_model_far.add_element(inf_far)
+
+	var ts_far: TransportSystem = TransportSystemClass.new()
+	ts_far.setup(test_world_model_far)
+
+	# 通常のfind_available_transport（75m以内）では見つからない
+	var found_near: ElementData.ElementInstance = ts_far.find_available_transport(inf_far)
+	assert_null(found_near)  # 200m離れているので見つからない
+
+	# 遠距離検索（500m以内）では見つかる
+	var found_far: ElementData.ElementInstance = ts_far.find_transport_in_range(inf_far, 500.0)
+	assert_not_null(found_far)
+	assert_eq(found_far.id, "test_ifv_far")
+	_pass()
+
+	# ========================================
+	# テスト: find_transport_in_range関数（範囲外）
+	# ========================================
+	_current_test = "find_transport_in_range_out_of_range"
+
+	# 600m離れた車両を配置
+	ifv_far.position = Vector2(1200, 600)  # 歩兵から600m離れた位置
+
+	# 500m検索では見つからない
+	var found_too_far: ElementData.ElementInstance = ts_far.find_transport_in_range(inf_far, 500.0)
+	assert_null(found_too_far)
+	_pass()
+
+	# ========================================
+	# テスト: find_transport_in_range関数（最も近い車両を返す）
+	# ========================================
+	_current_test = "find_transport_in_range_returns_nearest"
+
+	# 2台の車両を異なる距離に配置
+	ifv_far.position = Vector2(900, 600)  # 300m離れた位置
+
+	var ifv_near_range = ElementDataClass.ElementInstance.new(ifv_type2)
+	ifv_near_range.id = "test_ifv_near_range"
+	ifv_near_range.faction = GameEnums.Faction.BLUE
+	ifv_near_range.position = Vector2(700, 600)  # 100m離れた位置
+	test_world_model_far.add_element(ifv_near_range)
+
+	# 最も近い車両（100m）が返される
+	var found_nearest: ElementData.ElementInstance = ts_far.find_transport_in_range(inf_far, 500.0)
+	assert_not_null(found_nearest)
+	assert_eq(found_nearest.id, "test_ifv_near_range")  # 近い方が返される
+	_pass()
+
+	# ========================================
+	# テスト: get_transport_at_position関数（カーソル位置の車両を取得）
+	# ========================================
+	_current_test = "get_transport_at_position_found"
+
+	# 新しいWorldModelとTransportSystemを作成
+	var test_world_model_pos: WorldModel = WorldModelClass.new()
+	var ts_pos: TransportSystem = TransportSystemClass.new()
+	ts_pos.setup(test_world_model_pos)
+
+	# IFVを配置
+	var ifv_at_pos = ElementDataClass.ElementInstance.new(ifv_type2)
+	ifv_at_pos.id = "test_ifv_at_pos"
+	ifv_at_pos.faction = GameEnums.Faction.BLUE
+	ifv_at_pos.position = Vector2(500, 500)
+	test_world_model_pos.add_element(ifv_at_pos)
+
+	# 歩兵を配置
+	var inf_for_board = ElementDataClass.ElementInstance.new(inf_type2)
+	inf_for_board.id = "test_inf_for_board"
+	inf_for_board.faction = GameEnums.Faction.BLUE
+	inf_for_board.position = Vector2(300, 500)
+	test_world_model_pos.add_element(inf_for_board)
+
+	# カーソル位置（IFVの近く）で車両を取得
+	var found_at_pos: ElementData.ElementInstance = ts_pos.get_transport_at_position(
+		inf_for_board, Vector2(510, 510), 50.0  # IFVの近く、検出半径50m
+	)
+	assert_not_null(found_at_pos)
+	assert_eq(found_at_pos.id, "test_ifv_at_pos")
+	_pass()
+
+	# ========================================
+	# テスト: get_transport_at_position（車両がない位置）
+	# ========================================
+	_current_test = "get_transport_at_position_not_found"
+
+	# 車両がない位置を指定
+	var found_empty: ElementData.ElementInstance = ts_pos.get_transport_at_position(
+		inf_for_board, Vector2(1000, 1000), 50.0  # 何もない位置
+	)
+	assert_null(found_empty)
+	_pass()
+
+	# ========================================
+	# テスト: get_transport_at_position（既に歩兵が乗っている車両）
+	# ========================================
+	_current_test = "get_transport_at_position_already_loaded"
+
+	# IFVに別の歩兵を乗せる
+	ifv_at_pos.embarked_infantry_id = "some_other_infantry"
+
+	# 乗車済み車両は取得できない
+	var found_loaded: ElementData.ElementInstance = ts_pos.get_transport_at_position(
+		inf_for_board, Vector2(510, 510), 50.0
+	)
+	assert_null(found_loaded)
+
+	# 状態をリセット
+	ifv_at_pos.embarked_infantry_id = ""
+	_pass()
+
+	# ========================================
+	# テスト: get_transport_at_position（敵の車両）
+	# ========================================
+	_current_test = "get_transport_at_position_enemy_vehicle"
+
+	# 敵のIFVを配置
+	var enemy_ifv = ElementDataClass.ElementInstance.new(ifv_type2)
+	enemy_ifv.id = "test_enemy_ifv"
+	enemy_ifv.faction = GameEnums.Faction.RED  # 敵陣営
+	enemy_ifv.position = Vector2(600, 500)
+	test_world_model_pos.add_element(enemy_ifv)
+
+	# 敵の車両は取得できない
+	var found_enemy: ElementData.ElementInstance = ts_pos.get_transport_at_position(
+		inf_for_board, Vector2(610, 510), 50.0  # 敵IFVの近く
+	)
+	assert_null(found_enemy)
+	_pass()
+
+	# ========================================
+	# テスト: get_transport_at_position（輸送能力のない車両）
+	# ========================================
+	_current_test = "get_transport_at_position_non_transport"
+
+	# 輸送能力のない車両（戦車）を配置
+	var mbt_type_pos = ElementDataClass.ElementType.new()
+	mbt_type_pos.id = "MBT"
+	mbt_type_pos.category = ElementDataClass.Category.VEH
+	mbt_type_pos.can_transport_infantry = false
+
+	var mbt_at_pos = ElementDataClass.ElementInstance.new(mbt_type_pos)
+	mbt_at_pos.id = "test_mbt_at_pos"
+	mbt_at_pos.faction = GameEnums.Faction.BLUE
+	mbt_at_pos.position = Vector2(700, 500)
+	test_world_model_pos.add_element(mbt_at_pos)
+
+	# 輸送能力のない車両は取得できない
+	var found_mbt: ElementData.ElementInstance = ts_pos.get_transport_at_position(
+		inf_for_board, Vector2(710, 510), 50.0  # MBTの近く
+	)
+	assert_null(found_mbt)
+	_pass()
+
+
+# =============================================================================
+# Infantry Commands Tests
+# =============================================================================
+
+func test_infantry_commands() -> void:
+	var ElementDataClass: GDScript = load("res://scripts/data/element_data.gd")
+
+	# ========================================
+	# テスト用の歩兵タイプを作成
+	# ========================================
+	var inf_type = ElementDataClass.ElementType.new()
+	inf_type.id = "INF_LINE"
+	inf_type.max_strength = 30
+	inf_type.armor_class = 0
+	inf_type.category = ElementDataClass.Category.INF
+	inf_type.road_speed = 5.0
+
+	# ========================================
+	# テスト: DIG_IN OrderTypeの存在
+	# ========================================
+	_current_test = "dig_in_order_type_exists"
+	assert_eq(GameEnums.OrderType.DIG_IN, 18)
+	_pass()
+
+	# ========================================
+	# テスト: 歩兵のSOPモード設定
+	# ========================================
+	_current_test = "infantry_sop_mode_for_ambush"
+	var infantry = ElementDataClass.ElementInstance.new(inf_type)
+	infantry.id = "test_inf_1"
+	infantry.faction = GameEnums.Faction.BLUE
+	infantry.position = Vector2(500, 500)
+
+	# Ambush用のSOPモード設定
+	infantry.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	assert_eq(infantry.sop_mode, GameEnums.SOPMode.HOLD_FIRE)
+	_pass()
+
+	# ========================================
+	# テスト: Fast Move用のOrderType
+	# ========================================
+	_current_test = "fast_move_order_type"
+	infantry.current_order_type = GameEnums.OrderType.MOVE_FAST
+	assert_eq(infantry.current_order_type, GameEnums.OrderType.MOVE_FAST)
+	_pass()
+
+	# ========================================
+	# テスト: Ambush OrderTypeの存在
+	# ========================================
+	_current_test = "ambush_order_type_exists"
+	assert_eq(GameEnums.OrderType.AMBUSH, 15)
+	_pass()
+
+	# ========================================
+	# テスト: LOAD OrderType（Board用）
+	# ========================================
+	_current_test = "load_order_type_for_board"
+	assert_eq(GameEnums.OrderType.LOAD, 14)
+	_pass()
+
+	# ========================================
+	# テスト: 歩兵カテゴリのパイメニューコマンド
+	# ========================================
+	_current_test = "infantry_pie_menu_commands"
+	var PieMenuClass: GDScript = load("res://scripts/ui/pie_menu.gd")
+	var category: String = PieMenuClass.get_category_for_archetype("INF_LINE")
+	assert_eq(category, "INFANTRY")
+	_pass()
+
+	# ========================================
+	# テスト: INF_AT も歩兵カテゴリ
+	# ========================================
+	_current_test = "inf_at_is_infantry_category"
+	var category_at: String = PieMenuClass.get_category_for_archetype("INF_AT")
+	assert_eq(category_at, "INFANTRY")
+	_pass()
+
+	# ========================================
+	# テスト: INF_MG も歩兵カテゴリ
+	# ========================================
+	_current_test = "inf_mg_is_infantry_category"
+	var category_mg: String = PieMenuClass.get_category_for_archetype("INF_MG")
+	assert_eq(category_mg, "INFANTRY")
 	_pass()

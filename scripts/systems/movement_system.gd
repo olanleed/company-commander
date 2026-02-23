@@ -280,6 +280,10 @@ func _calculate_collision_avoidance(element: ElementData.ElementInstance) -> Vec
 	if not world_model:
 		return Vector2.ZERO
 
+	# 搭乗中の歩兵は衝突計算しない
+	if element.is_embarked:
+		return Vector2.ZERO
+
 	var avoidance := Vector2.ZERO
 	var my_radius := _get_collision_radius(element)
 
@@ -291,6 +295,12 @@ func _calculate_collision_avoidance(element: ElementData.ElementInstance) -> Vec
 		if other.id == element.id:
 			continue
 		if other.state == GameEnums.UnitState.DESTROYED:
+			continue
+		# 搭乗中の歩兵は衝突判定から除外
+		if other.is_embarked:
+			continue
+		# 乗車待機中の車両と乗車移動中の歩兵は互いに衝突回避しない
+		if _is_boarding_pair(element, other):
 			continue
 
 		var other_radius := _get_collision_radius(other)
@@ -309,9 +319,53 @@ func _calculate_collision_avoidance(element: ElementData.ElementInstance) -> Vec
 	return avoidance
 
 
+## 乗降関連のペアかどうかをチェック（衝突回避を除外する）
+func _is_boarding_pair(a: ElementData.ElementInstance, b: ElementData.ElementInstance) -> bool:
+	# aが車両でbが乗車移動中の歩兵
+	if not a.awaiting_boarding_id.is_empty() and a.awaiting_boarding_id == b.id:
+		return true
+	# bが車両でaが乗車移動中の歩兵
+	if not b.awaiting_boarding_id.is_empty() and b.awaiting_boarding_id == a.id:
+		return true
+	# aが歩兵でbに向かって乗車移動中
+	if not a.boarding_target_id.is_empty() and a.boarding_target_id == b.id:
+		return true
+	# bが歩兵でaに向かって乗車移動中
+	if not b.boarding_target_id.is_empty() and b.boarding_target_id == a.id:
+		return true
+	# 下車移動中の歩兵は近くの車両と衝突回避しない（下車直後の衝突を防ぐ）
+	if a.unloading_target_pos != Vector2.ZERO and b.element_type and b.element_type.can_transport_infantry:
+		return true
+	if b.unloading_target_pos != Vector2.ZERO and a.element_type and a.element_type.can_transport_infantry:
+		return true
+	# 味方の歩兵と輸送車両は衝突回避しない（乗車のために接近できるようにする）
+	if _is_friendly_infantry_transport_pair(a, b):
+		return true
+	return false
+
+
+## 味方の歩兵と輸送車両のペアかどうかをチェック
+func _is_friendly_infantry_transport_pair(a: ElementData.ElementInstance, b: ElementData.ElementInstance) -> bool:
+	# 同じ陣営でないなら除外しない
+	if a.faction != b.faction:
+		return false
+	# aが歩兵でbが輸送車両
+	if a.element_type and b.element_type:
+		if a.element_type.category == ElementData.Category.INF and b.element_type.can_transport_infantry:
+			return true
+		# bが歩兵でaが輸送車両
+		if b.element_type.category == ElementData.Category.INF and a.element_type.can_transport_infantry:
+			return true
+	return false
+
+
 ## ハード衝突解消（重なりを即座に解消）
 func resolve_hard_collisions(element: ElementData.ElementInstance) -> void:
 	if not world_model:
+		return
+
+	# 搭乗中の歩兵は衝突計算しない
+	if element.is_embarked:
 		return
 
 	var my_radius := _get_collision_radius(element)
@@ -322,6 +376,12 @@ func resolve_hard_collisions(element: ElementData.ElementInstance) -> void:
 		if other.id == element.id:
 			continue
 		if other.state == GameEnums.UnitState.DESTROYED:
+			continue
+		# 搭乗中の歩兵は衝突判定から除外
+		if other.is_embarked:
+			continue
+		# 乗車待機中の車両と乗車移動中の歩兵は互いに衝突回避しない
+		if _is_boarding_pair(element, other):
 			continue
 
 		var other_radius := _get_collision_radius(other)
@@ -352,6 +412,12 @@ func apply_separation(element: ElementData.ElementInstance, dt: float) -> void:
 		return
 	if element.is_moving:
 		return  # 移動中は update_element で処理
+	# 搭乗中の歩兵は処理しない
+	if element.is_embarked:
+		return
+	# 乗車待機中の車両は動かない
+	if not element.awaiting_boarding_id.is_empty():
+		return
 
 	# まずハード衝突を解消
 	resolve_hard_collisions(element)

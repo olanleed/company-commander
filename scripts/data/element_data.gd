@@ -76,6 +76,10 @@ class ElementType:
 	var is_comm_hub: bool = false        # 通信ハブ（指揮ユニット）か
 	var comm_range: float = 2000.0       # 通信距離 (m)
 
+	## Transport (輸送能力)
+	var can_transport_infantry: bool = false  # 歩兵輸送能力
+	var transport_capacity: int = 0           # 輸送可能な歩兵数（0=輸送不可）
+
 	## v0.1R: ゾーン別装甲（0-100レーティング）
 	## 仕様書: docs/damage_model_v0.1.md
 	## ArmorZone.FRONT/SIDE/REAR/TOP → rating
@@ -153,6 +157,14 @@ class ElementInstance:
 
 	## 兵器カタログ
 	var vehicle_id: String = ""          ## カタログ車両ID（例: "JPN_Type10"）
+
+	## 搭乗・輸送関連
+	var embarked_infantry_id: String = ""  ## 搭乗中の歩兵ユニットID（IFV/APC用）
+	var transport_vehicle_id: String = ""  ## 乗車中の車両ID（歩兵用）
+	var is_embarked: bool = false          ## 乗車中フラグ（歩兵用、trueの場合は非表示）
+	var boarding_target_id: String = ""    ## 乗車移動中の目標車両ID（歩兵用）
+	var unloading_target_pos: Vector2 = Vector2.ZERO  ## 下車移動中の目標位置（歩兵用）
+	var awaiting_boarding_id: String = ""  ## 乗車待機中の歩兵ID（車両用、衝突回避除外用）
 
 	## 初期化
 	func _init(p_type: ElementType = null) -> void:
@@ -422,6 +434,9 @@ class ElementArchetypes:
 		t.max_strength = 4
 		t.spot_range_base = 1500.0  # Hunter-killerシステム、熱画像装置
 		t.spot_range_moving = 1000.0
+		# 輸送能力: 4両で1個分隊（30人）を輸送可能
+		t.can_transport_infantry = true
+		t.transport_capacity = 30
 		# v0.1R: ゾーン別装甲（RHA換算, スケール: 100 = 500mm）
 		# KE（機関砲等）に対する装甲
 		# 正面: 約150mm RHA = 30, 側面: 約50mm = 10, 後部: 約30mm = 6
@@ -571,6 +586,9 @@ class ElementArchetypes:
 		t.max_strength = 4
 		t.spot_range_base = 500.0
 		t.spot_range_moving = 350.0
+		# 輸送能力: 4両で1個分隊（30人）を輸送可能
+		t.can_transport_infantry = true
+		t.transport_capacity = 30
 		# KE装甲（軽装甲: 7.62mm防護、14.5mm正面のみ）
 		t.armor_ke = {
 			WeaponData.ArmorZone.FRONT: 8,    # 40mm RHA - 14.5mm HMGに耐える
