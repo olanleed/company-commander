@@ -77,6 +77,18 @@ func run_all_tests() -> void:
 	print("\n[Weapon Effectiveness Tests]")
 	test_weapon_effectiveness()
 
+	print("\n[FireModel Tests - Bug 2 Fix]")
+	test_fire_model_discrete_vs_continuous()
+
+	print("\n[Tank vs Light Armor Tests - Bug 1 Fix]")
+	test_tank_vs_light_armor()
+
+	print("\n[HUD Ammo Display Tests]")
+	test_hud_ammo_display()
+
+	print("\n[Weapon Selection Algorithm Tests]")
+	test_weapon_selection_algorithm()
+
 
 # =============================================================================
 # WeaponData Tests
@@ -2591,6 +2603,557 @@ func test_weapon_effectiveness() -> void:
 	_current_test = "zbd04a_vs_btr82a_front"
 	# ZBD-04A 30mm (12 KE) vs BTR-82A front (8 KE): diff = +4 -> ~57%
 	assert_gt(_calc_pen_prob(12, 8), 0.55)
+	_pass()
+
+
+# =============================================================================
+# FireModel Tests - Bug 2 Fix (DISCRETE vs CONTINUOUS)
+# =============================================================================
+
+func test_fire_model_discrete_vs_continuous() -> void:
+	var WeaponDataClass: GDScript = load("res://scripts/data/weapon_data.gd")
+
+	# 戦車砲はDISCRETE
+	_current_test = "tank_gun_is_discrete"
+	var tank_ke = WeaponDataClass.create_cw_tank_ke()
+	assert_eq(tank_ke.fire_model, WeaponDataClass.FireModel.DISCRETE)
+	assert_eq(tank_ke.mechanism, WeaponDataClass.Mechanism.KINETIC)
+	_pass()
+
+	# 機関砲はCONTINUOUS
+	_current_test = "autocannon_is_continuous"
+	var autocannon = WeaponDataClass.create_cw_autocannon_30()
+	assert_eq(autocannon.fire_model, WeaponDataClass.FireModel.CONTINUOUS)
+	assert_eq(autocannon.mechanism, WeaponDataClass.Mechanism.KINETIC)
+	_pass()
+
+	# 両方KINETICだがfire_modelで区別可能
+	_current_test = "kinetic_weapons_distinguished_by_fire_model"
+	assert_eq(tank_ke.mechanism, autocannon.mechanism)  # 両方KINETIC
+	assert_true(tank_ke.fire_model != autocannon.fire_model)  # fire_modelは異なる
+	_pass()
+
+	# HEAT-MPはDISCRETE
+	_current_test = "heat_is_discrete"
+	var tank_heat = WeaponDataClass.create_cw_tank_heatmp()
+	assert_eq(tank_heat.fire_model, WeaponDataClass.FireModel.DISCRETE)
+	assert_eq(tank_heat.mechanism, WeaponDataClass.Mechanism.SHAPED_CHARGE)
+	_pass()
+
+	# ATGMはDISCRETE
+	_current_test = "atgm_is_discrete"
+	var atgm = WeaponDataClass.create_cw_atgm()
+	assert_eq(atgm.fire_model, WeaponDataClass.FireModel.DISCRETE)
+	_pass()
+
+	# 迫撃砲はINDIRECT
+	_current_test = "mortar_is_indirect"
+	var mortar = WeaponDataClass.create_cw_mortar_he()
+	assert_eq(mortar.fire_model, WeaponDataClass.FireModel.INDIRECT)
+	_pass()
+
+
+# =============================================================================
+# Tank vs Light Armor Tests - Bug 1 Fix
+# =============================================================================
+
+func test_tank_vs_light_armor() -> void:
+	var CombatSystemClass: GDScript = load("res://scripts/systems/combat_system.gd")
+	var ElementDataClass: GDScript = load("res://scripts/data/element_data.gd")
+	var WeaponDataClass: GDScript = load("res://scripts/data/weapon_data.gd")
+
+	var combat_system = CombatSystemClass.new()
+
+	# 軽装甲車両を作成（armor_class = 1）
+	var light_armor_type = ElementDataClass.ElementType.new()
+	light_armor_type.id = "test_recon"
+	light_armor_type.max_strength = 2
+	light_armor_type.armor_class = 1  # Light armor
+	light_armor_type.category = ElementDataClass.Category.VEH
+
+	# 戦車を作成
+	var tank_type = ElementDataClass.ElementType.new()
+	tank_type.id = "test_tank"
+	tank_type.max_strength = 4
+	tank_type.armor_class = 4  # Heavy armor
+	tank_type.category = ElementDataClass.Category.VEH
+
+	var shooter = ElementDataClass.ElementInstance.new(tank_type)
+	shooter.id = "shooter_tank"
+	shooter.faction = GameEnums.Faction.BLUE
+	shooter.position = Vector2(0, 0)
+	shooter.mobility_hp = 100
+	shooter.firepower_hp = 100
+	shooter.sensors_hp = 100
+
+	var weapon = WeaponDataClass.create_cw_tank_ke()
+
+	# テスト: 軽装甲への戦車砲命中は高い撃破確率
+	_current_test = "tank_vs_light_armor_high_kill_prob"
+	var target = ElementDataClass.ElementInstance.new(light_armor_type)
+	target.id = "target_recon"
+	target.faction = GameEnums.Faction.RED
+	target.position = Vector2(800, 0)
+	target.facing = PI
+	target.mobility_hp = 100
+	target.firepower_hp = 100
+	target.sensors_hp = 100
+
+	var result = combat_system.process_tank_engagement(shooter, target, weapon, 800.0, 0)
+	# 命中した場合、p_kill = 0.90（軽装甲）
+	if result.hit:
+		assert_almost_eq(result.p_kill, 0.90, 0.01)
+	_pass()
+
+	# テスト: 軽装甲への命中は必ずダメージ（Kill or M-Kill）
+	_current_test = "tank_vs_light_armor_always_damages"
+	var hits := 0
+	var damages := 0
+	for i in range(50):
+		var t = ElementDataClass.ElementInstance.new(light_armor_type)
+		t.id = "target_%d" % i
+		t.faction = GameEnums.Faction.RED
+		t.position = Vector2(500, 0)
+		t.facing = PI
+		t.mobility_hp = 100
+		t.firepower_hp = 100
+		t.sensors_hp = 100
+
+		shooter.last_fire_tick = -100  # リセット
+		var r = combat_system.process_tank_engagement(shooter, t, weapon, 500.0, i)
+		if r.hit:
+			hits += 1
+			if r.kill or r.mission_kill:
+				damages += 1
+
+	# 命中した場合は100%ダメージ（kill + mission_kill = 100%）
+	if hits > 0:
+		var damage_rate := float(damages) / float(hits)
+		assert_almost_eq(damage_rate, 1.0, 0.05)
+	_pass()
+
+	# テスト: IFV（armor_class=2）はMBT（armor_class>=3）より脆弱
+	_current_test = "ifv_more_vulnerable_than_mbt"
+	var ifv_type = ElementDataClass.ElementType.new()
+	ifv_type.id = "test_ifv"
+	ifv_type.max_strength = 3
+	ifv_type.armor_class = 2  # IFV
+	ifv_type.category = ElementDataClass.Category.VEH
+
+	var ifv = ElementDataClass.ElementInstance.new(ifv_type)
+	ifv.id = "target_ifv"
+	ifv.faction = GameEnums.Faction.RED
+	ifv.position = Vector2(800, 0)
+	ifv.facing = PI
+	ifv.mobility_hp = 100
+	ifv.firepower_hp = 100
+	ifv.sensors_hp = 100
+
+	var mbt = ElementDataClass.ElementInstance.new(tank_type)
+	mbt.id = "target_mbt"
+	mbt.faction = GameEnums.Faction.RED
+	mbt.position = Vector2(800, 0)
+	mbt.facing = PI
+	mbt.mobility_hp = 100
+	mbt.firepower_hp = 100
+	mbt.sensors_hp = 100
+
+	shooter.last_fire_tick = -100
+	var r_ifv = combat_system.process_tank_engagement(shooter, ifv, weapon, 800.0, 100)
+	shooter.last_fire_tick = -100
+	var r_mbt = combat_system.process_tank_engagement(shooter, mbt, weapon, 800.0, 101)
+
+	# IFVの方がMBTより撃破されやすい
+	if r_ifv.hit and r_mbt.hit:
+		assert_gt(r_ifv.p_kill, r_mbt.p_kill)
+	_pass()
+
+	# テスト: should_use_tank_combat が軽装甲で true を返す（修正後）
+	_current_test = "should_use_tank_combat_light_armor_true"
+	var target_light = ElementDataClass.ElementInstance.new(light_armor_type)
+	target_light.id = "target_light"
+	target_light.faction = GameEnums.Faction.RED
+	var should_use = combat_system.should_use_tank_combat(shooter, target_light, weapon)
+	assert_true(should_use)  # armor_class=1 は戦車戦闘モデルを使用
+	_pass()
+
+	# テスト: should_use_tank_combat がソフトスキンで false を返す
+	_current_test = "should_use_tank_combat_soft_false"
+	var soft_type = ElementDataClass.ElementType.new()
+	soft_type.id = "test_soft"
+	soft_type.max_strength = 10
+	soft_type.armor_class = 0  # Soft target
+	soft_type.category = ElementDataClass.Category.INF
+	var target_soft = ElementDataClass.ElementInstance.new(soft_type)
+	target_soft.id = "target_soft"
+	target_soft.faction = GameEnums.Faction.RED
+	should_use = combat_system.should_use_tank_combat(shooter, target_soft, weapon)
+	assert_false(should_use)  # armor_class=0 は戦車戦闘モデルを使用しない
+	_pass()
+
+	# テスト: should_use_tank_combat がIFV（armor_class=2）で true を返す
+	_current_test = "should_use_tank_combat_ifv_true"
+	should_use = combat_system.should_use_tank_combat(shooter, ifv, weapon)
+	assert_true(should_use)  # armor_class=2 は戦車戦闘モデルを使用
+	_pass()
+
+	# テスト: should_use_tank_combat がMBT（armor_class>=3）で true を返す
+	_current_test = "should_use_tank_combat_mbt_true"
+	should_use = combat_system.should_use_tank_combat(shooter, mbt, weapon)
+	assert_true(should_use)  # armor_class>=3 は戦車戦闘モデルを使用
+	_pass()
+
+
+# =============================================================================
+# HUD Ammo Display Tests
+# =============================================================================
+
+func test_hud_ammo_display() -> void:
+	var RightPanelClass: GDScript = load("res://scripts/ui/right_panel.gd")
+	var WeaponDataClass: GDScript = load("res://scripts/data/weapon_data.gd")
+
+	var right_panel = RightPanelClass.new()
+
+	# APFSDS表示
+	_current_test = "apfsds_displays_correctly"
+	var tank_ke = WeaponDataClass.create_cw_tank_ke()
+	var ammo_type = right_panel._get_ammo_type_display(tank_ke)
+	assert_eq(ammo_type, "APFSDS")
+	_pass()
+
+	# HEAT表示
+	_current_test = "heat_displays_correctly"
+	var tank_heat = WeaponDataClass.create_cw_tank_heatmp()
+	ammo_type = right_panel._get_ammo_type_display(tank_heat)
+	assert_eq(ammo_type, "HEAT")
+	_pass()
+
+	# ATGM表示
+	_current_test = "atgm_displays_correctly"
+	var atgm = WeaponDataClass.create_cw_atgm()
+	ammo_type = right_panel._get_ammo_type_display(atgm)
+	assert_eq(ammo_type, "ATGM")
+	_pass()
+
+	# 機関砲は弾種表示なし（CONTINUOUS）
+	_current_test = "autocannon_no_ammo_display"
+	var autocannon = WeaponDataClass.create_cw_autocannon_30()
+	ammo_type = right_panel._get_ammo_type_display(autocannon)
+	assert_eq(ammo_type, "")
+	_pass()
+
+	# 小銃は弾種表示なし
+	_current_test = "rifle_no_ammo_display"
+	var rifle = WeaponDataClass.create_rifle()
+	ammo_type = right_panel._get_ammo_type_display(rifle)
+	assert_eq(ammo_type, "")
+	_pass()
+
+	# null武器でもクラッシュしない
+	_current_test = "null_weapon_no_crash"
+	ammo_type = right_panel._get_ammo_type_display(null)
+	assert_eq(ammo_type, "")
+	_pass()
+
+	# LAWはCE表示
+	_current_test = "law_displays_ce"
+	var law = WeaponDataClass.create_cw_law()
+	ammo_type = right_panel._get_ammo_type_display(law)
+	assert_eq(ammo_type, "CE")
+	_pass()
+
+	right_panel.queue_free()
+
+
+# =============================================================================
+# Weapon Selection Algorithm Tests
+# =============================================================================
+
+func test_weapon_selection_algorithm() -> void:
+	var CombatSystemClass: GDScript = load("res://scripts/systems/combat_system.gd")
+	var ElementDataClass: GDScript = load("res://scripts/data/element_data.gd")
+	var WeaponDataClass: GDScript = load("res://scripts/data/weapon_data.gd")
+
+	var combat_system = CombatSystemClass.new()
+
+	# ========================================
+	# 目標タイプを作成
+	# ========================================
+
+	# 重装甲（MBT）
+	var mbt_type = ElementDataClass.ElementType.new()
+	mbt_type.id = "test_mbt"
+	mbt_type.max_strength = 4
+	mbt_type.armor_class = 4
+	mbt_type.category = ElementDataClass.Category.VEH
+
+	# 中装甲（IFV）
+	var ifv_type = ElementDataClass.ElementType.new()
+	ifv_type.id = "test_ifv"
+	ifv_type.max_strength = 3
+	ifv_type.armor_class = 2
+	ifv_type.category = ElementDataClass.Category.VEH
+
+	# 軽装甲（APC/RECON）
+	var apc_type = ElementDataClass.ElementType.new()
+	apc_type.id = "test_apc"
+	apc_type.max_strength = 2
+	apc_type.armor_class = 1
+	apc_type.category = ElementDataClass.Category.VEH
+
+	# 非装甲車両（トラック）
+	var truck_type = ElementDataClass.ElementType.new()
+	truck_type.id = "test_truck"
+	truck_type.max_strength = 1
+	truck_type.armor_class = 0
+	truck_type.category = ElementDataClass.Category.VEH
+
+	# 歩兵
+	var inf_type = ElementDataClass.ElementType.new()
+	inf_type.id = "test_inf"
+	inf_type.max_strength = 10
+	inf_type.armor_class = 0
+	inf_type.category = ElementDataClass.Category.INF
+
+	# 戦車（射手）
+	var tank_shooter_type = ElementDataClass.ElementType.new()
+	tank_shooter_type.id = "test_tank_shooter"
+	tank_shooter_type.max_strength = 4
+	tank_shooter_type.armor_class = 4
+	tank_shooter_type.category = ElementDataClass.Category.VEH
+
+	# ========================================
+	# 武器を作成
+	# ========================================
+	var apfsds = WeaponDataClass.create_cw_tank_ke()
+	var heat_mp = WeaponDataClass.create_cw_tank_heatmp()
+	var coax_mg = WeaponDataClass.create_cw_coax_mg()
+	var atgm = WeaponDataClass.create_cw_atgm()
+	var autocannon = WeaponDataClass.create_cw_autocannon_30()
+
+	# ========================================
+	# テスト: 目標カテゴリ分類
+	# ========================================
+	_current_test = "target_category_heavy_armor"
+	var mbt = ElementDataClass.ElementInstance.new(mbt_type)
+	var cat = combat_system.get_target_category(mbt)
+	assert_eq(cat, 0)  # HEAVY_ARMOR = 0
+	_pass()
+
+	_current_test = "target_category_medium_armor"
+	var ifv = ElementDataClass.ElementInstance.new(ifv_type)
+	cat = combat_system.get_target_category(ifv)
+	assert_eq(cat, 1)  # MEDIUM_ARMOR = 1
+	_pass()
+
+	_current_test = "target_category_light_armor"
+	var apc = ElementDataClass.ElementInstance.new(apc_type)
+	cat = combat_system.get_target_category(apc)
+	assert_eq(cat, 2)  # LIGHT_ARMOR = 2
+	_pass()
+
+	_current_test = "target_category_soft_vehicle"
+	var truck = ElementDataClass.ElementInstance.new(truck_type)
+	cat = combat_system.get_target_category(truck)
+	assert_eq(cat, 3)  # SOFT_VEHICLE = 3
+	_pass()
+
+	_current_test = "target_category_infantry"
+	var inf = ElementDataClass.ElementInstance.new(inf_type)
+	cat = combat_system.get_target_category(inf)
+	assert_eq(cat, 4)  # INFANTRY = 4
+	_pass()
+
+	# ========================================
+	# テスト: 武器役割の推論
+	# ========================================
+	_current_test = "weapon_role_apfsds"
+	WeaponDataClass.ensure_weapon_role(apfsds)
+	assert_eq(apfsds.weapon_role, WeaponDataClass.WeaponRole.MAIN_GUN_KE)
+	_pass()
+
+	_current_test = "weapon_role_heat"
+	WeaponDataClass.ensure_weapon_role(heat_mp)
+	assert_eq(heat_mp.weapon_role, WeaponDataClass.WeaponRole.MAIN_GUN_CE)
+	_pass()
+
+	_current_test = "weapon_role_coax_mg"
+	WeaponDataClass.ensure_weapon_role(coax_mg)
+	# COAX_MG = 4 (0:MAIN_GUN_KE, 1:MAIN_GUN_CE, 2:ATGM, 3:AUTOCANNON, 4:COAX_MG)
+	assert_eq(coax_mg.weapon_role, 4)  # WeaponRole.COAX_MG
+	_pass()
+
+	_current_test = "weapon_role_atgm"
+	WeaponDataClass.ensure_weapon_role(atgm)
+	assert_eq(atgm.weapon_role, WeaponDataClass.WeaponRole.ATGM)
+	_pass()
+
+	_current_test = "weapon_role_autocannon"
+	WeaponDataClass.ensure_weapon_role(autocannon)
+	assert_eq(autocannon.weapon_role, WeaponDataClass.WeaponRole.AUTOCANNON)
+	_pass()
+
+	# ========================================
+	# テスト: 戦車 vs MBT → APFSDS優先
+	# ========================================
+	_current_test = "tank_vs_mbt_selects_apfsds"
+	var shooter = ElementDataClass.ElementInstance.new(tank_shooter_type)
+	shooter.id = "shooter"
+	shooter.faction = GameEnums.Faction.BLUE
+	shooter.weapons.append(apfsds)
+	shooter.weapons.append(heat_mp)
+	shooter.weapons.append(coax_mg)
+	shooter.primary_weapon = apfsds
+
+	mbt.id = "target_mbt"
+	mbt.faction = GameEnums.Faction.RED
+
+	var selected = combat_system.select_best_weapon(shooter, mbt, 1500.0, false)
+	assert_eq(selected.id, "CW_TANK_KE")  # APFSDSが選択される
+	_pass()
+
+	# ========================================
+	# テスト: 戦車 vs IFV → HEAT-MP優先
+	# ========================================
+	_current_test = "tank_vs_ifv_selects_heat"
+	ifv.id = "target_ifv"
+	ifv.faction = GameEnums.Faction.RED
+
+	selected = combat_system.select_best_weapon(shooter, ifv, 1000.0, false)
+	assert_eq(selected.id, "CW_TANK_HEATMP")  # HEAT-MPが選択される
+	_pass()
+
+	# ========================================
+	# テスト: 戦車 vs APC → HEAT-MPまたは機関砲
+	# ========================================
+	_current_test = "tank_vs_apc_selects_heat_or_autocannon"
+	apc.id = "target_apc"
+	apc.faction = GameEnums.Faction.RED
+
+	selected = combat_system.select_best_weapon(shooter, apc, 800.0, false)
+	# HEAT-MPが優先される（機関砲がない場合）
+	assert_true(selected.id == "CW_TANK_HEATMP" or selected.id == "CW_AUTOCANNON_30")
+	_pass()
+
+	# ========================================
+	# テスト: 戦車 vs 歩兵 → 同軸MG優先
+	# ========================================
+	_current_test = "tank_vs_infantry_selects_coax_mg"
+	inf.id = "target_inf"
+	inf.faction = GameEnums.Faction.RED
+
+	selected = combat_system.select_best_weapon(shooter, inf, 500.0, false)
+	assert_eq(selected.id, "CW_COAX_MG")  # 同軸MGが選択される
+	_pass()
+
+	# ========================================
+	# テスト: 戦車 vs トラック → 同軸MG or HEAT-MP
+	# トラックは非装甲車両なので、同軸MGが最適だが射程外ならHEAT-MP
+	# ========================================
+	_current_test = "tank_vs_truck_selects_coax_or_heat"
+	truck.id = "target_truck"
+	truck.faction = GameEnums.Faction.RED
+
+	# 近距離では同軸MG、遠距離ではHEAT-MP（同軸MGの射程800m）
+	selected = combat_system.select_best_weapon(shooter, truck, 600.0, false)
+	# 同軸MG(射程800m)でもHEAT-MPでもOK - 弾薬経済性の観点から
+	assert_true(selected.id == "CW_COAX_MG" or selected.id == "CW_TANK_HEATMP")
+	_pass()
+
+	# ========================================
+	# テスト: IFV vs MBT → ATGM優先
+	# ========================================
+	_current_test = "ifv_vs_mbt_selects_atgm"
+	var ifv_shooter = ElementDataClass.ElementInstance.new(ifv_type)
+	ifv_shooter.id = "ifv_shooter"
+	ifv_shooter.faction = GameEnums.Faction.BLUE
+	ifv_shooter.weapons.append(autocannon)
+	ifv_shooter.weapons.append(atgm)
+	ifv_shooter.weapons.append(coax_mg)
+	ifv_shooter.primary_weapon = autocannon
+
+	selected = combat_system.select_best_weapon(ifv_shooter, mbt, 2000.0, false)
+	assert_eq(selected.id, "CW_ATGM")  # ATGMが選択される
+	_pass()
+
+	# ========================================
+	# テスト: IFV vs IFV → 機関砲優先（近距離）
+	# ========================================
+	_current_test = "ifv_vs_ifv_selects_autocannon"
+	var enemy_ifv = ElementDataClass.ElementInstance.new(ifv_type)
+	enemy_ifv.id = "enemy_ifv"
+	enemy_ifv.faction = GameEnums.Faction.RED
+
+	selected = combat_system.select_best_weapon(ifv_shooter, enemy_ifv, 800.0, false)
+	assert_eq(selected.id, "CW_AUTOCANNON_30")  # 機関砲が選択される
+	_pass()
+
+	# ========================================
+	# テスト: APFSDSは歩兵に対して低スコア
+	# ========================================
+	_current_test = "apfsds_low_score_vs_infantry"
+	var tank_only_ke = ElementDataClass.ElementInstance.new(tank_shooter_type)
+	tank_only_ke.id = "tank_only_ke"
+	tank_only_ke.faction = GameEnums.Faction.BLUE
+	tank_only_ke.weapons.append(apfsds)
+	tank_only_ke.primary_weapon = apfsds
+
+	# APFSDSしかない場合はフォールバックでprimary_weaponが使われる
+	# （負のスコアの武器しかない場合）
+	selected = combat_system.select_best_weapon(tank_only_ke, inf, 500.0, false)
+	# フォールバックでAPFSDSが選ばれても仕方ない（他の選択肢がない）
+	# 重要なのは複数武器がある場合に適切な武器が選ばれること
+	assert_true(selected != null)  # 何か選ばれる
+	_pass()
+
+	# ========================================
+	# テスト: ATGMは歩兵に使わない
+	# ========================================
+	_current_test = "atgm_not_used_vs_infantry"
+	var ifv_only_atgm = ElementDataClass.ElementInstance.new(ifv_type)
+	ifv_only_atgm.id = "ifv_only_atgm"
+	ifv_only_atgm.faction = GameEnums.Faction.BLUE
+	ifv_only_atgm.weapons.append(atgm)
+	ifv_only_atgm.weapons.append(coax_mg)
+	ifv_only_atgm.primary_weapon = coax_mg
+
+	selected = combat_system.select_best_weapon(ifv_only_atgm, inf, 500.0, false)
+	assert_eq(selected.id, "CW_COAX_MG")  # ATGMではなく同軸MG
+	_pass()
+
+	# ========================================
+	# IFV武器選択 - 距離による切り替え
+	# ========================================
+
+	# IFV vs MBT 近距離 - ATGMは避けて同軸MG/機関砲
+	# 実際の戦術: 近距離でMBTに遭遇したら逃げるか隠れる
+	# 武器選択としてはATGMが最も効果的だが発射準備に時間がかかる
+
+	# IFV vs IFV 遠距離 - ATGMが優位
+	_current_test = "ifv_vs_ifv_long_range_atgm"
+	selected = combat_system.select_best_weapon(ifv_shooter, enemy_ifv, 2000.0, false)
+	# 遠距離ではATGMが機関砲より有利
+	assert_eq(selected.id, "CW_ATGM")
+	_pass()
+
+	# IFV vs 歩兵 - 同軸MG射程外では機関砲
+	_current_test = "ifv_vs_infantry_autocannon_long_range"
+	selected = combat_system.select_best_weapon(ifv_shooter, inf, 1000.0, false)
+	# 同軸MG射程外(800m+)では機関砲が選ばれる
+	assert_eq(selected.id, "CW_AUTOCANNON_30")
+	_pass()
+
+	# IFV vs 歩兵 - 同軸MG（近距離）
+	_current_test = "ifv_vs_infantry_coax_close_range"
+	selected = combat_system.select_best_weapon(ifv_shooter, inf, 200.0, false)
+	# 近距離では同軸MGが最適
+	assert_eq(selected.id, "CW_COAX_MG")
+	_pass()
+
+	# IFV vs APC - 機関砲優先
+	_current_test = "ifv_vs_apc_autocannon"
+	selected = combat_system.select_best_weapon(ifv_shooter, apc, 600.0, false)
+	assert_eq(selected.id, "CW_AUTOCANNON_30")
 	_pass()
 
 

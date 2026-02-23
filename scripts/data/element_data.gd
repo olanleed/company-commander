@@ -380,8 +380,8 @@ class ElementArchetypes:
 		t.cross_speed = 8.0
 		t.base_strength = 4   # 車両数（4両/小隊）
 		t.max_strength = 4
-		t.spot_range_base = 800.0
-		t.spot_range_moving = 600.0
+		t.spot_range_base = 2000.0  # 熱画像装置、レーザー測距儀で長距離識別
+		t.spot_range_moving = 1500.0
 		# v0.1R: ゾーン別装甲（RHA換算, スケール: 100 = 500mm）
 		# KE（APFSDS等）に対する装甲
 		# 正面: 約700mm RHA = 140, 側面: 約200mm = 40, 後部: 約80mm = 16
@@ -418,8 +418,8 @@ class ElementArchetypes:
 		t.cross_speed = 9.0
 		t.base_strength = 4   # 車両数（4両/小隊）
 		t.max_strength = 4
-		t.spot_range_base = 700.0
-		t.spot_range_moving = 500.0
+		t.spot_range_base = 1500.0  # Hunter-killerシステム、熱画像装置
+		t.spot_range_moving = 1000.0
 		# v0.1R: ゾーン別装甲（RHA換算, スケール: 100 = 500mm）
 		# KE（機関砲等）に対する装甲
 		# 正面: 約150mm RHA = 30, 側面: 約50mm = 10, 後部: 約30mm = 6
@@ -456,8 +456,8 @@ class ElementArchetypes:
 		t.cross_speed = 10.0
 		t.base_strength = 2   # 車両数（2両/分隊）
 		t.max_strength = 2
-		t.spot_range_base = 1000.0
-		t.spot_range_moving = 800.0
+		t.spot_range_base = 2000.0  # 偵察専用センサー、熱画像
+		t.spot_range_moving = 1500.0
 		# v0.1R: ゾーン別装甲（RHA換算, スケール: 100 = 500mm）
 		# 軽装甲: 7.62mmには耐えるが12.7mmで貫通、AT火器には無力
 		# KE（機関砲等）に対する装甲
@@ -632,8 +632,8 @@ class ElementArchetypes:
 		t.cross_speed = 8.0
 		t.base_strength = 1
 		t.max_strength = 1
-		t.spot_range_base = 600.0
-		t.spot_range_moving = 400.0
+		t.spot_range_base = 1200.0  # 指揮通信車は通常よりも良好なセンサー
+		t.spot_range_moving = 800.0
 		t.is_comm_hub = true
 		t.comm_range = 5000.0  # 5km通信範囲
 		# 軽装甲
@@ -730,8 +730,8 @@ class ElementArchetypes:
 		t.cross_speed = 6.0
 		t.base_strength = 2
 		t.max_strength = 2
-		t.spot_range_base = 800.0  # レーダー搭載で長距離索敵
-		t.spot_range_moving = 600.0
+		t.spot_range_base = 1500.0  # 対空レーダー搭載で長距離索敵
+		t.spot_range_moving = 1000.0
 		# 中装甲
 		t.armor_ke = {
 			WeaponData.ArmorZone.FRONT: 14,
@@ -762,8 +762,8 @@ class ElementArchetypes:
 		t.cross_speed = 8.0
 		t.base_strength = 1
 		t.max_strength = 1
-		t.spot_range_base = 1000.0  # レーダー搭載
-		t.spot_range_moving = 800.0
+		t.spot_range_base = 2000.0  # 捜索レーダー搭載
+		t.spot_range_moving = 1500.0
 		# ソフトスキン（装甲なし）
 		return t
 
@@ -782,8 +782,8 @@ class ElementArchetypes:
 		t.cross_speed = 10.0
 		t.base_strength = 4
 		t.max_strength = 4
-		t.spot_range_base = 750.0
-		t.spot_range_moving = 550.0
+		t.spot_range_base = 1800.0  # 現代軽戦車の熱画像/FCS
+		t.spot_range_moving = 1200.0
 		# v0.1R: 中装甲（MBTより脆弱）
 		t.armor_ke = {
 			WeaponData.ArmorZone.FRONT: 60,   # 300mm RHA - 30mmに耐える

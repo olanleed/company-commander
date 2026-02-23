@@ -614,11 +614,29 @@ func _update_ai_info(element: ElementData.ElementInstance) -> void:
 
 	# 選択中の武器（current_weaponを使用）
 	if element.current_target_id != "" and element.current_weapon:
-		_ai_weapon_label.text = "Weapon: %s" % element.current_weapon.display_name
+		var weapon := element.current_weapon
+		var weapon_text := weapon.display_name
+
+		# 戦車砲やATGMなど重要な武器の場合は弾種を強調
+		var ammo_type := _get_ammo_type_display(weapon)
+		if ammo_type != "":
+			_ai_weapon_label.text = "Weapon: %s\n  [%s]" % [weapon_text, ammo_type]
+			# 弾種に応じて色を変更
+			if weapon.mechanism == WeaponData.Mechanism.KINETIC:
+				_ai_weapon_label.add_theme_color_override("font_color", Color(0.9, 0.95, 1.0))  # 白青（AP系）
+			elif weapon.mechanism == WeaponData.Mechanism.SHAPED_CHARGE:
+				_ai_weapon_label.add_theme_color_override("font_color", Color(1.0, 0.7, 0.3))  # オレンジ（HEAT系）
+			else:
+				_ai_weapon_label.remove_theme_color_override("font_color")
+		else:
+			_ai_weapon_label.text = "Weapon: %s" % weapon_text
+			_ai_weapon_label.remove_theme_color_override("font_color")
 	elif element.current_target_id != "":
 		_ai_weapon_label.text = "Weapon: ---"
+		_ai_weapon_label.remove_theme_color_override("font_color")
 	else:
 		_ai_weapon_label.text = "Weapon: (no target)"
+		_ai_weapon_label.remove_theme_color_override("font_color")
 
 
 func _clear_ai_info() -> void:
@@ -717,3 +735,40 @@ func _get_comm_state_name(state: GameEnums.CommState) -> String:
 			return "ISOLATED"
 		_:
 			return "UNKNOWN"
+
+
+## 武器から弾種表示名を取得（戦車砲やATGMなど重要な武器のみ）
+func _get_ammo_type_display(weapon: WeaponData.WeaponType) -> String:
+	if not weapon:
+		return ""
+
+	# 戦車砲（DISCRETE + KINETIC）= APFSDS系
+	if weapon.fire_model == WeaponData.FireModel.DISCRETE:
+		match weapon.mechanism:
+			WeaponData.Mechanism.KINETIC:
+				# 武器IDから弾種を判定
+				if weapon.id.contains("APFSDS") or weapon.id.contains("TANK_KE"):
+					return "APFSDS"
+				elif weapon.id.contains("AP"):
+					return "AP"
+				else:
+					return "KE"
+			WeaponData.Mechanism.SHAPED_CHARGE:
+				if weapon.id.contains("ATGM") or weapon.id.contains("MAT"):
+					return "ATGM"
+				elif weapon.id.contains("HEAT"):
+					return "HEAT"
+				elif weapon.id.contains("RPG"):
+					return "RPG"
+				else:
+					return "CE"
+			WeaponData.Mechanism.BLAST_FRAG:
+				if weapon.id.contains("HE"):
+					return "HE"
+				elif weapon.id.contains("MORTAR"):
+					return "HE-FRAG"
+				else:
+					return "FRAG"
+
+	# CONTINUOUS武器（機関砲など）は弾種表示なし
+	return ""

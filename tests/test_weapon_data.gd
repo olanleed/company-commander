@@ -112,3 +112,74 @@ func test_threat_class() -> void:
 
 	weapon.threat_class = WeaponDataClass.ThreatClass.AUTOCANNON
 	assert_eq(weapon.threat_class, WeaponDataClass.ThreatClass.AUTOCANNON)
+
+
+# =============================================================================
+# Bug 2関連: FireModel（DISCRETE vs CONTINUOUS）テスト
+# =============================================================================
+
+func test_tank_gun_is_discrete() -> void:
+	## 戦車砲（APFSDSなど）はDISCRETE射撃モデル
+	var tank_ke = WeaponDataClass.create_cw_tank_ke()
+
+	assert_eq(tank_ke.fire_model, WeaponDataClass.FireModel.DISCRETE,
+		"Tank gun should use DISCRETE fire model")
+	assert_eq(tank_ke.mechanism, WeaponDataClass.Mechanism.KINETIC,
+		"Tank APFSDS should use KINETIC mechanism")
+
+
+func test_autocannon_is_continuous() -> void:
+	## 機関砲はCONTINUOUS射撃モデル
+	var autocannon = WeaponDataClass.create_cw_autocannon_30()
+
+	assert_eq(autocannon.fire_model, WeaponDataClass.FireModel.CONTINUOUS,
+		"Autocannon should use CONTINUOUS fire model")
+	assert_eq(autocannon.mechanism, WeaponDataClass.Mechanism.KINETIC,
+		"Autocannon should use KINETIC mechanism")
+
+
+func test_kinetic_weapons_fire_model_distinction() -> void:
+	## KINETIC武器でもfire_modelで区別できる（トレーサー表示用）
+	## 戦車砲: KINETIC + DISCRETE → 単発トレーサー
+	## 機関砲: KINETIC + CONTINUOUS → 複数トレーサー
+
+	var tank_ke = WeaponDataClass.create_cw_tank_ke()
+	var autocannon = WeaponDataClass.create_cw_autocannon_30()
+
+	# 両方ともKINETIC
+	assert_eq(tank_ke.mechanism, WeaponDataClass.Mechanism.KINETIC)
+	assert_eq(autocannon.mechanism, WeaponDataClass.Mechanism.KINETIC)
+
+	# fire_modelで区別可能
+	assert_ne(tank_ke.fire_model, autocannon.fire_model,
+		"Tank gun and autocannon should have different fire models")
+
+	# 正しいfire_model
+	assert_eq(tank_ke.fire_model, WeaponDataClass.FireModel.DISCRETE)
+	assert_eq(autocannon.fire_model, WeaponDataClass.FireModel.CONTINUOUS)
+
+
+func test_heat_is_discrete() -> void:
+	## HEAT弾（成形炸薬）もDISCRETE
+	var tank_heat = WeaponDataClass.create_cw_tank_heatmp()
+
+	assert_eq(tank_heat.fire_model, WeaponDataClass.FireModel.DISCRETE,
+		"HEAT-MP should use DISCRETE fire model")
+	assert_eq(tank_heat.mechanism, WeaponDataClass.Mechanism.SHAPED_CHARGE,
+		"HEAT should use SHAPED_CHARGE mechanism")
+
+
+func test_atgm_is_discrete() -> void:
+	## ATGMもDISCRETE
+	var atgm = WeaponDataClass.create_cw_atgm()
+
+	assert_eq(atgm.fire_model, WeaponDataClass.FireModel.DISCRETE,
+		"ATGM should use DISCRETE fire model")
+
+
+func test_mortar_is_indirect() -> void:
+	## 迫撃砲はINDIRECT
+	var mortar = WeaponDataClass.create_cw_mortar_he()
+
+	assert_eq(mortar.fire_model, WeaponDataClass.FireModel.INDIRECT,
+		"Mortar should use INDIRECT fire model")

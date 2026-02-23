@@ -262,38 +262,30 @@ func _spawn_test_units() -> void:
 	var blue_hq := ElementFactory.create_element_with_vehicle("JPN_Type82_CCV", GameEnums.Faction.BLUE, Vector2(200, 950))
 	world_model.add_element(blue_hq)
 
-	# 10式戦車小隊×1（日本 最新MBT）
-	var blue_tank1 := ElementFactory.create_element_with_vehicle("JPN_Type10", GameEnums.Faction.BLUE, Vector2(400, 900))
-	world_model.add_element(blue_tank1)
+	# 10式戦車小隊×1（日本 MBT）
+	var blue_tank := ElementFactory.create_element_with_vehicle("JPN_Type10", GameEnums.Faction.BLUE, Vector2(400, 900))
+	world_model.add_element(blue_tank)
 
 	# 89式装甲戦闘車小隊×1（日本 IFV）
-	var blue_ifv1 := ElementFactory.create_element_with_vehicle("JPN_Type89", GameEnums.Faction.BLUE, Vector2(500, 1000))
+	var blue_ifv1 := ElementFactory.create_element_with_vehicle("JPN_Type89", GameEnums.Faction.BLUE, Vector2(350, 950))
 	world_model.add_element(blue_ifv1)
 
-	# 16式機動戦闘車×1（日本 装輪戦車）
-	var blue_mcv := ElementFactory.create_element_with_vehicle("JPN_Type16", GameEnums.Faction.BLUE, Vector2(350, 850))
-	world_model.add_element(blue_mcv)
-
-	# 96式装輪装甲車×1（日本 APC）
-	var blue_apc := ElementFactory.create_element_with_vehicle("JPN_Type96_WAPC", GameEnums.Faction.BLUE, Vector2(300, 1050))
-	world_model.add_element(blue_apc)
+	# 87式偵察警戒車×1（日本 偵察車）
+	var blue_recon := ElementFactory.create_element_with_vehicle("JPN_Type87_RCV", GameEnums.Faction.BLUE, Vector2(500, 850))
+	world_model.add_element(blue_recon)
 
 	# === RED陣営 (ロシア) ===
 	# 指揮車両（通信ハブ）
 	var red_hq := ElementFactory.create_element("COMMAND_VEH", GameEnums.Faction.RED, Vector2(1800, 950))
 	world_model.add_element(red_hq)
 
-	# T-90M戦車小隊×1（ロシア 最新MBT）
-	var red_tank1 := ElementFactory.create_element_with_vehicle("RUS_T90M", GameEnums.Faction.RED, Vector2(1600, 850))
-	world_model.add_element(red_tank1)
-
 	# BMP-3 IFV小隊×1（ロシア IFV）
 	var red_ifv1 := ElementFactory.create_element_with_vehicle("RUS_BMP3", GameEnums.Faction.RED, Vector2(1600, 900))
 	world_model.add_element(red_ifv1)
 
-	# BTR-82A APC小隊×1（ロシア 装輪APC）
-	var red_apc := ElementFactory.create_element_with_vehicle("RUS_BTR82A", GameEnums.Faction.RED, Vector2(1500, 1000))
-	world_model.add_element(red_apc)
+	# BRM-3K 偵察車×1（ロシア 偵察車）
+	var red_recon := ElementFactory.create_element_with_vehicle("RUS_BRM3K", GameEnums.Faction.RED, Vector2(1500, 850))
+	world_model.add_element(red_recon)
 
 	# スポーン後に衝突を解消
 	for element in world_model.elements:
@@ -301,9 +293,9 @@ func _spawn_test_units() -> void:
 
 	print("テストユニット生成完了: ", world_model.elements.size(), " elements")
 	print("=== BLUE (日本) vs RED (ロシア) ===")
-	print("  BLUE: 82式CCV + 10式MBT + 89式IFV + 16式MCV + 96式APC")
-	print("  RED:  指揮車 + T-90M + BMP-3 + BTR-82A")
-	print("  期待: 多様なユニットタイプの交戦テスト")
+	print("  BLUE: 82式CCV(HQ) + 10式MBT + 89式IFV + 87式偵察車")
+	print("  RED:  指揮車(HQ) + BMP-3(IFV) + BRM-3K(偵察)")
+	print("  期待: MBT vs RECON ダメージテスト")
 	print("==========================")
 	for element in world_model.elements:
 		var weapons_str := ""
@@ -746,7 +738,8 @@ func _update_combat(tick: int, dt: float) -> void:
 							1.0 if tank_result.kill else 0.5,  # ダメージ表示用
 							d_supp,
 							true,
-							selected_weapon.mechanism
+							selected_weapon.mechanism,
+							selected_weapon.fire_model
 						)
 				else:
 					# ミス時も射線は表示
@@ -760,7 +753,8 @@ func _update_combat(tick: int, dt: float) -> void:
 							0.0,
 							0.0,
 							false,
-							selected_weapon.mechanism
+							selected_weapon.mechanism,
+							selected_weapon.fire_model
 						)
 			# リロード中は射線を表示しない（照準維持のみ）
 			continue  # 戦車戦は専用処理で完結
@@ -851,6 +845,7 @@ func _update_combat(tick: int, dt: float) -> void:
 			# 抑圧のみの場合も射線は実線で表示
 			var is_hit := (visual_d_dmg > 0.0 or visual_d_supp > 0.0)
 			var weapon_mechanism := selected_weapon.mechanism if selected_weapon else WeaponData.Mechanism.SMALL_ARMS
+			var weapon_fire_model := selected_weapon.fire_model if selected_weapon else WeaponData.FireModel.CONTINUOUS
 			if combat_visualizer:
 				combat_visualizer.add_fire_event(
 					shooter.id,
@@ -861,7 +856,8 @@ func _update_combat(tick: int, dt: float) -> void:
 					visual_d_dmg,
 					visual_d_supp,
 					is_hit,
-					weapon_mechanism
+					weapon_mechanism,
+					weapon_fire_model
 				)
 
 			# DISCRETE武器の砲弾発射

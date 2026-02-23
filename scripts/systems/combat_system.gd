@@ -1408,6 +1408,41 @@ func get_target_class(target: ElementData.ElementInstance) -> WeaponData.TargetC
 		return WeaponData.TargetClass.SOFT
 
 
+## ターゲットの詳細カテゴリを取得（弾種選択用）
+## 戻り値: 0=HEAVY_ARMOR, 1=MEDIUM_ARMOR, 2=LIGHT_ARMOR, 3=SOFT_VEHICLE, 4=INFANTRY
+func get_target_category(target: ElementData.ElementInstance) -> int:
+	const HEAVY_ARMOR := 0
+	const MEDIUM_ARMOR := 1
+	const LIGHT_ARMOR := 2
+	const SOFT_VEHICLE := 3
+	const INFANTRY := 4
+
+	if not target.element_type:
+		return INFANTRY
+
+	var armor_class := target.element_type.armor_class
+	var category := target.element_type.category
+
+	# 重装甲（MBT）
+	if armor_class >= 3:
+		return HEAVY_ARMOR
+
+	# 中装甲（IFV）
+	if armor_class == 2:
+		return MEDIUM_ARMOR
+
+	# 軽装甲（APC/RECON）
+	if armor_class == 1:
+		return LIGHT_ARMOR
+
+	# 非装甲
+	if category == ElementData.Category.VEH:
+		return SOFT_VEHICLE
+
+	# 歩兵（INF, TEAM, または不明）
+	return INFANTRY
+
+
 ## 射手の全武器から目標に対して最適な武器を選択
 ## 戻り値: 最適な武器、または利用可能な武器がなければnull
 func select_best_weapon(
@@ -1473,9 +1508,9 @@ func select_best_weapon(
 
 
 ## 武器のスコアを計算（目標に対する有効性）
-## v0.3: 現実的な弾種選択ロジック
-## - 戦車: 重装甲→APFSDS、それ以外→HEAT/同軸MG
-## - IFV: 戦車/IFV/APC→ATGM、歩兵→機関砲/MG
+## v0.4: WeaponRoleベースのマトリクス選択
+## - 目標カテゴリ × 武器役割でスコアを決定
+## - 弾薬経済性を考慮（高価値弾を低脅威目標に使わない）
 func _calculate_weapon_score(
 	weapon: WeaponData.WeaponType,
 	target: ElementData.ElementInstance,
@@ -1483,88 +1518,190 @@ func _calculate_weapon_score(
 	distance_m: float,
 	is_armored: bool
 ) -> float:
-	var score: float = 0.0
+	# 武器役割を取得（未設定なら推論）
+	WeaponData.ensure_weapon_role(weapon)
+	var role := weapon.weapon_role
+
+	# 目標カテゴリを取得
+	var target_cat := get_target_category(target)
 
 	# 基本殺傷力
 	var lethality := weapon.get_lethality(distance_m, target_class)
-	score += float(lethality)
-
-	# 目標の装甲クラスを取得
-	var target_armor_class := target.element_type.armor_class if target.element_type else 0
+	var score: float = float(lethality)
 
 	# ========================================
-	# 装甲目標に対する判定
+	# 目標カテゴリ × 武器役割 マトリクス
 	# ========================================
+	# カテゴリ定数
+	const HEAVY_ARMOR := 0
+	const MEDIUM_ARMOR := 1
+	const LIGHT_ARMOR := 2
+	const SOFT_VEHICLE := 3
+	const INFANTRY := 4
+
+	match target_cat:
+		HEAVY_ARMOR:
+			# 重装甲（MBT）への選択
+			match role:
+				WeaponData.WeaponRole.MAIN_GUN_KE:
+					score += 400.0  # APFSDS最優先
+				WeaponData.WeaponRole.ATGM:
+					score += 350.0  # ATGMも有効
+					# 遠距離ではATGMがより有利
+					if distance_m >= 1500.0:
+						score += 50.0
+				WeaponData.WeaponRole.GUN_LAUNCHER:
+					score += 300.0  # 砲発射ミサイル（ATGMモード）
+					if distance_m >= 1500.0:
+						score += 30.0
+				WeaponData.WeaponRole.MAIN_GUN_CE:
+					score += 100.0  # HEAT-MPは重装甲正面に弱い
+				WeaponData.WeaponRole.RPG:
+					score += 50.0   # RPGは重装甲正面に効果薄い
+				WeaponData.WeaponRole.AUTOCANNON:
+					# 機関砲は重装甲正面には無効だが、側面/後方なら有効
+					# ここでは正面を想定して低評価
+					return -500.0
+				WeaponData.WeaponRole.HMG:
+					return -800.0   # HMGは重装甲に無効
+				WeaponData.WeaponRole.COAX_MG, WeaponData.WeaponRole.SMALL_ARMS:
+					return -1000.0  # 小火器は論外
+
+		MEDIUM_ARMOR:
+			# 中装甲（IFV）への選択
+			match role:
+				WeaponData.WeaponRole.AUTOCANNON:
+					# 機関砲が最も効率的（弾薬消費、連射可能）
+					score += 350.0
+					if distance_m <= 1000.0:
+						score += 50.0  # 近距離ボーナス
+				WeaponData.WeaponRole.MAIN_GUN_CE:
+					score += 320.0  # HEAT-MPも有効
+				WeaponData.WeaponRole.ATGM:
+					# ATGMは確実だが弾薬消費が高い
+					score += 280.0
+					# 遠距離ではATGMが有利
+					if distance_m >= 1500.0:
+						score += 80.0
+				WeaponData.WeaponRole.GUN_LAUNCHER:
+					score += 300.0
+				WeaponData.WeaponRole.RPG:
+					score += 250.0  # RPGも有効
+				WeaponData.WeaponRole.HMG:
+					# 14.5mm KPVTなど側面から有効
+					score += 180.0
+					if distance_m <= 500.0:
+						score += 50.0
+				WeaponData.WeaponRole.MAIN_GUN_KE:
+					score += 100.0  # APFSDSはオーバーキル（節約）
+				WeaponData.WeaponRole.COAX_MG, WeaponData.WeaponRole.SMALL_ARMS:
+					return -500.0   # 小火器は無効
+
+		LIGHT_ARMOR:
+			# 軽装甲（APC/RECON）への選択
+			match role:
+				WeaponData.WeaponRole.AUTOCANNON:
+					score += 350.0  # 機関砲が最適
+					if distance_m <= 800.0:
+						score += 50.0
+				WeaponData.WeaponRole.MAIN_GUN_CE:
+					score += 300.0  # HEAT-MPも有効
+				WeaponData.WeaponRole.HMG:
+					score += 280.0  # HMGが有効
+					if distance_m <= 500.0:
+						score += 50.0
+				WeaponData.WeaponRole.RPG:
+					score += 250.0  # RPGは過剰だが確実
+				WeaponData.WeaponRole.GUN_LAUNCHER:
+					score += 200.0
+				WeaponData.WeaponRole.ATGM:
+					score += 50.0   # ATGMは大幅オーバーキル
+				WeaponData.WeaponRole.MAIN_GUN_KE:
+					score += 30.0   # APFSDSは浪費
+				WeaponData.WeaponRole.COAX_MG:
+					score += 100.0  # 同軸MGでも可（近距離）
+					if distance_m > 300.0:
+						score -= 50.0
+				WeaponData.WeaponRole.SMALL_ARMS:
+					return -200.0   # 小銃は効果薄い
+
+		SOFT_VEHICLE:
+			# 非装甲車両（トラック等）への選択
+			match role:
+				WeaponData.WeaponRole.COAX_MG:
+					score += 350.0  # 同軸MGが最適
+				WeaponData.WeaponRole.HMG:
+					score += 320.0  # HMGも有効
+				WeaponData.WeaponRole.AUTOCANNON:
+					score += 280.0  # 機関砲も有効だがオーバーキル
+				WeaponData.WeaponRole.MAIN_GUN_CE:
+					score += 200.0  # HEAT-MPのHE効果
+				WeaponData.WeaponRole.AGL:
+					score += 180.0  # 擲弾銃も有効
+				WeaponData.WeaponRole.SMALL_ARMS:
+					score += 150.0  # 小銃でも可
+				WeaponData.WeaponRole.RPG:
+					score += 50.0   # RPGは浪費
+				WeaponData.WeaponRole.ATGM:
+					return -500.0   # ATGM浪費
+				WeaponData.WeaponRole.MAIN_GUN_KE:
+					return -300.0   # APFSDS浪費
+
+		INFANTRY:
+			# 歩兵への選択
+			match role:
+				WeaponData.WeaponRole.COAX_MG:
+					score += 400.0  # 同軸MGが最適
+				WeaponData.WeaponRole.SMALL_ARMS:
+					score += 350.0  # 小銃も有効
+				WeaponData.WeaponRole.HMG:
+					score += 300.0  # HMGも有効
+				WeaponData.WeaponRole.AUTOCANNON:
+					# 機関砲はSAPHEI弾で対歩兵に非常に有効
+					score += 320.0
+					if distance_m >= 500.0:
+						score += 30.0  # 中距離以上では同軸MGより優位
+				WeaponData.WeaponRole.AGL:
+					score += 280.0  # 擲弾銃が有効
+				WeaponData.WeaponRole.MORTAR:
+					score += 250.0  # 迫撃砲は対歩兵に有効
+				WeaponData.WeaponRole.GUN_LAUNCHER:
+					# BMP-3の100mm砲等、HE弾で対歩兵に有効
+					score += 250.0
+				WeaponData.WeaponRole.HOWITZER:
+					score += 200.0  # 榴弾砲も有効
+				WeaponData.WeaponRole.MAIN_GUN_CE:
+					score += 150.0  # HEAT-MPのHE効果
+				WeaponData.WeaponRole.RPG:
+					return -200.0   # RPGは対歩兵に不向き
+				WeaponData.WeaponRole.ATGM:
+					return -1000.0  # ATGM浪費
+				WeaponData.WeaponRole.MAIN_GUN_KE:
+					return -800.0   # APFSDS浪費
+
+	# ========================================
+	# 追加調整
+	# ========================================
+
+	# 貫徹力ボーナス（装甲目標のみ）
 	if is_armored:
-		# 小火器は装甲目標に効果なし → 使用不可
-		if weapon.mechanism == WeaponData.Mechanism.SMALL_ARMS:
-			if target_armor_class >= 1:
-				return -1000.0  # 絶対使わない
-
-		# --- 重装甲目標（戦車, armor_class >= 3）---
-		if target_armor_class >= 3:
-			# 重装甲にはAPFSDSが最適
-			if weapon.id == "CW_TANK_KE":
-				score += 300.0  # 最優先
-			elif weapon.id == "CW_ATGM":
-				score += 250.0  # ATGMも有効
-			elif weapon.mechanism == WeaponData.Mechanism.SHAPED_CHARGE:
-				# HEATは重装甲正面には効果が薄い
-				score += 50.0
-			elif weapon.threat_class == WeaponData.ThreatClass.AUTOCANNON:
-				# 機関砲は重装甲には効果がほぼない
-				return -500.0
-
-		# --- 中装甲目標（IFV/APC, armor_class 1-2）---
-		elif target_armor_class >= 1:
-			# ATGMは過剰だが確実
-			if weapon.id == "CW_ATGM":
-				score += 150.0
-			# HEATは中装甲に有効
-			elif weapon.mechanism == WeaponData.Mechanism.SHAPED_CHARGE:
-				score += 200.0
-			# 機関砲は中装甲に有効（近距離で特に）
-			elif weapon.threat_class == WeaponData.ThreatClass.AUTOCANNON:
-				score += 180.0  # 近距離では機関砲が効率的
-				if distance_m <= 800.0:
-					score += 50.0  # 近距離ボーナス
-			# APFSDSは軽装甲にはオーバーキル（使えるが優先度下げ）
-			elif weapon.id == "CW_TANK_KE":
-				score += 100.0
-
-		# 貫徹力を考慮
 		var pen := 0
 		if weapon.mechanism == WeaponData.Mechanism.KINETIC:
 			pen = weapon.get_pen_ke(distance_m)
 		elif weapon.mechanism == WeaponData.Mechanism.SHAPED_CHARGE:
 			pen = weapon.get_pen_ce(distance_m)
-
 		if pen > 0:
-			score += float(pen) * 0.3
+			score += float(pen) * 0.2
 
-	# ========================================
-	# 非装甲目標（歩兵など）に対する判定
-	# ========================================
-	else:
-		# AT武器は歩兵には使わない（弾薬節約＆オーバーキル）
-		if weapon.id == "CW_ATGM":
-			return -1000.0  # ATGMは歩兵に使わない
-		if weapon.id == "CW_TANK_KE":
-			return -500.0  # APFSDSは歩兵に使わない
-
-		# HEAT-MPは対歩兵に使える（HE効果あり）
-		if weapon.id == "CW_TANK_HEATMP":
-			score += 80.0
-
-		# 同軸MGや機関砲は対歩兵に最適
-		if weapon.threat_class == WeaponData.ThreatClass.SMALL_ARMS:
-			score += 150.0
-		elif weapon.threat_class == WeaponData.ThreatClass.AUTOCANNON:
-			score += 120.0  # 機関砲も対歩兵に有効
-
-		# 抑圧力を考慮（対歩兵では重要）
+	# 抑圧力ボーナス（歩兵目標のみ）
+	if target_cat == INFANTRY:
 		var supp := weapon.get_suppression_power(distance_m)
 		score += float(supp) * 0.3
+
+	# 距離による効率調整（近距離では高RoF武器が有利）
+	if distance_m <= 500.0:
+		if role == WeaponData.WeaponRole.COAX_MG or role == WeaponData.WeaponRole.AUTOCANNON:
+			score += 30.0
 
 	return score
 
@@ -1882,9 +2019,15 @@ func process_tank_engagement(
 			# その他の武器は旧モデルにフォールバック
 			return result
 
+	# 軽装甲 (armor_class = 1) に対しては戦車砲は確実に貫通する
 	# IFV/APC (armor_class = 2) に対しては撃破確率が高い
 	# 重装甲 (armor_class >= 3) に対してはテーブル値をそのまま使用
-	if target_armor_class == 2:
+	if target_armor_class <= 1:
+		# 軽装甲/ソフトスキン: 戦車砲はほぼ確実に撃破
+		# 命中すれば90%撃破、10%ミッションキル
+		kill_table.kill = 0.90
+		kill_table.mission_kill = 0.10
+	elif target_armor_class == 2:
 		# IFVはMBTより脆弱: 撃破確率+30%, ミッションキル確率+20%
 		kill_table.kill = minf(1.0, kill_table.kill + 0.30)
 		kill_table.mission_kill = minf(1.0 - kill_table.kill, kill_table.mission_kill + 0.20)
@@ -2056,17 +2199,18 @@ func is_heavy_armor(element: ElementData.ElementInstance) -> bool:
 
 ## v0.3: 戦車戦モデルを使用するか判定
 ## 装甲車両（IFV含む）に対するAT武器攻撃は戦車戦モデルを使用
-## - 目標: armor_class >= 2（IFV以上）
+## - 目標: armor_class >= 1（軽装甲以上の車両）
 ## - 武器: AT脅威クラス（KINETIC or SHAPED_CHARGE）
 func should_use_tank_combat(
 	_shooter: ElementData.ElementInstance,
 	target: ElementData.ElementInstance,
 	weapon: WeaponData.WeaponType
 ) -> bool:
-	# 目標が装甲車両（armor_class >= 2）でなければ通常モデル
+	# 目標が車両（armor_class >= 1）でなければ通常モデル
+	# ソフトスキン（armor_class = 0）は通常の直射モデルで処理
 	if not target.element_type:
 		return false
-	if target.element_type.armor_class < 2:
+	if target.element_type.armor_class < 1:
 		return false
 
 	# 武器がAT系でなければ通常モデル

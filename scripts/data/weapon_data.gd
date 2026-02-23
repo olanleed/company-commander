@@ -81,6 +81,39 @@ enum ArmorZone {
 }
 
 # =============================================================================
+# 武器役割（弾種選択用）
+# =============================================================================
+
+## 武器の戦術的役割（IDハードコードを避けるため）
+enum WeaponRole {
+	MAIN_GUN_KE,    ## 戦車砲APFSDS系（対重装甲）
+	MAIN_GUN_CE,    ## 戦車砲HEAT/HE-MP系（汎用）
+	ATGM,           ## 対戦車ミサイル（対装甲）
+	AUTOCANNON,     ## 機関砲20-40mm（対中/軽装甲）
+	COAX_MG,        ## 同軸機関銃（対歩兵/ソフト）
+	HMG,            ## 重機関銃12.7-14.5mm（対軽装甲/歩兵）
+	AGL,            ## 自動擲弾銃（対歩兵）
+	SMALL_ARMS,     ## 小銃/LMG（対歩兵）
+	RPG,            ## RPG/LAW（対装甲、歩兵携行）
+	MORTAR,         ## 迫撃砲（間接火力）
+	HOWITZER,       ## 榴弾砲（間接火力）
+	GUN_LAUNCHER,   ## 砲発射ミサイル対応砲（BMP-3等）
+}
+
+# =============================================================================
+# 目標カテゴリ（詳細分類）
+# =============================================================================
+
+## 弾種選択のための詳細目標分類
+enum TargetCategory {
+	HEAVY_ARMOR,    ## 重装甲（MBT, armor_class >= 3）
+	MEDIUM_ARMOR,   ## 中装甲（IFV, armor_class == 2）
+	LIGHT_ARMOR,    ## 軽装甲（APC/RECON, armor_class == 1）
+	SOFT_VEHICLE,   ## 非装甲車両（トラック等, armor_class == 0 && VEH）
+	INFANTRY,       ## 歩兵（armor_class == 0 && INF/TEAM）
+}
+
+# =============================================================================
 # WeaponType（武器タイプ定義）
 # =============================================================================
 
@@ -112,6 +145,9 @@ class WeaponType:
 
 	## 優先ターゲット（武器選択に使用）
 	var preferred_target: PreferredTarget = PreferredTarget.SOFT
+
+	## 武器役割（弾種選択ロジック用）
+	var weapon_role: WeaponRole = WeaponRole.SMALL_ARMS
 
 	## 弾薬持続時間（分）：連続交戦で尽きるまで
 	var ammo_endurance_min: float = 30.0
@@ -506,6 +542,7 @@ static func create_cw_tank_ke() -> WeaponType:
 	w.range_band_thresholds_m = [500.0, 1500.0]
 	w.threat_class = ThreatClass.AT
 	w.preferred_target = PreferredTarget.ARMOR
+	w.weapon_role = WeaponRole.MAIN_GUN_KE  # APFSDS系
 	w.ammo_endurance_min = 10.0
 	w.rof_rpm = 15.0  # 4秒に1発
 	w.sigma_hit_m = 1.5
@@ -571,6 +608,7 @@ static func create_cw_tank_heatmp() -> WeaponType:
 	w.range_band_thresholds_m = [300.0, 1000.0]
 	w.threat_class = ThreatClass.AT
 	w.preferred_target = PreferredTarget.ANY  # 多目的弾
+	w.weapon_role = WeaponRole.MAIN_GUN_CE  # HEAT/HE-MP系
 	w.ammo_endurance_min = 15.0
 	w.rof_rpm = 10.0  # 6秒に1発（APFSDSより遅い：弾頭交換時間を考慮）
 	w.sigma_hit_m = 2.0  # APFSDSより精度が低い
@@ -3943,3 +3981,101 @@ static func get_all_concrete_weapons() -> Dictionary:
 		"CW_QJZ89_AA": create_cw_qjz89_aa(),
 		"CW_TYPE86_COAX": create_cw_type86_coax(),
 	}
+
+
+## 武器の特性から役割を推論して設定
+## 既存の武器にweapon_roleが未設定の場合に使用
+static func infer_weapon_role(weapon: WeaponType) -> WeaponRole:
+	# IDベースの明示的な判定（優先）
+	var id := weapon.id.to_upper()
+
+	# 戦車砲APFSDS系
+	if id.contains("TANK_KE") or id.contains("APFSDS"):
+		return WeaponRole.MAIN_GUN_KE
+
+	# 戦車砲HEAT/HE-MP系
+	if id.contains("TANK_HEAT") or id.contains("HEATMP"):
+		return WeaponRole.MAIN_GUN_CE
+
+	# ATGM系
+	if id.contains("ATGM") or id.contains("MAT") or id.contains("KORNET") or \
+	   id.contains("JAVELIN") or id.contains("TOW") or id.contains("REFLEKS") or \
+	   id.contains("KONKURS") or id.contains("BASTION") or id.contains("HJ"):
+		return WeaponRole.ATGM
+
+	# 砲発射ミサイル対応（GP105等）
+	if id.contains("GP105"):
+		return WeaponRole.GUN_LAUNCHER
+
+	# RPG/LAW系
+	if id.contains("RPG") or id.contains("CARL") or id.contains("LAW"):
+		return WeaponRole.RPG
+
+	# 機関砲（20-40mm）
+	if id.contains("AUTOCANNON") or id.contains("BUSHMASTER") or \
+	   id.contains("2A42") or id.contains("2A72") or id.contains("ZPT"):
+		return WeaponRole.AUTOCANNON
+
+	# 100mm砲（BMP-3等）
+	if id.contains("100") and (id.contains("RUS") or id.contains("CHN")):
+		return WeaponRole.GUN_LAUNCHER
+
+	# 重機関銃（12.7-14.5mm）
+	if id.contains("KPVT") or id.contains("M2HB") or id.contains("QJZ89") or \
+	   id.contains("KORD") or id.contains("HMG") or id.contains("_AA"):
+		return WeaponRole.HMG
+
+	# 同軸機関銃
+	if id.contains("COAX") or id.contains("PKT") or id.contains("TYPE86"):
+		return WeaponRole.COAX_MG
+
+	# 自動擲弾銃
+	if id.contains("AGL") or id.contains("MK19") or id.contains("AGS"):
+		return WeaponRole.AGL
+
+	# 迫撃砲
+	if id.contains("MORTAR"):
+		return WeaponRole.MORTAR
+
+	# 榴弾砲
+	if id.contains("HOWITZER"):
+		return WeaponRole.HOWITZER
+
+	# 特性ベースのフォールバック
+	match weapon.mechanism:
+		Mechanism.KINETIC:
+			if weapon.fire_model == FireModel.DISCRETE:
+				return WeaponRole.MAIN_GUN_KE
+			elif weapon.threat_class == ThreatClass.AUTOCANNON:
+				return WeaponRole.AUTOCANNON
+			else:
+				return WeaponRole.HMG
+		Mechanism.SHAPED_CHARGE:
+			if weapon.fire_model == FireModel.DISCRETE:
+				if weapon.threat_class == ThreatClass.AT:
+					return WeaponRole.ATGM
+				else:
+					return WeaponRole.RPG
+			else:
+				return WeaponRole.MAIN_GUN_CE
+		Mechanism.BLAST_FRAG:
+			if weapon.fire_model == FireModel.INDIRECT:
+				return WeaponRole.MORTAR
+			else:
+				return WeaponRole.AGL
+		_:
+			return WeaponRole.SMALL_ARMS
+
+
+## 武器にweapon_roleが設定されているか、未設定なら推論して設定
+static func ensure_weapon_role(weapon: WeaponType) -> void:
+	# デフォルト値（SMALL_ARMS）のままなら推論
+	if weapon.weapon_role == WeaponRole.SMALL_ARMS:
+		# IDベースで明確に判定できるものは常に推論
+		var id := weapon.id.to_upper()
+		if id.contains("COAX") or id.contains("PKT") or id.contains("TYPE86") or \
+		   id.contains("M240") or id.contains("_MG"):
+			weapon.weapon_role = infer_weapon_role(weapon)
+		# それ以外は特性で判定
+		elif weapon.mechanism != Mechanism.SMALL_ARMS or weapon.threat_class != ThreatClass.SMALL_ARMS:
+			weapon.weapon_role = infer_weapon_role(weapon)

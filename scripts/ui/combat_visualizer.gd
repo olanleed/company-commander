@@ -70,11 +70,13 @@ class FireEvent:
 	var target_pos: Vector2
 	var shooter_faction: GameEnums.Faction
 	var time_created: float
+	var last_update_time: float  ## 最終更新時刻（CONTINUOUS武器の有効期限用）
 	var duration: float
 	var damage: float
 	var suppression: float
 	var is_hit: bool  ## 命中したかどうか（false=外れ/抑圧射撃）
 	var weapon_mechanism: WeaponData.Mechanism  ## 弾頭メカニズム
+	var fire_model: WeaponData.FireModel = WeaponData.FireModel.CONTINUOUS  ## 射撃モデル（CONTINUOUS/DISCRETE）
 
 ## マズルフラッシュ
 class MuzzleFlash:
@@ -149,7 +151,8 @@ func add_fire_event(
 	damage: float = 0.0,
 	suppression: float = 0.0,
 	is_hit: bool = false,
-	weapon_mechanism: WeaponData.Mechanism = WeaponData.Mechanism.SMALL_ARMS
+	weapon_mechanism: WeaponData.Mechanism = WeaponData.Mechanism.SMALL_ARMS,
+	fire_model: WeaponData.FireModel = WeaponData.FireModel.CONTINUOUS
 ) -> void:
 	var engagement_key := shooter_id + "->" + target_id
 
@@ -170,13 +173,21 @@ func add_fire_event(
 	event.shooter_pos = shooter_pos
 	event.target_pos = target_pos
 	event.shooter_faction = shooter_faction
-	event.time_created = _current_time
-	# 射線は1.0秒表示（tick間隔0.1秒 × 余裕）で射撃継続中は常に表示される
+
+	# 新規イベントの場合はtime_createdを設定
+	if is_new:
+		event.time_created = _current_time
+
+	# last_update_timeは常に更新（有効期限判定用）
+	event.last_update_time = _current_time
+
+	# 射線は最終更新から1.0秒間表示
 	event.duration = 1.0
 	event.damage = damage
 	event.suppression = suppression
 	event.is_hit = is_hit
 	event.weapon_mechanism = weapon_mechanism
+	event.fire_model = fire_model
 
 	# マズルフラッシュは間引く（5回に1回程度）
 	if is_new or randf() < 0.2:
@@ -229,9 +240,13 @@ func _add_impact(pos: Vector2, mechanism: WeaponData.Mechanism = WeaponData.Mech
 
 func _draw_fire_lines() -> void:
 	for event in _fire_events:
-		var age := _current_time - event.time_created
-		var alpha := 1.0 - (age / event.duration)
+		# last_update_time からの経過時間でフェードアウト
+		var since_update := _current_time - event.last_update_time
+		var alpha := 1.0 - (since_update / event.duration)
 		alpha = clampf(alpha, 0.0, 1.0)
+
+		if alpha <= 0.0:
+			continue
 
 		var base_color: Color
 		if event.shooter_faction == GameEnums.Faction.BLUE:
@@ -266,10 +281,9 @@ func _draw_dashed_line(from: Vector2, to: Vector2, color: Color, width: float) -
 
 func _draw_tracers() -> void:
 	for event in _fire_events:
-		var age := _current_time - event.time_created
-		var progress := age / event.duration
-
-		if progress >= 1.0:
+		# 有効期限判定: last_update_timeから1秒以上経過したら無効
+		var since_update := _current_time - event.last_update_time
+		if since_update >= event.duration:
 			continue
 
 		# 射手と目標間の距離を計算
@@ -282,28 +296,55 @@ func _draw_tracers() -> void:
 		var tracer_length: float = tracer_config.length
 		var speed_mult: float = tracer_config.speed
 
-		# 弾丸の位置を計算（射手から目標へ移動）
-		var bullet_progress := minf(progress * speed_mult, 1.0)
 		var direction := (event.target_pos - event.shooter_pos).normalized()
-		var bullet_pos: Vector2 = event.shooter_pos.lerp(event.target_pos, bullet_progress)
 
-		# トレーサーを描画（弾丸が到達前のみ）
-		if bullet_progress < 1.0:
-			var tracer_start := bullet_pos - direction * tracer_length
-			var alpha := 1.0 - bullet_progress * 0.5  # 到達に近づくにつれ薄くなる
-			var color := Color(tracer_color.r, tracer_color.g, tracer_color.b, tracer_color.a * alpha)
+		# 機関砲（KINETIC + CONTINUOUS）の場合は複数のトレーサーを描画（連続射撃の視覚効果）
+		# 戦車砲（KINETIC + DISCRETE）は単発なので複数トレーサーは描画しない
+		if event.weapon_mechanism == WeaponData.Mechanism.KINETIC and event.fire_model == WeaponData.FireModel.CONTINUOUS:
+			# 経過時間から複数の弾丸位置を計算
+			var age := _current_time - event.time_created
+			var tracer_interval := 0.15  # 弾丸間隔（秒）
+			var flight_time := distance / 800.0  # 800m/sとして飛行時間を計算
 
-			# 武器によって描画スタイルを変更
-			match event.weapon_mechanism:
-				WeaponData.Mechanism.BLAST_FRAG:
-					# 爆発物は弧を描く軌道
-					_draw_arcing_tracer(event.shooter_pos, event.target_pos, bullet_progress, color, tracer_width)
-				WeaponData.Mechanism.SHAPED_CHARGE:
-					# 成形炸薬は炎の尾を引く
-					_draw_rocket_tracer(tracer_start, bullet_pos, direction, color, tracer_width)
-				_:
-					# 通常の直線トレーサー
-					draw_line(tracer_start, bullet_pos, color, tracer_width)
+			# 現在飛行中の弾丸を複数描画
+			var num_tracers := 3  # 同時に表示する弾丸数
+			for i in range(num_tracers):
+				var tracer_age := age - i * tracer_interval
+				if tracer_age < 0:
+					continue
+				var bullet_progress := fmod(tracer_age / flight_time, 1.0)
+				if bullet_progress >= 1.0:
+					continue
+
+				var bullet_pos: Vector2 = event.shooter_pos.lerp(event.target_pos, bullet_progress)
+				var tracer_start := bullet_pos - direction * tracer_length
+				var alpha := (1.0 - bullet_progress * 0.3) * (1.0 - float(i) * 0.2)  # 後続の弾は薄く
+				var color := Color(tracer_color.r, tracer_color.g, tracer_color.b, tracer_color.a * alpha)
+				draw_line(tracer_start, bullet_pos, color, tracer_width)
+		else:
+			# 単発武器: 従来のトレーサー描画
+			var age := _current_time - event.time_created
+			var progress := age / event.duration
+			var bullet_progress := minf(progress * speed_mult, 1.0)
+			var bullet_pos: Vector2 = event.shooter_pos.lerp(event.target_pos, bullet_progress)
+
+			# トレーサーを描画（弾丸が到達前のみ）
+			if bullet_progress < 1.0:
+				var tracer_start := bullet_pos - direction * tracer_length
+				var alpha := 1.0 - bullet_progress * 0.5  # 到達に近づくにつれ薄くなる
+				var color := Color(tracer_color.r, tracer_color.g, tracer_color.b, tracer_color.a * alpha)
+
+				# 武器によって描画スタイルを変更
+				match event.weapon_mechanism:
+					WeaponData.Mechanism.BLAST_FRAG:
+						# 爆発物は弧を描く軌道
+						_draw_arcing_tracer(event.shooter_pos, event.target_pos, bullet_progress, color, tracer_width)
+					WeaponData.Mechanism.SHAPED_CHARGE:
+						# 成形炸薬は炎の尾を引く
+						_draw_rocket_tracer(tracer_start, bullet_pos, direction, color, tracer_width)
+					_:
+						# 通常の直線トレーサー
+						draw_line(tracer_start, bullet_pos, color, tracer_width)
 
 
 ## 武器別トレーサー設定を取得
@@ -520,12 +561,13 @@ func _draw_explosion_impact(pos: Vector2, age: float, duration: float, alpha: fl
 # =============================================================================
 
 func _cleanup_expired_effects() -> void:
-	# 期限切れの射撃イベントを削除
+	# 期限切れの射撃イベントを削除（last_update_timeベース）
 	var valid_events: Array[FireEvent] = []
 	var expired_keys: Array[String] = []
 
 	for event in _fire_events:
-		if _current_time - event.time_created < event.duration:
+		# last_update_time から duration 経過していなければ有効
+		if _current_time - event.last_update_time < event.duration:
 			valid_events.append(event)
 		else:
 			# アクティブエンゲージメントからも削除

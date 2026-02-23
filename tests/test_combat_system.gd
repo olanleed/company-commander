@@ -487,3 +487,157 @@ func _create_test_tank_gun() -> WeaponData.WeaponType:
 	weapon.threat_class = WeaponData.ThreatClass.AT
 	weapon.max_range_m = 2500.0
 	return weapon
+
+
+func _create_light_armor_vehicle() -> ElementData.ElementInstance:
+	## 軽装甲車両（armor_class = 1）- 偵察車両など
+	var element_type: ElementData.ElementType = ElementData.ElementType.new()
+	element_type.id = "test_recon"
+	element_type.display_name = "Test Recon Vehicle"
+	element_type.max_strength = 2  # 2両編成
+	element_type.armor_class = 1  # Light armor
+	element_type.category = ElementData.Category.VEH
+
+	var element: ElementData.ElementInstance = ElementData.ElementInstance.new(element_type)
+	element.id = "test_recon_" + str(randi())
+	element.faction = GameEnums.Faction.RED
+	element.position = Vector2(1000, 500)
+	element.suppression = 0.0
+	element.current_strength = 2
+	element.is_moving = false
+	element.facing = PI  # 射手側を向いている
+	element.mobility_hp = 100
+	element.firepower_hp = 100
+	element.sensors_hp = 100
+
+	return element
+
+
+func _create_ifv_vehicle() -> ElementData.ElementInstance:
+	## IFV（armor_class = 2）
+	var element_type: ElementData.ElementType = ElementData.ElementType.new()
+	element_type.id = "test_ifv"
+	element_type.display_name = "Test IFV"
+	element_type.max_strength = 3
+	element_type.armor_class = 2  # Medium armor (IFV)
+	element_type.category = ElementData.Category.VEH
+
+	var element: ElementData.ElementInstance = ElementData.ElementInstance.new(element_type)
+	element.id = "test_ifv_" + str(randi())
+	element.faction = GameEnums.Faction.RED
+	element.position = Vector2(1000, 500)
+	element.suppression = 0.0
+	element.current_strength = 3
+	element.is_moving = false
+	element.facing = PI
+	element.mobility_hp = 100
+	element.firepower_hp = 100
+	element.sensors_hp = 100
+
+	return element
+
+
+# =============================================================================
+# Bug 1テスト: 軽装甲車両への戦車砲ダメージ
+# =============================================================================
+
+func test_tank_vs_light_armor_kill_probability() -> void:
+	## 戦車砲 vs 軽装甲（armor_class <= 1）: 90%撃破、10%ミッションキル
+	var shooter := _create_test_tank()
+	shooter.faction = GameEnums.Faction.BLUE
+	shooter.position = Vector2(0, 0)
+
+	var target := _create_light_armor_vehicle()
+	target.position = Vector2(800, 0)  # 800m先
+	target.facing = PI  # 射手を向いている
+
+	var weapon := WeaponData.create_cw_tank_ke()
+	var distance := 800.0
+
+	# 戦車戦闘モデルを使用
+	var result := combat_system.process_tank_engagement(
+		shooter, target, weapon, distance, 0
+	)
+
+	# 発砲が行われること
+	assert_true(result.fired, "Tank should fire at light armor target")
+
+	# 命中した場合は高い撃破確率
+	if result.hit:
+		# kill_tableが軽装甲用に調整されていることを確認
+		# armor_class <= 1: kill=0.90, mission_kill=0.10
+		assert_almost_eq(result.p_kill, 0.90, 0.01, "Kill probability vs light armor should be 90%")
+
+
+func test_tank_vs_light_armor_always_damages() -> void:
+	## 軽装甲への戦車砲命中は必ずダメージが発生する
+	var shooter := _create_test_tank()
+	shooter.faction = GameEnums.Faction.BLUE
+	shooter.position = Vector2(0, 0)
+
+	var weapon := WeaponData.create_cw_tank_ke()
+
+	# 100回のシミュレーション
+	var hits := 0
+	var kills := 0
+	var mission_kills := 0
+
+	for i in range(100):
+		var target := _create_light_armor_vehicle()
+		target.position = Vector2(500, 0)
+		target.facing = PI
+
+		var result := combat_system.process_tank_engagement(
+			shooter, target, weapon, 500.0, i
+		)
+
+		if result.hit:
+			hits += 1
+			if result.kill:
+				kills += 1
+			elif result.mission_kill:
+				mission_kills += 1
+
+	gut.p("Hits: %d, Kills: %d, Mission Kills: %d" % [hits, kills, mission_kills])
+
+	# 命中した場合は必ずKillかMission Killが発生
+	# (armor_class <= 1では kill=0.90, mission_kill=0.10 なので合計100%)
+	if hits > 0:
+		var damage_ratio := float(kills + mission_kills) / float(hits)
+		assert_almost_eq(damage_ratio, 1.0, 0.05, "Light armor should always take damage on hit")
+
+
+func test_tank_vs_ifv_higher_kill_than_mbt() -> void:
+	## IFV（armor_class=2）への戦車砲はMBT（armor_class>=3）より高い撃破確率
+	var shooter := _create_test_tank()
+	shooter.faction = GameEnums.Faction.BLUE
+	shooter.position = Vector2(0, 0)
+
+	var weapon := WeaponData.create_cw_tank_ke()
+	var distance := 800.0
+
+	# vs IFV (armor_class=2)
+	var ifv := _create_ifv_vehicle()
+	ifv.position = Vector2(800, 0)
+	ifv.facing = PI
+
+	var result_ifv := combat_system.process_tank_engagement(
+		shooter, ifv, weapon, distance, 0
+	)
+
+	# vs MBT (armor_class>=3)
+	var mbt := _create_test_tank()
+	mbt.faction = GameEnums.Faction.RED
+	mbt.position = Vector2(800, 0)
+	mbt.facing = PI
+
+	shooter.last_fire_tick = -100  # リセット
+	var result_mbt := combat_system.process_tank_engagement(
+		shooter, mbt, weapon, distance, 1
+	)
+
+	gut.p("IFV p_kill: %.2f, MBT p_kill: %.2f" % [result_ifv.p_kill, result_mbt.p_kill])
+
+	# IFVの方がMBTより撃破されやすい
+	if result_ifv.hit and result_mbt.hit:
+		assert_gt(result_ifv.p_kill, result_mbt.p_kill, "IFV should have higher kill probability than MBT")
