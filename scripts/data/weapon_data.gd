@@ -1013,18 +1013,30 @@ static func create_cw_hmg() -> WeaponType:
 	w.direct_hit_radius_m = 0.5
 	w.shock_radius_m = 3.0
 
-	# 対歩兵
 	w.lethality = {
-		TargetClass.SOFT: { RangeBand.NEAR: 0.8, RangeBand.MID: 0.6, RangeBand.FAR: 0.4 },
-		TargetClass.LIGHT: { RangeBand.NEAR: 0.5, RangeBand.MID: 0.3, RangeBand.FAR: 0.1 },
-		TargetClass.HEAVY: { RangeBand.NEAR: 0.0, RangeBand.MID: 0.0, RangeBand.FAR: 0.0 },
-		TargetClass.FORTIFIED: { RangeBand.NEAR: 0.2, RangeBand.MID: 0.1, RangeBand.FAR: 0.05 },
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 80,
+			TargetClass.LIGHT: 50,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 20,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 60,
+			TargetClass.LIGHT: 30,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 10,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 40,
+			TargetClass.LIGHT: 10,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 5,
+		},
 	}
 	w.suppression_power = {
-		TargetClass.SOFT: { RangeBand.NEAR: 0.9, RangeBand.MID: 0.7, RangeBand.FAR: 0.5 },
-		TargetClass.LIGHT: { RangeBand.NEAR: 0.6, RangeBand.MID: 0.4, RangeBand.FAR: 0.2 },
-		TargetClass.HEAVY: { RangeBand.NEAR: 0.2, RangeBand.MID: 0.1, RangeBand.FAR: 0.05 },
-		TargetClass.FORTIFIED: { RangeBand.NEAR: 0.4, RangeBand.MID: 0.2, RangeBand.FAR: 0.1 },
+		RangeBand.NEAR: 90,
+		RangeBand.MID: 70,
+		RangeBand.FAR: 50,
 	}
 
 	# KE貫徹力（12.7mm AP弾）
@@ -1062,16 +1074,29 @@ static func create_cw_autocannon_35() -> WeaponType:
 	w.shock_radius_m = 5.0
 
 	w.lethality = {
-		TargetClass.SOFT: { RangeBand.NEAR: 0.95, RangeBand.MID: 0.8, RangeBand.FAR: 0.6 },
-		TargetClass.LIGHT: { RangeBand.NEAR: 0.8, RangeBand.MID: 0.6, RangeBand.FAR: 0.4 },
-		TargetClass.HEAVY: { RangeBand.NEAR: 0.3, RangeBand.MID: 0.2, RangeBand.FAR: 0.1 },
-		TargetClass.FORTIFIED: { RangeBand.NEAR: 0.5, RangeBand.MID: 0.3, RangeBand.FAR: 0.2 },
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 80,
+			TargetClass.HEAVY: 30,
+			TargetClass.FORTIFIED: 50,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 80,
+			TargetClass.LIGHT: 60,
+			TargetClass.HEAVY: 20,
+			TargetClass.FORTIFIED: 30,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 60,
+			TargetClass.LIGHT: 40,
+			TargetClass.HEAVY: 10,
+			TargetClass.FORTIFIED: 20,
+		},
 	}
 	w.suppression_power = {
-		TargetClass.SOFT: { RangeBand.NEAR: 0.95, RangeBand.MID: 0.85, RangeBand.FAR: 0.7 },
-		TargetClass.LIGHT: { RangeBand.NEAR: 0.8, RangeBand.MID: 0.6, RangeBand.FAR: 0.4 },
-		TargetClass.HEAVY: { RangeBand.NEAR: 0.4, RangeBand.MID: 0.25, RangeBand.FAR: 0.15 },
-		TargetClass.FORTIFIED: { RangeBand.NEAR: 0.6, RangeBand.MID: 0.4, RangeBand.FAR: 0.25 },
+		RangeBand.NEAR: 95,
+		RangeBand.MID: 85,
+		RangeBand.FAR: 70,
 	}
 
 	# 35mm APDS - 30mmより高貫徹
@@ -1111,16 +1136,29 @@ static func create_cw_howitzer_155() -> WeaponType:
 
 	# 155mm HE - 大威力
 	w.lethality = {
-		TargetClass.SOFT: { RangeBand.NEAR: 0.95, RangeBand.MID: 0.9, RangeBand.FAR: 0.85 },
-		TargetClass.LIGHT: { RangeBand.NEAR: 0.7, RangeBand.MID: 0.65, RangeBand.FAR: 0.6 },
-		TargetClass.HEAVY: { RangeBand.NEAR: 0.2, RangeBand.MID: 0.15, RangeBand.FAR: 0.1 },
-		TargetClass.FORTIFIED: { RangeBand.NEAR: 0.8, RangeBand.MID: 0.75, RangeBand.FAR: 0.7 },
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 95,
+			TargetClass.LIGHT: 70,
+			TargetClass.HEAVY: 20,
+			TargetClass.FORTIFIED: 80,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 90,
+			TargetClass.LIGHT: 65,
+			TargetClass.HEAVY: 15,
+			TargetClass.FORTIFIED: 75,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 85,
+			TargetClass.LIGHT: 60,
+			TargetClass.HEAVY: 10,
+			TargetClass.FORTIFIED: 70,
+		},
 	}
 	w.suppression_power = {
-		TargetClass.SOFT: { RangeBand.NEAR: 1.0, RangeBand.MID: 0.95, RangeBand.FAR: 0.9 },
-		TargetClass.LIGHT: { RangeBand.NEAR: 0.9, RangeBand.MID: 0.85, RangeBand.FAR: 0.8 },
-		TargetClass.HEAVY: { RangeBand.NEAR: 0.5, RangeBand.MID: 0.4, RangeBand.FAR: 0.3 },
-		TargetClass.FORTIFIED: { RangeBand.NEAR: 0.95, RangeBand.MID: 0.9, RangeBand.FAR: 0.85 },
+		RangeBand.NEAR: 100,
+		RangeBand.MID: 95,
+		RangeBand.FAR: 90,
 	}
 
 	# 砲弾速度（高角射撃）
@@ -1152,16 +1190,29 @@ static func create_cw_mortar_120() -> WeaponType:
 	w.requires_observer = true
 
 	w.lethality = {
-		TargetClass.SOFT: { RangeBand.NEAR: 0.85, RangeBand.MID: 0.8, RangeBand.FAR: 0.75 },
-		TargetClass.LIGHT: { RangeBand.NEAR: 0.5, RangeBand.MID: 0.45, RangeBand.FAR: 0.4 },
-		TargetClass.HEAVY: { RangeBand.NEAR: 0.1, RangeBand.MID: 0.08, RangeBand.FAR: 0.05 },
-		TargetClass.FORTIFIED: { RangeBand.NEAR: 0.6, RangeBand.MID: 0.55, RangeBand.FAR: 0.5 },
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 85,
+			TargetClass.LIGHT: 50,
+			TargetClass.HEAVY: 10,
+			TargetClass.FORTIFIED: 60,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 80,
+			TargetClass.LIGHT: 45,
+			TargetClass.HEAVY: 8,
+			TargetClass.FORTIFIED: 55,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 75,
+			TargetClass.LIGHT: 40,
+			TargetClass.HEAVY: 5,
+			TargetClass.FORTIFIED: 50,
+		},
 	}
 	w.suppression_power = {
-		TargetClass.SOFT: { RangeBand.NEAR: 0.95, RangeBand.MID: 0.9, RangeBand.FAR: 0.85 },
-		TargetClass.LIGHT: { RangeBand.NEAR: 0.7, RangeBand.MID: 0.65, RangeBand.FAR: 0.6 },
-		TargetClass.HEAVY: { RangeBand.NEAR: 0.3, RangeBand.MID: 0.25, RangeBand.FAR: 0.2 },
-		TargetClass.FORTIFIED: { RangeBand.NEAR: 0.8, RangeBand.MID: 0.75, RangeBand.FAR: 0.7 },
+		RangeBand.NEAR: 95,
+		RangeBand.MID: 90,
+		RangeBand.FAR: 85,
 	}
 
 	w.projectile_speed_mps = 300.0
@@ -1416,16 +1467,29 @@ static func create_cw_howitzer_152() -> WeaponType:
 	w.requires_observer = true
 
 	w.lethality = {
-		TargetClass.SOFT: { RangeBand.NEAR: 0.93, RangeBand.MID: 0.88, RangeBand.FAR: 0.83 },
-		TargetClass.LIGHT: { RangeBand.NEAR: 0.68, RangeBand.MID: 0.63, RangeBand.FAR: 0.58 },
-		TargetClass.HEAVY: { RangeBand.NEAR: 0.18, RangeBand.MID: 0.13, RangeBand.FAR: 0.08 },
-		TargetClass.FORTIFIED: { RangeBand.NEAR: 0.78, RangeBand.MID: 0.73, RangeBand.FAR: 0.68 },
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 93,
+			TargetClass.LIGHT: 68,
+			TargetClass.HEAVY: 18,
+			TargetClass.FORTIFIED: 78,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 88,
+			TargetClass.LIGHT: 63,
+			TargetClass.HEAVY: 13,
+			TargetClass.FORTIFIED: 73,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 83,
+			TargetClass.LIGHT: 58,
+			TargetClass.HEAVY: 8,
+			TargetClass.FORTIFIED: 68,
+		},
 	}
 	w.suppression_power = {
-		TargetClass.SOFT: { RangeBand.NEAR: 0.98, RangeBand.MID: 0.93, RangeBand.FAR: 0.88 },
-		TargetClass.LIGHT: { RangeBand.NEAR: 0.88, RangeBand.MID: 0.83, RangeBand.FAR: 0.78 },
-		TargetClass.HEAVY: { RangeBand.NEAR: 0.48, RangeBand.MID: 0.38, RangeBand.FAR: 0.28 },
-		TargetClass.FORTIFIED: { RangeBand.NEAR: 0.93, RangeBand.MID: 0.88, RangeBand.FAR: 0.83 },
+		RangeBand.NEAR: 98,
+		RangeBand.MID: 93,
+		RangeBand.FAR: 88,
 	}
 
 	w.projectile_speed_mps = 780.0
