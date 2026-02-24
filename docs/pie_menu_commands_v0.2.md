@@ -329,10 +329,57 @@ func get_available_commands(element: ElementData.ElementInstance) -> Array:
 
 ホバー時にコマンド詳細とホットキーを表示。
 
+### 7.4 コマンドカラー定義
+
+コマンドの性質に応じて色分けする。視認性と直感的な分類を重視。
+
+| カラー名 | RGB値 | 用途 | 適用コマンド |
+|---------|-------|------|-------------|
+| **CMD_COLOR_MOVE** | (0.3, 0.6, 0.9) 青 | 移動系 | Move, Fast Move, Follow |
+| **CMD_COLOR_ATTACK** | (0.9, 0.3, 0.3) 赤 | 攻撃系 | Attack, Fire HE, Engage Air/Ground |
+| **CMD_COLOR_ALERT** | (0.9, 0.7, 0.3) 橙 | 警戒/待機系 | Ambush, Observe |
+| **CMD_COLOR_SUPPORT** | (0.4, 0.8, 0.4) 緑 | 支援系 | Deploy, Resupply |
+| **CMD_COLOR_SMOKE** | (0.6, 0.6, 0.7) 灰 | 煙幕/防御系 | Smoke, Fire Mission Smoke, Cease Fire |
+| **CMD_COLOR_TRANSPORT** | (0.6, 0.4, 0.7) 紫 | 輸送系 | Unload, Board |
+| **CMD_COLOR_RETREAT** | (0.6, 0.5, 0.4) 茶 | 後退系 | Reverse, Hide |
+| **CMD_COLOR_BUILD** | (0.3, 0.7, 0.8) シアン | 構築系 | Dig In |
+| **CMD_COLOR_RECON** | (0.5, 0.7, 0.5) 薄緑 | 偵察系 | Recon Move |
+| **CMD_COLOR_DISABLED** | (0.4, 0.4, 0.4) 暗灰 | 無効/空き | 使用不可コマンド |
+
+#### カテゴリ別カラー適用一覧
+
+| カテゴリ | コマンド | カラー |
+|---------|---------|--------|
+| **TANK** | Reverse | 茶 |
+| | Smoke | 灰 |
+| **IFV** | Unload | 紫 |
+| | Reverse | 茶 |
+| | Smoke | 灰 |
+| **ARTILLERY** | Deploy | 緑 |
+| | Fire HE | 赤 |
+| | Fire Mission Smoke | 灰 |
+| | Fire Mission Illum | 黄 (0.9, 0.8, 0.4) |
+| | Cease Fire | 暗灰 |
+| **INFANTRY** | Fast Move | 青 |
+| | Ambush | 橙 |
+| | Dig In | シアン |
+| | Board | 紫 |
+| **RECON** | Recon Move | 薄緑 |
+| | Observe | 橙 |
+| | Hide | 暗茶 (0.5, 0.5, 0.4) |
+| | Smoke | 灰 |
+| **AIR_DEFENSE** | Engage Air | 赤 |
+| | Engage Ground | 暗赤 (0.8, 0.4, 0.3) |
+| **SUPPORT** | Follow | 青 |
+| | Resupply | 緑 |
+| | Evacuate | ピンク (0.8, 0.5, 0.5) |
+
 ---
 
 ## 8. 変更履歴
 
+- v0.2.6 (2026-02-23): コマンドカラー定義を追加（7.4節）
+- v0.2.5 (2026-02-23): 全ユニットカテゴリのパイメニュー実装（ARTILLERY/AIR_DEFENSE/SUPPORT/RECON）
 - v0.2.4 (2026-02-23): 歩兵コマンド実装（Board/Fast Move/Ambush/Dig In）
 - v0.2.3 (2026-02-23): IFVのLoadコマンド削除（歩兵Boardで代替）
 - v0.2.2 (2026-02-23): Attack Move廃止、Move+SOPで射撃制御する設計に変更

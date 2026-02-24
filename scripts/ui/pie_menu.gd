@@ -28,53 +28,74 @@ const DEADZONE_RADIUS := 30.0  # 中心のデッドゾーン
 
 const DEFAULT_COMMANDS := [
 	{"name": "Move", "type": GameEnums.OrderType.MOVE, "angle": 270, "color": Color(0.3, 0.6, 0.9), "enabled": true},
-	{"name": "---", "type": GameEnums.OrderType.NONE, "angle": 315, "color": Color(0.4, 0.4, 0.4), "enabled": false},  # NE: 空き
+	{"name": "---", "type": GameEnums.OrderType.NONE, "angle": 315, "color": Color(0.4, 0.4, 0.4), "enabled": false},  # NE: 空き（カテゴリ別で上書き）
 	{"name": "Attack", "type": GameEnums.OrderType.ATTACK, "angle": 0, "color": Color(0.9, 0.3, 0.3), "enabled": true},
-	{"name": "---", "type": GameEnums.OrderType.NONE, "angle": 45, "color": Color(0.4, 0.4, 0.4), "enabled": false},   # SE: 空き
+	{"name": "---", "type": GameEnums.OrderType.NONE, "angle": 45, "color": Color(0.4, 0.4, 0.4), "enabled": false},   # SE: 空き（カテゴリ別で上書き）
 	{"name": "Stop", "type": GameEnums.OrderType.HOLD, "angle": 90, "color": Color(0.5, 0.5, 0.6), "enabled": true},
 	{"name": "Reverse", "type": GameEnums.OrderType.RETREAT, "angle": 135, "color": Color(0.6, 0.5, 0.4), "enabled": false},  # SW: Reverse（戦車/IFV用）
 	{"name": "Smoke", "type": GameEnums.OrderType.SMOKE, "angle": 180, "color": Color(0.6, 0.6, 0.7), "enabled": false},  # W: Smoke（装備時のみ）
 	{"name": "Break", "type": GameEnums.OrderType.BREAK_CONTACT, "angle": 225, "color": Color(0.7, 0.4, 0.4), "enabled": true},
 ]
 
+## コマンドカラー定義
+## 色はコマンドの性質に応じて分類
+const CMD_COLOR_MOVE := Color(0.3, 0.6, 0.9)       # 青: 移動系
+const CMD_COLOR_ATTACK := Color(0.9, 0.3, 0.3)    # 赤: 攻撃系
+const CMD_COLOR_ALERT := Color(0.9, 0.7, 0.3)     # 黄/橙: 警戒/待機系
+const CMD_COLOR_SUPPORT := Color(0.4, 0.8, 0.4)   # 緑: 支援系
+const CMD_COLOR_SMOKE := Color(0.6, 0.6, 0.7)     # 灰: 煙幕/防御系
+const CMD_COLOR_TRANSPORT := Color(0.6, 0.4, 0.7) # 紫: 輸送系
+const CMD_COLOR_RETREAT := Color(0.6, 0.5, 0.4)   # 茶: 後退系
+const CMD_COLOR_BUILD := Color(0.3, 0.7, 0.8)     # シアン: 構築系
+const CMD_COLOR_RECON := Color(0.5, 0.7, 0.5)     # 薄緑: 偵察系
+const CMD_COLOR_DISABLED := Color(0.4, 0.4, 0.4)  # 灰: 無効
+
 ## ユニットカテゴリ別コマンド設定
 const CATEGORY_COMMANDS := {
 	"TANK": {
-		315: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},  # NE: 空き（将来: Fire Position）
-		45: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},   # SE: 空き
-		135: {"name": "Reverse", "type": GameEnums.OrderType.RETREAT, "enabled": true},  # SW: Reverse
-		180: {"name": "Smoke", "type": GameEnums.OrderType.SMOKE, "enabled": true},  # W: Smoke
+		315: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false, "color": Color(0.4, 0.4, 0.4)},  # NE: 空き（将来: Fire Position）
+		45: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false, "color": Color(0.4, 0.4, 0.4)},   # SE: 空き
+		135: {"name": "Reverse", "type": GameEnums.OrderType.RETREAT, "enabled": true, "color": Color(0.6, 0.5, 0.4)},  # SW: Reverse（茶）
+		180: {"name": "Smoke", "type": GameEnums.OrderType.SMOKE, "enabled": true, "color": Color(0.6, 0.6, 0.7)},  # W: Smoke（灰）
 	},
 	"IFV": {
-		315: {"name": "Unload", "type": GameEnums.OrderType.UNLOAD, "enabled": true},  # NE: Unload
-		45: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},   # SE: 空き（将来用）
-		135: {"name": "Reverse", "type": GameEnums.OrderType.RETREAT, "enabled": true},  # SW: Reverse
-		180: {"name": "Smoke", "type": GameEnums.OrderType.SMOKE, "enabled": true},  # W: Smoke
+		315: {"name": "Unload", "type": GameEnums.OrderType.UNLOAD, "enabled": true, "color": Color(0.6, 0.4, 0.7)},  # NE: Unload（紫）
+		45: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false, "color": Color(0.4, 0.4, 0.4)},   # SE: 空き
+		135: {"name": "Reverse", "type": GameEnums.OrderType.RETREAT, "enabled": true, "color": Color(0.6, 0.5, 0.4)},  # SW: Reverse（茶）
+		180: {"name": "Smoke", "type": GameEnums.OrderType.SMOKE, "enabled": true, "color": Color(0.6, 0.6, 0.7)},  # W: Smoke（灰）
 	},
 	"ARTILLERY": {
-		315: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},  # NE: 空き（将来: Deploy）
-		45: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},   # SE: 空き（将来: Cease Fire）
-		135: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},  # SW: 空き
-		180: {"name": "Fire HE", "type": GameEnums.OrderType.FIRE_MISSION, "enabled": true},  # W: Fire Mission
-		0: {"name": "Fire HE", "type": GameEnums.OrderType.FIRE_MISSION, "enabled": true},  # E: Fire Mission（Attackの代わり）
+		315: {"name": "Deploy", "type": GameEnums.OrderType.DEPLOY, "enabled": true, "color": Color(0.4, 0.8, 0.4)},  # NE: Deploy（緑）
+		0: {"name": "Fire HE", "type": GameEnums.OrderType.FIRE_MISSION, "enabled": true, "color": Color(0.9, 0.3, 0.3)},  # E: Fire Mission HE（赤）
+		45: {"name": "Smoke", "type": GameEnums.OrderType.FIRE_MISSION_SMOKE, "enabled": true, "color": Color(0.6, 0.6, 0.7)},   # SE: Fire Mission Smoke（灰）
+		135: {"name": "Illum", "type": GameEnums.OrderType.FIRE_MISSION_ILLUM, "enabled": true, "color": Color(0.9, 0.8, 0.4)},  # SW: Fire Mission Illum（黄）
+		180: {"name": "Cease", "type": GameEnums.OrderType.CEASE_FIRE, "enabled": true, "color": Color(0.5, 0.5, 0.6)},  # W: Cease Fire（暗灰）
 	},
 	"INFANTRY": {
-		315: {"name": "Fast", "type": GameEnums.OrderType.MOVE_FAST, "enabled": true},  # NE: Fast Move
-		45: {"name": "Ambush", "type": GameEnums.OrderType.AMBUSH, "enabled": true},   # SE: Ambush
-		135: {"name": "Dig In", "type": GameEnums.OrderType.DIG_IN, "enabled": true},  # SW: Dig In（塹壕構築）
-		180: {"name": "Board", "type": GameEnums.OrderType.LOAD, "enabled": true},  # W: Board（乗車）
+		315: {"name": "Fast", "type": GameEnums.OrderType.MOVE_FAST, "enabled": true, "color": Color(0.3, 0.6, 0.9)},  # NE: Fast Move（青）
+		45: {"name": "Ambush", "type": GameEnums.OrderType.AMBUSH, "enabled": true, "color": Color(0.9, 0.7, 0.3)},   # SE: Ambush（橙）
+		135: {"name": "Dig In", "type": GameEnums.OrderType.DIG_IN, "enabled": true, "color": Color(0.3, 0.7, 0.8)},  # SW: Dig In（シアン）
+		180: {"name": "Board", "type": GameEnums.OrderType.LOAD, "enabled": true, "color": Color(0.6, 0.4, 0.7)},  # W: Board（紫）
 	},
 	"RECON": {
-		315: {"name": "Recon", "type": GameEnums.OrderType.RECON, "enabled": true},  # NE: Recon Move
-		45: {"name": "Observe", "type": GameEnums.OrderType.OBSERVE, "enabled": true},   # SE: Observe
-		135: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},  # SW: 空き（将来: Hide）
-		180: {"name": "Smoke", "type": GameEnums.OrderType.SMOKE, "enabled": false},  # W: Smoke（装備時のみ）
+		315: {"name": "Recon", "type": GameEnums.OrderType.RECON, "enabled": true, "color": Color(0.5, 0.7, 0.5)},  # NE: Recon Move（薄緑）
+		45: {"name": "Observe", "type": GameEnums.OrderType.OBSERVE, "enabled": true, "color": Color(0.9, 0.7, 0.3)},   # SE: Observe（橙）
+		135: {"name": "Hide", "type": GameEnums.OrderType.HIDE, "enabled": true, "color": Color(0.5, 0.5, 0.4)},  # SW: Hide（暗茶）
+		180: {"name": "Smoke", "type": GameEnums.OrderType.SMOKE, "enabled": false, "color": Color(0.6, 0.6, 0.7)},  # W: Smoke（灰）
+	},
+	"AIR_DEFENSE": {
+		315: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false, "color": Color(0.4, 0.4, 0.4)},  # NE: 空き
+		0: {"name": "Air", "type": GameEnums.OrderType.ENGAGE_AIR, "enabled": true, "color": Color(0.9, 0.3, 0.3)},  # E: Engage Air（赤）
+		45: {"name": "Ground", "type": GameEnums.OrderType.ENGAGE_GROUND, "enabled": true, "color": Color(0.8, 0.4, 0.3)},   # SE: Engage Ground（暗赤）
+		135: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false, "color": Color(0.4, 0.4, 0.4)},  # SW: 空き
+		180: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false, "color": Color(0.4, 0.4, 0.4)},  # W: 空き
 	},
 	"SUPPORT": {
-		315: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},  # NE: 空き（将来: Follow）
-		45: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},   # SE: 空き
-		135: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false},  # SW: 空き
-		180: {"name": "Resupply", "type": GameEnums.OrderType.SUPPORT, "enabled": true},  # W: Resupply
+		315: {"name": "Follow", "type": GameEnums.OrderType.FOLLOW, "enabled": true, "color": Color(0.3, 0.6, 0.9)},  # NE: Follow（青）
+		0: {"name": "Resupply", "type": GameEnums.OrderType.RESUPPLY, "enabled": true, "color": Color(0.4, 0.8, 0.4)},  # E: Resupply（緑）
+		45: {"name": "Evacuate", "type": GameEnums.OrderType.EVACUATE, "enabled": true, "color": Color(0.8, 0.5, 0.5)},   # SE: Evacuate（ピンク）
+		135: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false, "color": Color(0.4, 0.4, 0.4)},  # SW: 空き
+		180: {"name": "---", "type": GameEnums.OrderType.NONE, "enabled": false, "color": Color(0.4, 0.4, 0.4)},  # W: 空き
 	},
 }
 

@@ -295,6 +295,11 @@ func _spawn_test_units() -> void:
 	transport_system.embark_initial(blue_apc, blue_inf2)
 	world_model.add_element(blue_inf2)
 
+	# === RED陣営 (ロシア) ===
+	# T-90M戦車小隊×1
+	var red_tank := ElementFactory.create_element_with_vehicle("RUS_T90M", GameEnums.Faction.RED, Vector2(800, 200))
+	world_model.add_element(red_tank)
+
 	# スポーン後に衝突を解消
 	for element in world_model.elements:
 		movement_system.resolve_hard_collisions(element)
@@ -302,6 +307,8 @@ func _spawn_test_units() -> void:
 	print("テストユニット生成完了: ", world_model.elements.size(), " elements")
 	print("=== BLUE陣営 (日本) ===")
 	print("  82式CCV(HQ) + 10式MBT + 89式IFV(歩兵搭乗) + 87式偵察車 + 96式WAPC(歩兵搭乗)")
+	print("=== RED陣営 (ロシア) ===")
+	print("  T-90M MBT")
 	print("==========================")
 	for element in world_model.elements:
 		var weapons_str := ""
@@ -728,6 +735,14 @@ func _update_combat(tick: int, dt: float) -> void:
 			continue
 		if shooter.sop_mode == GameEnums.SOPMode.HOLD_FIRE:
 			continue
+		# RETURN_FIRE: 被弾後一定時間のみ射撃許可
+		if shooter.sop_mode == GameEnums.SOPMode.RETURN_FIRE:
+			const RETURN_FIRE_TIMEOUT := 300  # 30秒 = 300tick
+			if shooter.last_hit_tick <= 0:
+				continue  # 攻撃されていない
+			var ticks_since_hit := tick - shooter.last_hit_tick
+			if ticks_since_hit > RETURN_FIRE_TIMEOUT:
+				continue  # タイムアウト
 
 		# 射撃対象を選択
 		var target := _select_target(shooter, tick)
@@ -1106,6 +1121,7 @@ func _setup_hud() -> void:
 	hud_manager.pie_command_selected.connect(_on_pie_command_selected)
 	hud_manager.unit_selected_from_list.connect(_on_unit_selected_from_list)
 	hud_manager.minimap_clicked.connect(_on_minimap_clicked)
+	hud_manager.sop_changed.connect(_on_sop_changed)
 
 	# InputController
 	input_controller = InputControllerClass.new()
@@ -1185,6 +1201,18 @@ func _on_pie_command_selected(command_type: GameEnums.OrderType, world_pos: Vect
 			_execute_attack_command(_selected_elements, target_element)
 			return
 	_execute_command_for_selected(command_type, world_pos)
+
+
+func _on_sop_changed(new_sop: GameEnums.SOPMode) -> void:
+	# 右パネルのSOPボタンからのSOP変更
+	for element in _selected_elements:
+		if element.faction != player_faction:
+			continue
+		_execute_sop_command(element, new_sop)
+
+	# 右パネルの表示を更新
+	if hud_manager and hud_manager.right_panel:
+		hud_manager.right_panel.update_display(_selected_elements, company_ais.get(player_faction))
 
 
 func _on_unit_selected_from_list(element_id: String) -> void:
@@ -1358,6 +1386,14 @@ func _execute_command_for_selected(command_type: GameEnums.OrderType, target_pos
 			GameEnums.OrderType.DIG_IN:
 				# 塹壕構築：その場で防御力向上（将来実装）
 				_execute_dig_in_command(element)
+
+			GameEnums.OrderType.WEAPONS_FREE:
+				# 射撃許可：SOP を FIRE_AT_WILL に設定
+				_execute_sop_command(element, GameEnums.SOPMode.FIRE_AT_WILL)
+
+			GameEnums.OrderType.WEAPONS_HOLD:
+				# 射撃禁止：SOP を HOLD_FIRE に設定
+				_execute_sop_command(element, GameEnums.SOPMode.HOLD_FIRE)
 
 			GameEnums.OrderType.DEFEND:
 				# 防御命令：その位置で防御（廃止だが後方互換）
@@ -1542,6 +1578,32 @@ func _execute_dig_in_command(element: ElementData.ElementInstance) -> void:
 	print("[Order] %s -> DIG IN (not yet implemented)" % element.id)
 
 
+## SOPモード切り替えコマンドを実行
+func _execute_sop_command(element: ElementData.ElementInstance, new_sop: GameEnums.SOPMode) -> void:
+	if not element:
+		return
+
+	var old_sop := element.sop_mode
+	element.sop_mode = new_sop
+
+	# RETURN_FIREに切り替えた場合、過去の被弾履歴をリセット
+	# （「今から攻撃を受けたら反撃」という意味にするため）
+	if new_sop == GameEnums.SOPMode.RETURN_FIRE:
+		element.last_hit_tick = 0
+
+	# SOPモード名を取得
+	var sop_names := {
+		GameEnums.SOPMode.HOLD_FIRE: "HOLD FIRE",
+		GameEnums.SOPMode.RETURN_FIRE: "RETURN FIRE",
+		GameEnums.SOPMode.FIRE_AT_WILL: "FIRE AT WILL",
+	}
+
+	var old_name: String = sop_names.get(old_sop, "UNKNOWN")
+	var new_name: String = sop_names.get(new_sop, "UNKNOWN")
+
+	print("[SOP] %s: %s -> %s" % [element.id, old_name, new_name])
+
+
 func _get_cp_at_position(pos: Vector2) -> MapData.CapturePoint:
 	if not map_data:
 		return null
@@ -1620,10 +1682,8 @@ func _select_target(shooter: ElementData.ElementInstance, _tick: int) -> Element
 	if fireable_targets.size() == 0:
 		return null
 
-	# SOPモードによるフィルタリング
-	if shooter.sop_mode == GameEnums.SOPMode.HOLD_FIRE:
-		return null
-	# RETURN_FIREの場合は被弾時のみ射撃（現在は簡略化してFIRE_AT_WILLと同じ）
+	# SOPモードによるフィルタリングは _update_combat() で一元管理
+	# （この関数が呼ばれる時点でSOPチェックは完了済み）
 
 	# 最も近い敵を選択（距離ベースの比較）
 	var best_target: ElementData.ElementInstance = null

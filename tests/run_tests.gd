@@ -3214,6 +3214,27 @@ func _fail(message: String) -> void:
 	_tests_failed += 1
 
 
+## SOPに基づく射撃開始可否を判定
+## RETURN_FIREの場合はlast_hit_tickを考慮
+func _can_initiate_fire_by_sop(elem: ElementData.ElementInstance, current_tick: int) -> bool:
+	const RETURN_FIRE_TIMEOUT := 300  # 30秒 = 300tick
+
+	match elem.sop_mode:
+		GameEnums.SOPMode.HOLD_FIRE:
+			return false
+		GameEnums.SOPMode.FIRE_AT_WILL:
+			return true
+		GameEnums.SOPMode.RETURN_FIRE:
+			# 攻撃されていない場合は射撃不可
+			if elem.last_hit_tick <= 0:
+				return false
+			# タイムアウトチェック
+			var ticks_since_hit := current_tick - elem.last_hit_tick
+			return ticks_since_hit <= RETURN_FIRE_TIMEOUT
+		_:
+			return false
+
+
 # =============================================================================
 # Pie Menu Commands Tests
 # =============================================================================
@@ -3250,6 +3271,47 @@ func test_pie_menu_commands() -> void:
 	assert_eq(GameEnums.SOPMode.HOLD_FIRE, 0)
 	assert_eq(GameEnums.SOPMode.RETURN_FIRE, 1)
 	assert_eq(GameEnums.SOPMode.FIRE_AT_WILL, 2)
+	_pass()
+
+	# ========================================
+	# SOP射撃判定のテスト
+	# ========================================
+	_current_test = "sop_hold_fire_blocks_shooting"
+	var elem_hold := ElementData.ElementInstance.new()
+	elem_hold.id = "test_hold"
+	elem_hold.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	assert_false(_can_initiate_fire_by_sop(elem_hold, 100))  # HOLD_FIRE blocks shooting
+	_pass()
+
+	_current_test = "sop_fire_at_will_allows_shooting"
+	var elem_free := ElementData.ElementInstance.new()
+	elem_free.id = "test_free"
+	elem_free.sop_mode = GameEnums.SOPMode.FIRE_AT_WILL
+	assert_true(_can_initiate_fire_by_sop(elem_free, 100))  # FIRE_AT_WILL allows shooting
+	_pass()
+
+	_current_test = "sop_return_fire_blocks_unprovoked"
+	var elem_ret := ElementData.ElementInstance.new()
+	elem_ret.id = "test_return"
+	elem_ret.sop_mode = GameEnums.SOPMode.RETURN_FIRE
+	elem_ret.last_hit_tick = 0  # 攻撃されていない
+	assert_false(_can_initiate_fire_by_sop(elem_ret, 100))  # RETURN_FIRE blocks unprovoked fire
+	_pass()
+
+	_current_test = "sop_return_fire_allows_retaliation"
+	var elem_ret_hit := ElementData.ElementInstance.new()
+	elem_ret_hit.id = "test_return_hit"
+	elem_ret_hit.sop_mode = GameEnums.SOPMode.RETURN_FIRE
+	elem_ret_hit.last_hit_tick = 95  # 5tick前に攻撃された
+	assert_true(_can_initiate_fire_by_sop(elem_ret_hit, 100))  # RETURN_FIRE allows retaliation
+	_pass()
+
+	_current_test = "sop_return_fire_timeout"
+	var elem_ret_timeout := ElementData.ElementInstance.new()
+	elem_ret_timeout.id = "test_return_timeout"
+	elem_ret_timeout.sop_mode = GameEnums.SOPMode.RETURN_FIRE
+	elem_ret_timeout.last_hit_tick = 50  # 350tick前に攻撃された（タイムアウト）
+	assert_false(_can_initiate_fire_by_sop(elem_ret_timeout, 400))  # RETURN_FIRE times out
 	_pass()
 
 	# ========================================

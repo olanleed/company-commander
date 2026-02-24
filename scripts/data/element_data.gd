@@ -137,6 +137,7 @@ class ElementInstance:
 	var current_target_id: String = ""  ## 現在の射撃目標
 	var forced_target_id: String = ""  ## プレイヤー指定の強制交戦目標
 	var last_fire_tick: int = -1  ## 最後に射撃したtick
+	var last_hit_tick: int = 0    ## 最後に被弾したtick（RETURN_FIRE判定用）
 	var sop_mode: GameEnums.SOPMode = GameEnums.SOPMode.FIRE_AT_WILL  ## 射撃ルール
 	var accumulated_damage: float = 0.0  ## 蓄積ダメージ（1.0超過でstrength-1）
 	var accumulated_armor_damage: float = 0.0  ## 連続射撃の装甲ダメージ蓄積（1.0超過で車両ダメージ判定）

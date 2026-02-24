@@ -483,6 +483,10 @@ func apply_damage(
 	# 状態更新
 	element.state = get_suppression_state(element)
 
+	# 被弾時刻を記録（RETURN_FIRE判定用）
+	if current_tick > 0:
+		element.last_hit_tick = current_tick
+
 	# 撃破判定
 	if element.current_strength <= 0:
 		_mark_destroyed(element, current_tick, false)

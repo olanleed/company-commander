@@ -18,6 +18,7 @@ signal command_selected(command_type: GameEnums.OrderType, world_pos: Vector2)
 signal unit_selected_from_list(element_id: String)
 signal minimap_clicked(world_pos: Vector2)
 signal pie_command_selected(command_type: GameEnums.OrderType, world_pos: Vector2)
+signal sop_changed(new_sop: GameEnums.SOPMode)
 
 # =============================================================================
 # ノード参照
@@ -94,6 +95,7 @@ func _setup_layout() -> void:
 	right_panel = RightPanel.new()
 	right_panel.name = "RightPanel"
 	add_child(right_panel)
+	right_panel.sop_changed.connect(_on_sop_changed)
 	_apply_right_panel_layout()
 
 	# 下部バー
@@ -245,3 +247,7 @@ func _on_minimap_clicked(world_pos: Vector2) -> void:
 func _on_pie_command_selected(command_type: GameEnums.OrderType, world_pos: Vector2) -> void:
 	pie_command_selected.emit(command_type, world_pos)
 	hide_pie_menu()
+
+
+func _on_sop_changed(new_sop: GameEnums.SOPMode) -> void:
+	sop_changed.emit(new_sop)

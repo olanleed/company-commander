@@ -163,8 +163,22 @@ enum OrderType {
 	LOAD = 14,          ## 乗車（歩兵：近くの車両に乗車）= BOARD
 	AMBUSH = 15,        ## 待ち伏せ（歩兵：SOP Hold Fireで待機、近距離で射撃）
 	OBSERVE = 16,       ## 監視（偵察：移動停止、視界集中）
-	FIRE_MISSION = 17,  ## 射撃任務（砲兵：間接射撃）
+	FIRE_MISSION = 17,  ## 射撃任務（砲兵：間接射撃HE）
 	DIG_IN = 18,        ## 塹壕構築（歩兵：防御力向上、時間がかかる）
+	# === 新規追加（v0.2.3 パイメニュー拡張） ===
+	DEPLOY = 19,              ## 展開（砲兵：射撃陣地展開）
+	CEASE_FIRE = 20,          ## 射撃中止（砲兵：射撃中止・移動準備）
+	FIRE_MISSION_SMOKE = 21,  ## 煙幕射撃（砲兵：煙幕射撃）
+	FIRE_MISSION_ILLUM = 22,  ## 照明弾射撃（砲兵：夜間視界確保）
+	ENGAGE_AIR = 23,          ## 対空射撃（対空：航空機優先）
+	ENGAGE_GROUND = 24,       ## 対地射撃（対空SPAAG：対地射撃）
+	FOLLOW = 25,              ## 追随（支援：指定ユニットに追随）
+	RESUPPLY = 26,            ## 補給（支援：LOG_TRUCKのみ）
+	EVACUATE = 27,            ## 回収（支援：MEDICAL_VEHのみ）
+	HIDE = 28,                ## 隠蔽（偵察：発見されにくくなる）
+	# === 新規追加（v0.2.4 SOPシステム） ===
+	WEAPONS_FREE = 29,        ## 射撃許可（SOP: FIRE_AT_WILL）
+	WEAPONS_HOLD = 30,        ## 射撃禁止（SOP: HOLD_FIRE）
 }
 
 # =============================================================================

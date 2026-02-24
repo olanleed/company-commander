@@ -5,6 +5,12 @@ extends PanelContainer
 ## Strength、Suppression、Order、SOPを表示
 
 # =============================================================================
+# シグナル
+# =============================================================================
+
+signal sop_changed(new_sop: GameEnums.SOPMode)
+
+# =============================================================================
 # UI要素
 # =============================================================================
 
@@ -16,6 +22,11 @@ var _strength_label: Label
 var _suppression_bar: ProgressBar
 var _suppression_label: Label
 var _order_label: Label
+var _sop_section: VBoxContainer
+var _sop_buttons: HBoxContainer
+var _sop_btn_hold: Button
+var _sop_btn_return: Button
+var _sop_btn_free: Button
 var _state_label: Label
 var _comm_state_label: Label
 var _position_label: Label
@@ -171,6 +182,31 @@ func _setup_layout() -> void:
 	order_section.add_child(_order_label)
 	_vbox.add_child(order_section)
 
+	# SOP (Standard Operating Procedure) - 3ボタン式
+	_sop_section = VBoxContainer.new()
+	_sop_section.add_theme_constant_override("separation", 4)
+
+	var sop_header := Label.new()
+	sop_header.text = "SOP (FIRE CONTROL)"
+	sop_header.add_theme_font_size_override("font_size", 10)
+	sop_header.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	_sop_section.add_child(sop_header)
+
+	# 3つのSOPボタンを横並び
+	_sop_buttons = HBoxContainer.new()
+	_sop_buttons.add_theme_constant_override("separation", 4)
+
+	_sop_btn_hold = _create_sop_button("HOLD", Color(0.9, 0.3, 0.3), GameEnums.SOPMode.HOLD_FIRE)
+	_sop_btn_return = _create_sop_button("RET", Color(0.9, 0.8, 0.2), GameEnums.SOPMode.RETURN_FIRE)
+	_sop_btn_free = _create_sop_button("FREE", Color(0.3, 0.9, 0.3), GameEnums.SOPMode.FIRE_AT_WILL)
+
+	_sop_buttons.add_child(_sop_btn_hold)
+	_sop_buttons.add_child(_sop_btn_return)
+	_sop_buttons.add_child(_sop_btn_free)
+
+	_sop_section.add_child(_sop_buttons)
+	_vbox.add_child(_sop_section)
+
 	# State
 	var state_section := VBoxContainer.new()
 	var state_header := Label.new()
@@ -289,6 +325,58 @@ func _create_ai_info_label(prefix: String) -> Label:
 	label.add_theme_font_size_override("font_size", 11)
 	label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
 	return label
+
+
+## SOPボタンを作成
+func _create_sop_button(text: String, color: Color, sop_mode: GameEnums.SOPMode) -> Button:
+	var btn := Button.new()
+	btn.text = text
+	btn.custom_minimum_size = Vector2(55, 28)
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn.add_theme_font_size_override("font_size", 11)
+
+	# スタイル設定
+	var normal_style := StyleBoxFlat.new()
+	normal_style.bg_color = color.darkened(0.6)
+	normal_style.border_width_bottom = 2
+	normal_style.border_color = color.darkened(0.3)
+	normal_style.corner_radius_top_left = 3
+	normal_style.corner_radius_top_right = 3
+	normal_style.corner_radius_bottom_left = 3
+	normal_style.corner_radius_bottom_right = 3
+	btn.add_theme_stylebox_override("normal", normal_style)
+
+	var hover_style := StyleBoxFlat.new()
+	hover_style.bg_color = color.darkened(0.4)
+	hover_style.border_width_bottom = 2
+	hover_style.border_color = color
+	hover_style.corner_radius_top_left = 3
+	hover_style.corner_radius_top_right = 3
+	hover_style.corner_radius_bottom_left = 3
+	hover_style.corner_radius_bottom_right = 3
+	btn.add_theme_stylebox_override("hover", hover_style)
+
+	var pressed_style := StyleBoxFlat.new()
+	pressed_style.bg_color = color.darkened(0.2)
+	pressed_style.border_width_bottom = 3
+	pressed_style.border_color = color.lightened(0.2)
+	pressed_style.corner_radius_top_left = 3
+	pressed_style.corner_radius_top_right = 3
+	pressed_style.corner_radius_bottom_left = 3
+	pressed_style.corner_radius_bottom_right = 3
+	btn.add_theme_stylebox_override("pressed", pressed_style)
+
+	# クリック時にSOPモードを変更
+	btn.pressed.connect(_on_sop_button_pressed.bind(sop_mode))
+
+	return btn
+
+
+## SOPボタンがクリックされたとき
+func _on_sop_button_pressed(sop_mode: GameEnums.SOPMode) -> void:
+	sop_changed.emit(sop_mode)
+	# ボタンのハイライト状態を更新
+	_update_sop_buttons(sop_mode)
 
 
 func _create_stat_section(header_text: String, bar_color: Color) -> VBoxContainer:
@@ -412,6 +500,7 @@ func _show_empty() -> void:
 	_suppression_label.text = "---"
 	_subsystem_section.visible = false
 	_order_label.text = "NONE"
+	_sop_section.visible = false
 	_state_label.text = "---"
 	_comm_state_label.text = "---"
 	_comm_state_label.remove_theme_color_override("font_color")
@@ -440,6 +529,9 @@ func _show_single(element: ElementData.ElementInstance) -> void:
 
 	# Order
 	_order_label.text = _get_order_name(element.current_order_type)
+
+	# SOP
+	_update_sop_display(element)
 
 	# State
 	_state_label.text = _get_state_name(element.state)
@@ -484,6 +576,11 @@ func _show_multiple() -> void:
 	_subsystem_section.visible = false
 
 	_order_label.text = "MULTIPLE"
+	# 複数選択時もSOPボタンを表示（全選択ユニットに適用される）
+	_sop_section.visible = true
+	# 最初のユニットのSOPを表示
+	if _selected_elements.size() > 0:
+		_update_sop_buttons(_selected_elements[0].sop_mode)
 	_state_label.text = "---"
 	_update_comm_state_display_multiple()
 	_position_label.text = "---"
@@ -561,6 +658,48 @@ func _get_order_name(order_type: GameEnums.OrderType) -> String:
 			return "RECON"
 		_:
 			return "UNKNOWN"
+
+
+## SOP状態を表示（ボタンハイライト）
+func _update_sop_display(element: ElementData.ElementInstance) -> void:
+	var sop := element.sop_mode
+	_update_sop_buttons(sop)
+	_sop_section.visible = true
+
+
+## SOPボタンのハイライト状態を更新
+func _update_sop_buttons(current_sop: GameEnums.SOPMode) -> void:
+	# 全ボタンのスタイルをリセット
+	_set_sop_button_active(_sop_btn_hold, current_sop == GameEnums.SOPMode.HOLD_FIRE, Color(0.9, 0.3, 0.3))
+	_set_sop_button_active(_sop_btn_return, current_sop == GameEnums.SOPMode.RETURN_FIRE, Color(0.9, 0.8, 0.2))
+	_set_sop_button_active(_sop_btn_free, current_sop == GameEnums.SOPMode.FIRE_AT_WILL, Color(0.3, 0.9, 0.3))
+
+
+## SOPボタンのアクティブ状態を設定
+func _set_sop_button_active(btn: Button, is_active: bool, color: Color) -> void:
+	var style := StyleBoxFlat.new()
+	style.corner_radius_top_left = 3
+	style.corner_radius_top_right = 3
+	style.corner_radius_bottom_left = 3
+	style.corner_radius_bottom_right = 3
+
+	if is_active:
+		# アクティブ: 明るい色 + 太いボーダー
+		style.bg_color = color.darkened(0.2)
+		style.border_width_bottom = 3
+		style.border_width_top = 1
+		style.border_width_left = 1
+		style.border_width_right = 1
+		style.border_color = color.lightened(0.3)
+		btn.add_theme_color_override("font_color", Color.WHITE)
+	else:
+		# 非アクティブ: 暗い色
+		style.bg_color = color.darkened(0.7)
+		style.border_width_bottom = 2
+		style.border_color = color.darkened(0.4)
+		btn.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+
+	btn.add_theme_stylebox_override("normal", style)
 
 
 func _get_state_name(state: GameEnums.UnitState) -> String:
