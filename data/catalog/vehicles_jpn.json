@@ -177,6 +177,7 @@
         "cross_speed": 0.85
       },
       "main_gun": {
+        "weapon_id": "CW_AUTOCANNON_30",
         "caliber_mm": 30,
         "type": "autocannon",
         "dual_feed": true,
@@ -185,12 +186,7 @@
         "rof_modifier": 1.10,
         "accuracy_modifier": 1.10
       },
-      "atgm": {
-        "type": "Type01_LMAT",
-        "range_m": 2000,
-        "pen_ce": 80,
-        "count": 2
-      },
+      "secondary_weapons": ["CW_COAX_MG"],
       "protection": {
         "era_equipped": false,
         "aps_equipped": false
@@ -202,7 +198,7 @@
         "engine_hp": 600,
         "max_speed_kmh": 100
       },
-      "notes": "無人砲塔搭載、30mm機関砲、8輪装甲車、2024年制式化"
+      "notes": "無人砲塔搭載、Mk.44 30mm機関砲、Mk.52 7.62mm同軸機銃、8輪装甲車、2024年制式化"
     },
     {
       "id": "JPN_Type16",
@@ -298,7 +294,7 @@
     },
     {
       "id": "JPN_Type25_RCV",
-      "display_name": "25式偵察戦闘車",
+      "display_name": "25式偵察警戒車",
       "display_name_en": "Type 25 RCV",
       "base_archetype": "RECON_VEH",
       "mobility_class": "WHEELED",
@@ -317,6 +313,7 @@
         "cross_speed": 0.85
       },
       "main_gun": {
+        "weapon_id": "CW_AUTOCANNON_30",
         "caliber_mm": 30,
         "type": "autocannon",
         "dual_feed": true,
@@ -325,6 +322,7 @@
         "rof_modifier": 1.10,
         "accuracy_modifier": 1.10
       },
+      "secondary_weapons": ["CW_COAX_MG"],
       "protection": {
         "era_equipped": false,
         "aps_equipped": false
@@ -335,7 +333,7 @@
         "engine_hp": 500,
         "max_speed_kmh": 100
       },
-      "notes": "87式の後継、30mm機関砲搭載、先進センサー、2025年制式化"
+      "notes": "87式の後継、Mk.44 30mm機関砲、Mk.52 7.62mm同軸機銃、先進センサー、2025年制式化"
     },
     {
       "id": "JPN_Type96_WAPC",
@@ -468,9 +466,10 @@
         "road_speed": 1.15,
         "cross_speed": 0.70
       },
-      "armament": {
-        "primary": "5.56mm_MINIMI",
-        "secondary": null
+      "main_gun": {
+        "weapon_id": "CW_MG_STD",
+        "caliber_mm": 5.56,
+        "type": "lmg"
       },
       "protection": {
         "era_equipped": false,
@@ -483,7 +482,7 @@
         "engine_hp": 160,
         "max_speed_kmh": 100
       },
-      "notes": "7.62mm弾耐弾、4輪軽装甲車、普通科向け"
+      "notes": "7.62mm弾耐弾、4輪軽装甲車、5.56mm MINIMI搭載、普通科向け"
     },
     {
       "id": "JPN_AAV7",
@@ -581,6 +580,7 @@
         "cross_speed": 0.80
       },
       "main_gun": {
+        "weapon_id": "CW_MORTAR_120",
         "caliber_mm": 120,
         "type": "mortar",
         "autoloader": false,
@@ -621,6 +621,7 @@
         "cross_speed": 0.90
       },
       "main_gun": {
+        "weapon_id": "CW_HOWITZER_155",
         "caliber_mm": 155,
         "type": "howitzer",
         "autoloader": true,
@@ -661,6 +662,7 @@
         "cross_speed": 0.75
       },
       "main_gun": {
+        "weapon_id": "CW_HOWITZER_155",
         "caliber_mm": 155,
         "type": "howitzer",
         "autoloader": false,
