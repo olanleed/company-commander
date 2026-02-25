@@ -55,6 +55,13 @@ class VehicleConfig:
 		"composite_gen": 3,
 	}
 
+	## 砲兵展開設定（SP_ARTILLERY/SP_MORTARのみ有効）
+	## 履帯自走砲: 展開15秒、撤収20秒
+	## 装輪自走砲: 展開30秒、撤収45秒
+	## 牽引砲: 展開120秒、撤収180秒
+	var artillery_deploy_time_sec: float = 30.0   ## 展開にかかる時間（秒）
+	var artillery_pack_time_sec: float = 45.0     ## 撤収にかかる時間（秒）
+
 	var notes: String = ""
 
 
@@ -182,7 +189,47 @@ func _parse_vehicle_config(data: Dictionary, nation: String) -> VehicleConfig:
 	if data.has("secondary_weapons"):
 		config.secondary_weapons = data.secondary_weapons
 
+	# 砲兵展開時間（JSONで指定があればそれを使用、なければアーキタイプとmobility_classに基づくデフォルト）
+	if data.has("artillery_deploy_time_sec"):
+		config.artillery_deploy_time_sec = data.artillery_deploy_time_sec
+	else:
+		# デフォルト値をアーキタイプとmobility_classから計算
+		config.artillery_deploy_time_sec = _get_default_deploy_time(config.base_archetype, config.mobility_class)
+
+	if data.has("artillery_pack_time_sec"):
+		config.artillery_pack_time_sec = data.artillery_pack_time_sec
+	else:
+		config.artillery_pack_time_sec = _get_default_pack_time(config.base_archetype, config.mobility_class)
+
 	return config
+
+
+## 砲兵展開時間のデフォルト値を取得
+## 履帯自走砲: 展開15秒（停止→即射撃準備完了に近い）
+## 装輪自走砲: 展開30秒（アウトリガー展開等）
+## 迫撃砲（自走）: 展開10秒（軽量で展開が速い）
+func _get_default_deploy_time(archetype: String, mobility_class: String) -> float:
+	if archetype == "SP_MORTAR":
+		# 自走迫撃砲は軽量で展開が速い
+		return 10.0 if mobility_class == "TRACKED" else 15.0
+	elif archetype == "SP_ARTILLERY":
+		# 自走砲は履帯式が速い、装輪式はアウトリガー展開が必要
+		return 15.0 if mobility_class == "TRACKED" else 30.0
+	elif archetype == "TOWED_ARTILLERY":
+		# 牽引砲は展開に時間がかかる（将来拡張用）
+		return 120.0
+	return 0.0  # 砲兵以外
+
+
+## 砲兵撤収時間のデフォルト値を取得
+func _get_default_pack_time(archetype: String, mobility_class: String) -> float:
+	if archetype == "SP_MORTAR":
+		return 15.0 if mobility_class == "TRACKED" else 20.0
+	elif archetype == "SP_ARTILLERY":
+		return 20.0 if mobility_class == "TRACKED" else 45.0
+	elif archetype == "TOWED_ARTILLERY":
+		return 180.0
+	return 0.0
 
 # =============================================================================
 # 公開API

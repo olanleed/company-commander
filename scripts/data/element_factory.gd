@@ -163,6 +163,11 @@ static func create_element_with_vehicle(
 	# 武装を装備（modifierを適用）
 	_equip_weapons_with_vehicle(element, archetype_id, vehicle_config)
 
+	# 砲兵展開時間を設定（SP_ARTILLERY/SP_MORTARのみ）
+	if archetype_id in ["SP_ARTILLERY", "SP_MORTAR"]:
+		element.artillery_deploy_time_sec = vehicle_config.artillery_deploy_time_sec
+		element.artillery_pack_time_sec = vehicle_config.artillery_pack_time_sec
+
 	return element
 
 

@@ -152,7 +152,8 @@ func add_fire_event(
 	suppression: float = 0.0,
 	is_hit: bool = false,
 	weapon_mechanism: WeaponData.Mechanism = WeaponData.Mechanism.SMALL_ARMS,
-	fire_model: WeaponData.FireModel = WeaponData.FireModel.CONTINUOUS
+	fire_model: WeaponData.FireModel = WeaponData.FireModel.CONTINUOUS,
+	custom_duration: float = -1.0  ## カスタム表示時間（-1なら自動計算）
 ) -> void:
 	var engagement_key := shooter_id + "->" + target_id
 
@@ -181,8 +182,11 @@ func add_fire_event(
 	# last_update_timeは常に更新（有効期限判定用）
 	event.last_update_time = _current_time
 
-	# 射線は最終更新から1.0秒間表示
-	event.duration = 1.0
+	# 射線の表示時間を設定
+	if custom_duration > 0:
+		event.duration = custom_duration
+	else:
+		event.duration = 1.0  # デフォルトは1秒
 	event.damage = damage
 	event.suppression = suppression
 	event.is_hit = is_hit
@@ -289,8 +293,8 @@ func _draw_tracers() -> void:
 		# 射手と目標間の距離を計算
 		var distance := event.shooter_pos.distance_to(event.target_pos)
 
-		# 武器別のトレーサー設定を取得（距離を考慮）
-		var tracer_config := _get_tracer_config(event.weapon_mechanism, distance)
+		# 武器別のトレーサー設定を取得（距離、射撃モデル、陣営を考慮）
+		var tracer_config := _get_tracer_config(event.weapon_mechanism, distance, event.fire_model, event.shooter_faction)
 		var tracer_color: Color = tracer_config.color
 		var tracer_width: float = tracer_config.width
 		var tracer_length: float = tracer_config.length
@@ -349,10 +353,27 @@ func _draw_tracers() -> void:
 
 ## 武器別トレーサー設定を取得
 ## 距離を考慮して速度を調整（遠距離でもトレーサーが見えるように）
-func _get_tracer_config(mechanism: WeaponData.Mechanism, distance: float = 500.0) -> Dictionary:
+## 間接射撃の場合は陣営色を使用
+func _get_tracer_config(
+	mechanism: WeaponData.Mechanism,
+	distance: float = 500.0,
+	fire_model: WeaponData.FireModel = WeaponData.FireModel.CONTINUOUS,
+	faction: GameEnums.Faction = GameEnums.Faction.BLUE
+) -> Dictionary:
 	# 距離に応じた速度スケール（遠いほど遅くする）
 	# 基準距離500mで1.0、2000mで0.5程度になるよう調整
 	var distance_scale := clampf(500.0 / maxf(distance, 100.0), 0.3, 2.0)
+
+	# 間接射撃の場合は陣営色を使用（赤い軌跡ではなく青/赤の陣営色）
+	# speedは1.0固定: custom_durationで正確な飛翔時間が設定されているため
+	if fire_model == WeaponData.FireModel.INDIRECT:
+		var faction_color := FIRE_LINE_BLUE if faction == GameEnums.Faction.BLUE else FIRE_LINE_RED
+		return {
+			"color": faction_color,
+			"width": TRACER_BLAST_WIDTH,
+			"length": TRACER_BLAST_LENGTH,
+			"speed": 1.0  # 飛翔時間はcustom_durationで正確に設定済み
+		}
 
 	match mechanism:
 		WeaponData.Mechanism.SMALL_ARMS:

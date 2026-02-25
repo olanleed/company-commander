@@ -60,6 +60,10 @@ var _element_views: Dictionary = {}  # element_id -> ElementView
 var _selected_elements: Array[ElementData.ElementInstance] = []
 var _cp_views: Dictionary = {}  # cp_id -> CapturePointView
 
+## 飛翔中の間接射撃（着弾待ち）
+## 各要素: {shooter_id, impact_pos, weapon, faction, arrival_time}
+var _pending_indirect_impacts: Array[Dictionary] = []
+
 # =============================================================================
 # プレイヤー設定
 # =============================================================================
@@ -263,41 +267,36 @@ func _spawn_test_units() -> void:
 	if catalog and catalog.is_loaded():
 		print("[VehicleCatalog] Loaded %d vehicles" % catalog.get_all_vehicle_ids().size())
 
-	# === BLUE陣営 (日本) ===
-	# 82式指揮通信車（通信ハブ - 後方配置）
+	# === BLUE陣営 (日本) - 砲兵テストシナリオ ===
+	# 99式自走155mm榴弾砲×1（砲兵 - FIRE AT WILL）
+	var blue_sph := ElementFactory.create_element_with_vehicle("JPN_Type99_SPH", GameEnums.Faction.BLUE, Vector2(300, 900))
+	blue_sph.sop_mode = GameEnums.SOPMode.FIRE_AT_WILL
+	world_model.add_element(blue_sph)
+
+	# 82式指揮通信車（通信ハブ - 後方配置、HOLD FIRE）
 	var blue_hq := ElementFactory.create_element_with_vehicle("JPN_Type82_CCV", GameEnums.Faction.BLUE, Vector2(200, 950))
+	blue_hq.sop_mode = GameEnums.SOPMode.HOLD_FIRE
 	world_model.add_element(blue_hq)
 
-	# 10式戦車小隊×1（日本 MBT）
-	var blue_tank := ElementFactory.create_element_with_vehicle("JPN_Type10", GameEnums.Faction.BLUE, Vector2(400, 900))
-	world_model.add_element(blue_tank)
-
-	# 89式装甲戦闘車小隊×1（日本 IFV）
-	var blue_ifv1 := ElementFactory.create_element_with_vehicle("JPN_Type89", GameEnums.Faction.BLUE, Vector2(350, 950))
-	world_model.add_element(blue_ifv1)
-
-	# IFVに搭乗する歩兵小隊を作成
-	var blue_inf1 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, Vector2(350, 950))
-	# 搭乗状態を設定してからadd（add時に_on_element_addedでvisibleが決まる）
-	transport_system.embark_initial(blue_ifv1, blue_inf1)
-	world_model.add_element(blue_inf1)
-
-	# 87式偵察警戒車×1（日本 偵察車）
-	var blue_recon := ElementFactory.create_element_with_vehicle("JPN_Type87_RCV", GameEnums.Faction.BLUE, Vector2(500, 850))
+	# 87式偵察警戒車×1（日本 偵察車、HOLD FIRE）
+	var blue_recon := ElementFactory.create_element_with_vehicle("JPN_Type87_RCV", GameEnums.Faction.BLUE, Vector2(500, 400))
+	blue_recon.sop_mode = GameEnums.SOPMode.HOLD_FIRE
 	world_model.add_element(blue_recon)
 
-	# 96式装輪装甲車×1（日本 APC）
-	var blue_apc := ElementFactory.create_element_with_vehicle("JPN_Type96_WAPC", GameEnums.Faction.BLUE, Vector2(450, 1000))
-	world_model.add_element(blue_apc)
+	# === RED陣営 (ロシア) - 全てHOLD FIRE ===
+	# 歩兵小隊×1
+	var red_inf := ElementFactory.create_element("INF_LINE", GameEnums.Faction.RED, Vector2(750, 250))
+	red_inf.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(red_inf)
 
-	# APCに搭乗する歩兵小隊を作成
-	var blue_inf2 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, Vector2(450, 1000))
-	transport_system.embark_initial(blue_apc, blue_inf2)
-	world_model.add_element(blue_inf2)
+	# BMP-3×1（IFV）
+	var red_ifv := ElementFactory.create_element_with_vehicle("RUS_BMP3", GameEnums.Faction.RED, Vector2(850, 200))
+	red_ifv.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(red_ifv)
 
-	# === RED陣営 (ロシア) ===
-	# T-90M戦車小隊×1
-	var red_tank := ElementFactory.create_element_with_vehicle("RUS_T90M", GameEnums.Faction.RED, Vector2(800, 200))
+	# T-90M戦車×1
+	var red_tank := ElementFactory.create_element_with_vehicle("RUS_T90M", GameEnums.Faction.RED, Vector2(800, 150))
+	red_tank.sop_mode = GameEnums.SOPMode.HOLD_FIRE
 	world_model.add_element(red_tank)
 
 	# スポーン後に衝突を解消
@@ -305,11 +304,11 @@ func _spawn_test_units() -> void:
 		movement_system.resolve_hard_collisions(element)
 
 	print("テストユニット生成完了: ", world_model.elements.size(), " elements")
-	print("=== BLUE陣営 (日本) ===")
-	print("  82式CCV(HQ) + 10式MBT + 89式IFV(歩兵搭乗) + 87式偵察車 + 96式WAPC(歩兵搭乗)")
-	print("=== RED陣営 (ロシア) ===")
-	print("  T-90M MBT")
-	print("==========================")
+	print("=== BLUE陣営 (日本) - 砲兵テストシナリオ ===")
+	print("  99式SPH(FIRE AT WILL) + 82式CCV(HOLD FIRE) + 87式RCV(HOLD FIRE)")
+	print("=== RED陣営 (ロシア) - 全てHOLD FIRE ===")
+	print("  歩兵(HOLD FIRE) + BMP-3(HOLD FIRE) + T-90M(HOLD FIRE)")
+	print("==========================================")
 	for element in world_model.elements:
 		var weapons_str := ""
 		for w in element.weapons:
@@ -725,7 +724,16 @@ func _update_combat(tick: int, dt: float) -> void:
 	# 射撃中のユニットを追跡（射撃終了時にcurrent_target_idをクリアするため）
 	var shooters_firing: Dictionary = {}  # element_id -> bool
 
-	# 射撃処理
+	# === 間接射撃の着弾処理 ===
+	_process_pending_indirect_impacts(tick)
+
+	# === 砲兵展開・撤収処理 ===
+	_process_artillery_deployment(dt)
+
+	# === 間接射撃処理（砲兵ユニット） ===
+	_process_indirect_fire(tick, elements_under_fire, shooters_firing)
+
+	# === 直接射撃処理 ===
 	for shooter in world_model.elements:
 		if shooter.state == GameEnums.UnitState.DESTROYED:
 			continue
@@ -1339,15 +1347,17 @@ func _execute_command_for_selected(command_type: GameEnums.OrderType, target_pos
 
 		match command_type:
 			GameEnums.OrderType.MOVE:
-				# 移動命令：強制目標をクリア
+				# 移動命令：強制目標をクリア、射撃任務も解除
 				element.forced_target_id = ""
 				element.current_order_type = GameEnums.OrderType.MOVE
+				_cancel_fire_mission(element)
 				movement_system.issue_move_order(element, target_pos, use_road)
 
 			GameEnums.OrderType.ATTACK:
 				# 攻撃命令（位置指定）：その位置へ移動しつつ交戦
 				element.forced_target_id = ""  # 位置指定なので特定目標なし
 				element.current_order_type = GameEnums.OrderType.ATTACK
+				_cancel_fire_mission(element)
 				movement_system.issue_move_order(element, target_pos, use_road)
 
 			GameEnums.OrderType.HOLD:
@@ -1357,10 +1367,12 @@ func _execute_command_for_selected(command_type: GameEnums.OrderType, target_pos
 			GameEnums.OrderType.RETREAT:
 				# 後退命令：正面を維持したまま後退
 				# target_posへ向かって後退（クリック位置が後退先）
+				_cancel_fire_mission(element)
 				movement_system.issue_reverse_order(element, element.position.distance_to(target_pos))
 
 			GameEnums.OrderType.BREAK_CONTACT:
 				# 離脱命令：煙幕＋後退で戦闘離脱
+				_cancel_fire_mission(element)
 				movement_system.issue_break_contact_order(element, target_pos)
 
 			GameEnums.OrderType.SMOKE:
@@ -1399,11 +1411,17 @@ func _execute_command_for_selected(command_type: GameEnums.OrderType, target_pos
 				# 防御命令：その位置で防御（廃止だが後方互換）
 				element.forced_target_id = ""
 				element.current_order_type = GameEnums.OrderType.DEFEND
+				_cancel_fire_mission(element)
 				movement_system.issue_move_order(element, target_pos, use_road)
+
+			GameEnums.OrderType.FIRE_MISSION:
+				# 間接射撃（砲兵用）：指定位置にHE射撃
+				_execute_fire_mission_command(element, target_pos)
 
 			_:
 				# その他のコマンドは移動として処理（暫定）
 				element.current_order_type = command_type
+				_cancel_fire_mission(element)
 				movement_system.issue_move_order(element, target_pos, use_road)
 
 
@@ -1423,6 +1441,9 @@ func _execute_attack_command(attackers: Array[ElementData.ElementInstance], targ
 
 		# VisionSystemで射撃可能か判定（視界範囲 + DataLink考慮）
 		var can_fire := vision_system.can_fire_at(element, target.id) if vision_system else false
+
+		# 砲兵の射撃任務を解除（直接攻撃命令）
+		_cancel_fire_mission(element)
 
 		if can_fire:
 			# 射撃可能なら移動停止
@@ -1523,6 +1544,7 @@ func _execute_board_command(element: ElementData.ElementInstance, target_pos: Ve
 	# 車両に向かって移動を開始
 	element.boarding_target_id = transport.id
 	element.current_order_type = GameEnums.OrderType.LOAD
+	_cancel_fire_mission(element)
 	# 車両を乗車待機状態に設定（衝突回避で逃げないようにする）
 	transport.awaiting_boarding_id = element.id
 	movement_system.issue_stop_order(transport)  # 車両を停止
@@ -1538,6 +1560,7 @@ func _execute_fast_move_command(element: ElementData.ElementInstance, target_pos
 	# 通常移動と同じだが、速度ボーナスとステルスペナルティを設定
 	element.forced_target_id = ""
 	element.current_order_type = GameEnums.OrderType.MOVE_FAST
+	_cancel_fire_mission(element)
 	movement_system.issue_move_order(element, target_pos, use_road)
 
 	# TODO: 速度ボーナスとステルスペナルティの実装
@@ -1576,6 +1599,82 @@ func _execute_dig_in_command(element: ElementData.ElementInstance) -> void:
 
 	# TODO: 時間経過で防御力向上の実装
 	print("[Order] %s -> DIG IN (not yet implemented)" % element.id)
+
+
+## 間接射撃コマンドを実行（砲兵用：指定位置にHE射撃）
+func _execute_fire_mission_command(element: ElementData.ElementInstance, target_pos: Vector2) -> void:
+	if not element:
+		return
+
+	# 砲兵かどうかチェック（SP_ARTILLERYまたはSP_MORTARアーキタイプ）
+	var archetype := element.element_type.id if element.element_type else ""
+	if archetype != "SP_ARTILLERY" and archetype != "SP_MORTAR":
+		print("[Order] %s -> FIRE MISSION failed: not artillery unit" % element.id)
+		return
+
+	# 間接射撃武器を持っているかチェック
+	var has_indirect_weapon := false
+	for weapon in element.weapons:
+		if weapon.fire_model == WeaponData.FireModel.INDIRECT:
+			has_indirect_weapon = true
+			break
+
+	if not has_indirect_weapon:
+		print("[Order] %s -> FIRE MISSION failed: no indirect fire weapon" % element.id)
+		return
+
+	# 移動を停止
+	movement_system.issue_stop_order(element)
+
+	# 間接射撃任務を設定
+	element.current_order_type = GameEnums.OrderType.FIRE_MISSION
+	element.fire_mission_target = target_pos
+	element.forced_target_id = ""  # 直接射撃目標をクリア
+
+	# 展開状態に応じて処理を分岐
+	var ADS := ElementData.ElementInstance.ArtilleryDeployState
+	match element.artillery_deploy_state:
+		ADS.DEPLOYED:
+			# 既に展開完了：即座に射撃可能
+			element.fire_mission_active = true
+			print("[Order] %s -> FIRE MISSION HE at %s (already deployed)" % [element.id, target_pos])
+
+		ADS.DEPLOYING:
+			# 展開中：展開完了を待ってから射撃開始
+			element.fire_mission_active = false  # 展開完了まで射撃不可
+			print("[Order] %s -> FIRE MISSION HE at %s (deploying... %.0f%%)" % [
+				element.id, target_pos, element.artillery_deploy_progress * 100
+			])
+
+		ADS.STOWED, ADS.PACKING:
+			# 収納状態または撤収中：展開を開始
+			element.artillery_deploy_state = ADS.DEPLOYING
+			element.artillery_deploy_progress = 0.0
+			element.fire_mission_active = false  # 展開完了まで射撃不可
+			print("[Order] %s -> FIRE MISSION HE at %s (deploying... 0%%)" % [element.id, target_pos])
+
+
+## 間接射撃任務を解除（移動命令時に呼び出す）
+## 砲兵は走行間射撃ができないため、移動命令を受けると射撃を中止し撤収を開始
+func _cancel_fire_mission(element: ElementData.ElementInstance) -> void:
+	var archetype := element.element_type.id if element.element_type else ""
+	if archetype != "SP_ARTILLERY" and archetype != "SP_MORTAR":
+		return  # 砲兵以外は処理不要
+
+	var ADS := ElementData.ElementInstance.ArtilleryDeployState
+
+	# 射撃任務を解除
+	if element.fire_mission_active or element.fire_mission_target != Vector2.ZERO:
+		element.fire_mission_active = false
+		element.fire_mission_target = Vector2.ZERO
+		print("[Order] %s -> FIRE MISSION cancelled (movement ordered)" % element.id)
+
+	# 展開中または展開完了の場合は撤収を開始
+	match element.artillery_deploy_state:
+		ADS.DEPLOYED, ADS.DEPLOYING:
+			element.artillery_deploy_state = ADS.PACKING
+			element.artillery_deploy_progress = 0.0
+			print("[Order] %s -> Packing up (0%%)" % element.id)
 
 
 ## SOPモード切り替えコマンドを実行
@@ -1655,6 +1754,218 @@ func _get_combat_state_name(state: GameEnums.CombatState) -> String:
 # =============================================================================
 # 戦闘ヘルパー
 # =============================================================================
+
+## 飛翔中の間接射撃の着弾処理
+func _process_pending_indirect_impacts(tick: int) -> void:
+	var current_time := Time.get_ticks_msec() / 1000.0
+	var to_remove: Array[int] = []
+
+	for i in range(_pending_indirect_impacts.size()):
+		var impact_data: Dictionary = _pending_indirect_impacts[i]
+		if current_time >= impact_data.arrival_time:
+			# 着弾！ダメージを適用
+			_apply_indirect_damage(
+				impact_data.shooter_id,
+				impact_data.impact_pos,
+				impact_data.weapon,
+				impact_data.faction,
+				tick
+			)
+			to_remove.append(i)
+
+	# 着弾済みを削除（逆順）
+	for i in range(to_remove.size() - 1, -1, -1):
+		_pending_indirect_impacts.remove_at(to_remove[i])
+
+
+## 間接射撃のダメージを適用
+func _apply_indirect_damage(shooter_id: String, impact_pos: Vector2, weapon: WeaponData.WeaponType, faction: GameEnums.Faction, tick: int) -> void:
+	var blast_radius: float = weapon.blast_radius_m
+	var direct_hit_radius: float = weapon.direct_hit_radius_m
+
+	for target in world_model.elements:
+		if target.faction == faction:
+			continue  # 味方には当たらない
+		if target.state == GameEnums.UnitState.DESTROYED:
+			continue
+
+		var target_distance := target.position.distance_to(impact_pos)
+
+		if target_distance > blast_radius:
+			continue  # 爆風範囲外
+
+		# ダメージ計算
+		var is_direct_hit := target_distance <= direct_hit_radius
+		var terrain := map_data.get_terrain_at(target.position) if map_data else GameEnums.TerrainType.OPEN
+		var effect_result := combat_system.calculate_indirect_impact_effect(
+			target, weapon, target_distance, terrain, false, 1
+		)
+
+		if effect_result.d_supp > 0 or effect_result.d_dmg > 0:
+			# ダメージと抑圧を適用
+			combat_system.apply_damage(
+				target,
+				effect_result.d_supp,
+				effect_result.d_dmg,
+				tick,
+				weapon.threat_class
+			)
+
+			# デバッグ出力
+			var hit_type := "DIRECT HIT" if is_direct_hit else "BLAST"
+			print("[IndirectFire] %s -> %s (%s, dist=%.1fm): supp=%.2f dmg=%.2f" % [
+				shooter_id, target.id, hit_type, target_distance,
+				effect_result.d_supp, effect_result.d_dmg
+			])
+
+
+## 砲兵展開・撤収処理
+## 展開: STOWED -> DEPLOYING -> DEPLOYED（射撃可能）
+## 撤収: DEPLOYED -> PACKING -> STOWED（移動可能）
+func _process_artillery_deployment(delta: float) -> void:
+	var ADS := ElementData.ElementInstance.ArtilleryDeployState
+
+	for element in world_model.elements:
+		if element.state == GameEnums.UnitState.DESTROYED:
+			continue
+
+		# 砲兵ユニットのみ処理
+		var archetype := element.element_type.id if element.element_type else ""
+		if archetype != "SP_ARTILLERY" and archetype != "SP_MORTAR":
+			continue
+
+		match element.artillery_deploy_state:
+			ADS.DEPLOYING:
+				# 展開中：進捗を更新
+				var prev_progress := element.artillery_deploy_progress
+				if element.artillery_deploy_time_sec > 0:
+					element.artillery_deploy_progress += delta / element.artillery_deploy_time_sec
+				else:
+					element.artillery_deploy_progress = 1.0
+
+				# 進捗を10%ごとにログ出力
+				var prev_pct := int(prev_progress * 10)
+				var curr_pct := int(element.artillery_deploy_progress * 10)
+				if curr_pct > prev_pct and curr_pct < 10:
+					print("[Artillery] %s -> Deploying... %d%%" % [element.id, curr_pct * 10])
+
+				if element.artillery_deploy_progress >= 1.0:
+					# 展開完了
+					element.artillery_deploy_progress = 1.0
+					element.artillery_deploy_state = ADS.DEPLOYED
+
+					# 射撃任務が設定されていれば射撃開始
+					if element.fire_mission_target != Vector2.ZERO:
+						element.fire_mission_active = true
+						print("[Artillery] %s -> Deployed! Ready to fire at %s" % [
+							element.id, element.fire_mission_target
+						])
+					else:
+						print("[Artillery] %s -> Deployed!" % element.id)
+
+			ADS.PACKING:
+				# 撤収中：進捗を更新
+				if element.artillery_pack_time_sec > 0:
+					element.artillery_deploy_progress += delta / element.artillery_pack_time_sec
+				else:
+					element.artillery_deploy_progress = 1.0
+
+				if element.artillery_deploy_progress >= 1.0:
+					# 撤収完了：移動可能
+					element.artillery_deploy_progress = 0.0
+					element.artillery_deploy_state = ADS.STOWED
+					print("[Artillery] %s -> Packed! Ready to move" % element.id)
+
+
+## 間接射撃処理（砲兵ユニット）
+## 仕様書: docs/indirect_fire_v0.2.md
+func _process_indirect_fire(tick: int, _elements_under_fire: Dictionary, shooters_firing: Dictionary) -> void:
+	for shooter in world_model.elements:
+		# 間接射撃任務が有効なユニットのみ処理
+		if not shooter.fire_mission_active:
+			continue
+		if shooter.state == GameEnums.UnitState.DESTROYED:
+			continue
+		if shooter.state == GameEnums.UnitState.BROKEN:
+			continue
+
+		# 間接射撃武器を取得
+		var indirect_weapon: WeaponData.WeaponType = null
+		for weapon in shooter.weapons:
+			if weapon.fire_model == WeaponData.FireModel.INDIRECT:
+				indirect_weapon = weapon
+				break
+
+		if not indirect_weapon:
+			continue
+
+		# 発射レート制御（DISCRETE武器）
+		if shooter.last_fire_tick >= 0 and indirect_weapon.rof_rpm > 0:
+			var ticks_per_shot := int(600.0 / indirect_weapon.rof_rpm)
+			var elapsed := tick - shooter.last_fire_tick
+			if elapsed < ticks_per_shot:
+				continue  # リロード中
+
+		# 射撃実行
+		var target_pos: Vector2 = shooter.fire_mission_target
+		var distance := shooter.position.distance_to(target_pos)
+
+		# 射程チェック
+		if distance > indirect_weapon.max_range_m:
+			if tick % 100 == 0:
+				print("[IndirectFire] %s: target out of range (%.0fm > %.0fm)" % [
+					shooter.id, distance, indirect_weapon.max_range_m
+				])
+			continue
+
+		# CEP（円形誤差半数）を計算
+		var sigma_hit: float = indirect_weapon.sigma_hit_m
+		# 距離による精度低下（遠いほどCEPが大きくなる）
+		var range_factor := clampf(distance / indirect_weapon.max_range_m, 0.5, 1.5)
+		sigma_hit *= range_factor
+
+		# 着弾位置を計算（ガウス分布）
+		var impact_offset := Vector2(
+			randfn(0, sigma_hit),
+			randfn(0, sigma_hit)
+		)
+		var impact_pos := target_pos + impact_offset
+
+		# 発射タイミングを記録
+		shooter.last_fire_tick = tick
+		shooter.current_weapon = indirect_weapon
+		shooters_firing[shooter.id] = true
+
+		# 飛翔時間を計算（弾速に基づく）
+		var flight_time_sec := distance / indirect_weapon.projectile_speed_mps
+		var current_time := Time.get_ticks_msec() / 1000.0
+		var arrival_time := current_time + flight_time_sec
+
+		# 着弾待ちリストに追加
+		_pending_indirect_impacts.append({
+			"shooter_id": shooter.id,
+			"impact_pos": impact_pos,
+			"weapon": indirect_weapon,
+			"faction": shooter.faction,
+			"arrival_time": arrival_time
+		})
+
+		# 戦闘可視化（トレーサー表示 - 陣営色で表示）
+		if combat_visualizer:
+			combat_visualizer.add_fire_event(
+				shooter.id,
+				"",  # 位置目標なのでtarget_idは空
+				shooter.position,
+				impact_pos,
+				shooter.faction,
+				1.0,  # ダメージ表示用
+				0.5,  # 抑圧表示用
+				true,
+				indirect_weapon.mechanism,
+				indirect_weapon.fire_model,
+				flight_time_sec  # トレーサー表示時間を飛翔時間に合わせる
+			)
+
 
 ## 射撃対象を選択（VisionSystem統合API使用）
 ## VisionSystemが「見えている敵だけを撃てる」という原則を保証

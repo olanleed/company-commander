@@ -167,6 +167,21 @@ class ElementInstance:
 	var unloading_target_pos: Vector2 = Vector2.ZERO  ## 下車移動中の目標位置（歩兵用）
 	var awaiting_boarding_id: String = ""  ## 乗車待機中の歩兵ID（車両用、衝突回避除外用）
 
+	## 間接射撃（砲兵用）
+	var fire_mission_target: Vector2 = Vector2.ZERO  ## 間接射撃の目標位置（Vector2.ZEROなら未指定）
+	var fire_mission_active: bool = false            ## 間接射撃任務が有効か
+
+	## 砲兵展開状態
+	## STOWED: 収納状態（移動可能、射撃不可）
+	## DEPLOYING: 展開中（移動不可、射撃不可）
+	## DEPLOYED: 展開完了（移動不可、射撃可能）
+	## PACKING: 撤収中（移動不可、射撃不可）
+	enum ArtilleryDeployState { STOWED, DEPLOYING, DEPLOYED, PACKING }
+	var artillery_deploy_state: ArtilleryDeployState = ArtilleryDeployState.STOWED
+	var artillery_deploy_progress: float = 0.0       ## 展開/撤収の進捗（0.0〜1.0）
+	var artillery_deploy_time_sec: float = 30.0      ## 展開にかかる時間（秒）
+	var artillery_pack_time_sec: float = 30.0        ## 撤収にかかる時間（秒）
+
 	## 初期化
 	func _init(p_type: ElementType = null) -> void:
 		# 重要: 型付き配列はインスタンスごとに新しく初期化する必要がある
