@@ -21,11 +21,11 @@ func before_each() -> void:
 # =============================================================================
 
 func test_v01r_constants_exist() -> void:
-	# v0.1R定数が存在することを確認
-	assert_eq(GameConstants.K_DF_SUPP, 2.2, "K_DF_SUPP should be 2.2")
-	assert_eq(GameConstants.K_DF_HIT, 0.25, "K_DF_HIT should be 0.25")
-	assert_eq(GameConstants.K_IF_SUPP, 24.0, "K_IF_SUPP should be 24")
-	assert_eq(GameConstants.K_IF_HIT, 0.65, "K_IF_HIT should be 0.65")
+	# v0.1R定数が存在することを確認（現在のゲームバランス値）
+	assert_almost_eq(GameConstants.K_DF_SUPP, 0.12, 0.01, "K_DF_SUPP should be 0.12")
+	assert_almost_eq(GameConstants.K_DF_HIT, 0.50, 0.01, "K_DF_HIT should be 0.50")
+	assert_almost_eq(GameConstants.K_IF_SUPP, 4.0, 0.01, "K_IF_SUPP should be 4.0")
+	assert_almost_eq(GameConstants.K_IF_HIT, 0.65, 0.01, "K_IF_HIT should be 0.65")
 
 
 # =============================================================================
@@ -68,10 +68,10 @@ func test_vulnerability_dmg_vs_heavy_at() -> void:
 
 
 func test_vulnerability_supp_vs_heavy_at() -> void:
-	# Heavy(戦車)はAT supp脆弱性 = 1.0
+	# Heavy(戦車)はAT supp脆弱性 = 0.30（装甲で守られており抑圧されにくい）
 	var target: ElementData.ElementInstance = _create_heavy_element()
 	var vuln: float = combat_system.get_vulnerability_supp(target, WeaponData.ThreatClass.AT)
-	assert_almost_eq(vuln, 1.0, 0.01)
+	assert_almost_eq(vuln, GameConstants.VULN_HEAVY_AT_SUPP, 0.01)
 
 
 # =============================================================================

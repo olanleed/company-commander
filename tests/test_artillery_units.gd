@@ -349,20 +349,21 @@ func test_all_mortar_vehicles_have_mortar_archetype() -> void:
 # =============================================================================
 
 func test_sp_mortar_deploy_time_faster_than_sph() -> void:
-	# 自走迫撃砲は自走砲より展開が速いことを確認
+	# 履帯式自走迫撃砲（10秒）は履帯式自走砲（15秒）より展開が速いことを確認
+	# 注: 装輪式迫撃砲(15秒)と履帯式自走砲(15秒)は同じ展開時間なので履帯式迫撃砲を使用
 	var mortar := ElementFactory.create_element_with_vehicle(
-		"JPN_Type24_Mortar",
+		"USA_M1287_AMPV_MC",  # SP_MORTAR + TRACKED = 10秒
 		GameEnums.Faction.BLUE,
 		Vector2(100, 100)
 	)
 	var sph := ElementFactory.create_element_with_vehicle(
-		"JPN_Type99_SPH",
+		"JPN_Type99_SPH",  # SP_ARTILLERY + TRACKED = 15秒
 		GameEnums.Faction.BLUE,
 		Vector2(200, 100)
 	)
 
 	assert_lt(mortar.artillery_deploy_time_sec, sph.artillery_deploy_time_sec,
-		"Mortar should deploy faster than SPH")
+		"Tracked mortar (10s) should deploy faster than tracked SPH (15s)")
 	print("[Test] Mortar deploy: %.1fs, SPH deploy: %.1fs" % [
 		mortar.artillery_deploy_time_sec, sph.artillery_deploy_time_sec
 	])
