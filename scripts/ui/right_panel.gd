@@ -510,8 +510,19 @@ func _show_empty() -> void:
 
 
 func _show_single(element: ElementData.ElementInstance) -> void:
-	# ユニット名
-	_unit_name.text = element.element_type.display_name if element.element_type else element.id
+	# ユニット名（車両名があればそれを優先表示）
+	if element.vehicle_id != "":
+		var catalog = ElementFactory.get_vehicle_catalog()
+		if catalog:
+			var vehicle_config = catalog.get_vehicle(element.vehicle_id)
+			if vehicle_config:
+				_unit_name.text = vehicle_config.display_name
+			else:
+				_unit_name.text = element.vehicle_id
+		else:
+			_unit_name.text = element.vehicle_id
+	else:
+		_unit_name.text = element.element_type.display_name if element.element_type else element.id
 
 	# Strength
 	var max_str := element.element_type.max_strength if element.element_type else 10

@@ -485,6 +485,45 @@
       "notes": "7.62mm弾耐弾、4輪軽装甲車、5.56mm MINIMI搭載、普通科向け"
     },
     {
+      "id": "JPN_HMV",
+      "display_name": "高機動車",
+      "display_name_en": "High Mobility Vehicle",
+      "base_archetype": "LIGHT_VEH",
+      "mobility_class": "WHEELED",
+      "era": "1990s",
+      "unit_count": 4,
+      "modifiers": {
+        "armor_ke_front": 0.50,
+        "armor_ke_side": 0.40,
+        "armor_ke_rear": 0.40,
+        "armor_ce_front": 0.50,
+        "armor_ce_side": 0.40,
+        "armor_ce_rear": 0.40,
+        "spot_range": 0.90,
+        "spot_range_moving": 0.85,
+        "road_speed": 1.20,
+        "cross_speed": 0.85
+      },
+      "main_gun": {
+        "weapon_id": "CW_MG_STD",
+        "caliber_mm": 7.62,
+        "type": "mg"
+      },
+      "secondary_weapons": [],
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 2.7,
+        "crew": 1,
+        "passengers": 9,
+        "engine_hp": 170,
+        "max_speed_kmh": 125
+      },
+      "notes": "非装甲、4輪高機動車、HMMWV相当、トヨタ製"
+    },
+    {
       "id": "JPN_AAV7",
       "display_name": "水陸両用車AAV7",
       "display_name_en": "AAV7A1",

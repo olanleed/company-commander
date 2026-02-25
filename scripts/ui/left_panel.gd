@@ -178,9 +178,20 @@ func _create_unit_item(element: ElementData.ElementInstance) -> Control:
 	var content := VBoxContainer.new()
 	margin.add_child(content)
 
-	# ユニット名
+	# ユニット名（車両名があれば優先表示）
 	var name_label := Label.new()
-	name_label.text = element.element_type.display_name if element.element_type else element.id
+	if element.vehicle_id != "":
+		var catalog = ElementFactory.get_vehicle_catalog()
+		if catalog:
+			var vehicle_config = catalog.get_vehicle(element.vehicle_id)
+			if vehicle_config:
+				name_label.text = vehicle_config.display_name
+			else:
+				name_label.text = element.vehicle_id
+		else:
+			name_label.text = element.vehicle_id
+	else:
+		name_label.text = element.element_type.display_name if element.element_type else element.id
 	name_label.add_theme_font_size_override("font_size", 12)
 	content.add_child(name_label)
 

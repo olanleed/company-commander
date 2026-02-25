@@ -267,105 +267,122 @@ func _spawn_test_units() -> void:
 	if catalog and catalog.is_loaded():
 		print("[VehicleCatalog] Loaded %d vehicles" % catalog.get_all_vehicle_ids().size())
 
-	# === BLUE陣営 (自衛隊) - 全ユニット配置テスト ===
+	# === BLUE陣営 (米軍) - 全ユニット配置テスト ===
 	# 全ユニットHOLD FIRE
 
-	# --- 歩兵 ---
-	var blue_inf := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, Vector2(200, 500))
-	blue_inf.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_inf)
-
-	var blue_inf_at := ElementFactory.create_element("INF_AT", GameEnums.Faction.BLUE, Vector2(250, 500))
-	blue_inf_at.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_inf_at)
-
-	var blue_inf_mg := ElementFactory.create_element("INF_MG", GameEnums.Faction.BLUE, Vector2(300, 500))
-	blue_inf_mg.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_inf_mg)
-
 	# --- 戦車 ---
-	var blue_type10 := ElementFactory.create_element_with_vehicle("JPN_Type10", GameEnums.Faction.BLUE, Vector2(100, 400))
-	blue_type10.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type10)
+	var blue_m1a2_sepv3 := ElementFactory.create_element_with_vehicle("USA_M1A2_SEPv3", GameEnums.Faction.BLUE, Vector2(100, 400))
+	blue_m1a2_sepv3.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_m1a2_sepv3)
 
-	var blue_type90 := ElementFactory.create_element_with_vehicle("JPN_Type90", GameEnums.Faction.BLUE, Vector2(150, 400))
-	blue_type90.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type90)
+	var blue_m1a2_sepv2 := ElementFactory.create_element_with_vehicle("USA_M1A2_SEPv2", GameEnums.Faction.BLUE, Vector2(150, 400))
+	blue_m1a2_sepv2.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_m1a2_sepv2)
 
-	# --- IFV/装甲車 ---
-	var blue_type89 := ElementFactory.create_element_with_vehicle("JPN_Type89", GameEnums.Faction.BLUE, Vector2(200, 400))
-	blue_type89.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type89)
+	# --- IFV (Bradley) + 歩兵乗車 ---
+	var blue_m2a4 := ElementFactory.create_element_with_vehicle("USA_M2A4_Bradley", GameEnums.Faction.BLUE, Vector2(200, 400))
+	blue_m2a4.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_m2a4)
+	# M2A4に歩兵を乗車
+	var blue_inf_m2a4 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, Vector2(200, 400))
+	blue_inf_m2a4.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_inf_m2a4)
+	transport_system.embark_initial(blue_m2a4, blue_inf_m2a4)
 
-	var blue_type24_ifv := ElementFactory.create_element_with_vehicle("JPN_Type24_IFV", GameEnums.Faction.BLUE, Vector2(250, 400))
-	blue_type24_ifv.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type24_ifv)
+	var blue_m2a3 := ElementFactory.create_element_with_vehicle("USA_M2A3_Bradley", GameEnums.Faction.BLUE, Vector2(250, 400))
+	blue_m2a3.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_m2a3)
+	# M2A3に歩兵を乗車
+	var blue_inf_m2a3 := ElementFactory.create_element("INF_AT", GameEnums.Faction.BLUE, Vector2(250, 400))
+	blue_inf_m2a3.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_inf_m2a3)
+	transport_system.embark_initial(blue_m2a3, blue_inf_m2a3)
 
-	# --- 機動戦闘車 ---
-	var blue_type16 := ElementFactory.create_element_with_vehicle("JPN_Type16", GameEnums.Faction.BLUE, Vector2(300, 400))
-	blue_type16.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type16)
+	# --- 偵察 (M3A3 CFV) ---
+	var blue_m3a3 := ElementFactory.create_element_with_vehicle("USA_M3A3_CFV", GameEnums.Faction.BLUE, Vector2(300, 400))
+	blue_m3a3.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_m3a3)
 
-	# --- 偵察車 ---
-	var blue_type87_rcv := ElementFactory.create_element_with_vehicle("JPN_Type87_RCV", GameEnums.Faction.BLUE, Vector2(350, 400))
-	blue_type87_rcv.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type87_rcv)
+	# --- Stryker ---
+	var blue_stryker_dragoon := ElementFactory.create_element_with_vehicle("USA_Stryker_Dragoon", GameEnums.Faction.BLUE, Vector2(350, 400))
+	blue_stryker_dragoon.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_stryker_dragoon)
+	# Stryker Dragoonに歩兵を乗車
+	var blue_inf_dragoon := ElementFactory.create_element("INF_MG", GameEnums.Faction.BLUE, Vector2(350, 400))
+	blue_inf_dragoon.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_inf_dragoon)
+	transport_system.embark_initial(blue_stryker_dragoon, blue_inf_dragoon)
 
-	var blue_type25_rcv := ElementFactory.create_element_with_vehicle("JPN_Type25_RCV", GameEnums.Faction.BLUE, Vector2(400, 400))
-	blue_type25_rcv.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type25_rcv)
+	var blue_stryker_icv := ElementFactory.create_element_with_vehicle("USA_Stryker_ICV", GameEnums.Faction.BLUE, Vector2(400, 400))
+	blue_stryker_icv.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_stryker_icv)
+	# Stryker ICVに歩兵を乗車
+	var blue_inf_icv := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, Vector2(400, 400))
+	blue_inf_icv.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_inf_icv)
+	transport_system.embark_initial(blue_stryker_icv, blue_inf_icv)
+
+	var blue_stryker_dvh := ElementFactory.create_element_with_vehicle("USA_Stryker_DVH", GameEnums.Faction.BLUE, Vector2(450, 400))
+	blue_stryker_dvh.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_stryker_dvh)
+
+	var blue_stryker_rv := ElementFactory.create_element_with_vehicle("USA_Stryker_RV", GameEnums.Faction.BLUE, Vector2(500, 400))
+	blue_stryker_rv.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_stryker_rv)
 
 	# --- APC ---
-	var blue_type96 := ElementFactory.create_element_with_vehicle("JPN_Type96_WAPC", GameEnums.Faction.BLUE, Vector2(100, 300))
-	blue_type96.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type96)
+	var blue_m1283_ampv := ElementFactory.create_element_with_vehicle("USA_M1283_AMPV", GameEnums.Faction.BLUE, Vector2(100, 300))
+	blue_m1283_ampv.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_m1283_ampv)
 
-	var blue_type73 := ElementFactory.create_element_with_vehicle("JPN_Type73_APC", GameEnums.Faction.BLUE, Vector2(150, 300))
-	blue_type73.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type73)
+	var blue_m113a3 := ElementFactory.create_element_with_vehicle("USA_M113A3", GameEnums.Faction.BLUE, Vector2(150, 300))
+	blue_m113a3.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_m113a3)
 
-	var blue_patria := ElementFactory.create_element_with_vehicle("JPN_Patria_AMV", GameEnums.Faction.BLUE, Vector2(200, 300))
-	blue_patria.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_patria)
+	# --- 軽車両 (JLTV) ---
+	var blue_jltv_gp := ElementFactory.create_element_with_vehicle("USA_JLTV_GP", GameEnums.Faction.BLUE, Vector2(200, 300))
+	blue_jltv_gp.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_jltv_gp)
 
-	var blue_lav := ElementFactory.create_element_with_vehicle("JPN_LAV", GameEnums.Faction.BLUE, Vector2(250, 300))
-	blue_lav.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_lav)
+	var blue_jltv_hgc := ElementFactory.create_element_with_vehicle("USA_JLTV_HGC", GameEnums.Faction.BLUE, Vector2(250, 300))
+	blue_jltv_hgc.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_jltv_hgc)
 
-	var blue_aav7 := ElementFactory.create_element_with_vehicle("JPN_AAV7", GameEnums.Faction.BLUE, Vector2(300, 300))
-	blue_aav7.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_aav7)
-
-	# --- 指揮通信車 ---
-	var blue_type82 := ElementFactory.create_element_with_vehicle("JPN_Type82_CCV", GameEnums.Faction.BLUE, Vector2(200, 950))
-	blue_type82.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type82)
+	var blue_m1117 := ElementFactory.create_element_with_vehicle("USA_M1117_Guardian", GameEnums.Faction.BLUE, Vector2(300, 300))
+	blue_m1117.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_m1117)
 
 	# --- 砲兵 ---
-	var blue_type99_sph := ElementFactory.create_element_with_vehicle("JPN_Type99_SPH", GameEnums.Faction.BLUE, Vector2(100, 900))
-	blue_type99_sph.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type99_sph)
+	var blue_m109a7 := ElementFactory.create_element_with_vehicle("USA_M109A7_Paladin", GameEnums.Faction.BLUE, Vector2(100, 900))
+	blue_m109a7.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_m109a7)
 
-	var blue_type19_sph := ElementFactory.create_element_with_vehicle("JPN_Type19_SPH", GameEnums.Faction.BLUE, Vector2(150, 900))
-	blue_type19_sph.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type19_sph)
+	var blue_m109a6 := ElementFactory.create_element_with_vehicle("USA_M109A6_Paladin", GameEnums.Faction.BLUE, Vector2(150, 900))
+	blue_m109a6.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_m109a6)
 
-	var blue_type24_mortar := ElementFactory.create_element_with_vehicle("JPN_Type24_Mortar", GameEnums.Faction.BLUE, Vector2(200, 900))
-	blue_type24_mortar.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type24_mortar)
+	var blue_ampv_mc := ElementFactory.create_element_with_vehicle("USA_M1287_AMPV_MC", GameEnums.Faction.BLUE, Vector2(200, 900))
+	blue_ampv_mc.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_ampv_mc)
+
+	var blue_stryker_mc := ElementFactory.create_element_with_vehicle("USA_M1129_Stryker_MC", GameEnums.Faction.BLUE, Vector2(250, 900))
+	blue_stryker_mc.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_stryker_mc)
 
 	# --- 防空 ---
-	var blue_type87_spaag := ElementFactory.create_element_with_vehicle("JPN_Type87_SPAAG", GameEnums.Faction.BLUE, Vector2(100, 850))
-	blue_type87_spaag.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type87_spaag)
+	var blue_mshorad := ElementFactory.create_element_with_vehicle("USA_M_SHORAD", GameEnums.Faction.BLUE, Vector2(100, 850))
+	blue_mshorad.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_mshorad)
 
-	var blue_type93_sam := ElementFactory.create_element_with_vehicle("JPN_Type93_SAM", GameEnums.Faction.BLUE, Vector2(150, 850))
-	blue_type93_sam.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type93_sam)
+	# --- 支援車両 ---
+	var blue_m88a2 := ElementFactory.create_element_with_vehicle("USA_M88A2_Hercules", GameEnums.Faction.BLUE, Vector2(150, 850))
+	blue_m88a2.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_m88a2)
 
-	var blue_type11_sam := ElementFactory.create_element_with_vehicle("JPN_Type11_SAM", GameEnums.Faction.BLUE, Vector2(200, 850))
-	blue_type11_sam.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type11_sam)
+	# --- 指揮通信車両 ---
+	var blue_m1068 := ElementFactory.create_element_with_vehicle("USA_M1068A3_SICPS", GameEnums.Faction.BLUE, Vector2(200, 850))
+	blue_m1068.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_m1068)
 
 	# === RED陣営 (ロシア) - 全てHOLD FIRE ===
 	# 歩兵小隊×1
@@ -388,17 +405,18 @@ func _spawn_test_units() -> void:
 		movement_system.resolve_hard_collisions(element)
 
 	print("テストユニット生成完了: ", world_model.elements.size(), " elements")
-	print("=== BLUE陣営 (自衛隊) - 全ユニット配置テスト ===")
-	print("  歩兵: INF_LINE, INF_AT, INF_MG")
-	print("  戦車: 10式, 90式")
-	print("  IFV: 89式, 24式IFV")
-	print("  機動戦闘車: 16式")
-	print("  偵察: 87式RCV, 25式RCV")
-	print("  APC: 96式, 73式, パトリア, LAV, AAV7")
-	print("  指揮: 82式CCV")
-	print("  砲兵: 99式SPH, 19式SPH, 24式迫撃砲")
-	print("  防空: 87式SPAAG, 93式SAM, 11式SAM")
-	print("  ※全ユニットHOLD FIRE")
+	print("=== BLUE陣営 (米軍) - 全ユニット配置テスト ===")
+	print("  戦車: M1A2 SEPv3, M1A2 SEPv2")
+	print("  IFV: M2A4 Bradley (+INF_LINE), M2A3 Bradley (+INF_AT)")
+	print("  偵察: M3A3 CFV")
+	print("  Stryker: Dragoon (+INF_MG), ICV (+INF_LINE), DVH, RV")
+	print("  APC: M1283 AMPV, M113A3")
+	print("  軽車両: JLTV GP, JLTV HGC, M1117 Guardian")
+	print("  砲兵: M109A7, M109A6, AMPV-MC, Stryker MC")
+	print("  防空: M-SHORAD")
+	print("  支援: M88A2 Hercules")
+	print("  指揮通信: M1068A3 SICPS")
+	print("  ※全ユニットHOLD FIRE、歩兵4個小隊乗車済み")
 	print("=== RED陣営 (ロシア) - 全てHOLD FIRE ===")
 	print("  歩兵 + BMP-3 + T-90M")
 	print("==========================================")
