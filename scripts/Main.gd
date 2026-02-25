@@ -273,6 +273,11 @@ func _spawn_test_units() -> void:
 	blue_sph.sop_mode = GameEnums.SOPMode.FIRE_AT_WILL
 	world_model.add_element(blue_sph)
 
+	# 24式機動120mm迫撃砲×1（自走迫撃砲 - FIRE AT WILL）
+	var blue_mortar := ElementFactory.create_element_with_vehicle("JPN_Type24_Mortar", GameEnums.Faction.BLUE, Vector2(350, 850))
+	blue_mortar.sop_mode = GameEnums.SOPMode.FIRE_AT_WILL
+	world_model.add_element(blue_mortar)
+
 	# 82式指揮通信車（通信ハブ - 後方配置、HOLD FIRE）
 	var blue_hq := ElementFactory.create_element_with_vehicle("JPN_Type82_CCV", GameEnums.Faction.BLUE, Vector2(200, 950))
 	blue_hq.sop_mode = GameEnums.SOPMode.HOLD_FIRE
@@ -305,7 +310,8 @@ func _spawn_test_units() -> void:
 
 	print("テストユニット生成完了: ", world_model.elements.size(), " elements")
 	print("=== BLUE陣営 (日本) - 砲兵テストシナリオ ===")
-	print("  99式SPH(FIRE AT WILL) + 82式CCV(HOLD FIRE) + 87式RCV(HOLD FIRE)")
+	print("  99式SPH(FIRE AT WILL) + 24式迫撃砲(FIRE AT WILL)")
+	print("  82式CCV(HOLD FIRE) + 87式RCV(HOLD FIRE)")
 	print("=== RED陣営 (ロシア) - 全てHOLD FIRE ===")
 	print("  歩兵(HOLD FIRE) + BMP-3(HOLD FIRE) + T-90M(HOLD FIRE)")
 	print("==========================================")

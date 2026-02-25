@@ -726,6 +726,176 @@ func test_cep_shown_during_all_deploy_states() -> void:
 
 
 # =============================================================================
+# ダメージモデルテスト（v0.2調整）
+# =============================================================================
+
+func test_open_terrain_high_damage_to_infantry() -> void:
+	# 開けた場所の歩兵は砲撃に対して脆弱
+	var infantry := _create_test_infantry()
+	var weapon := WeaponData.create_cw_howitzer_155()
+
+	# 直撃（5m以内）、開けた場所、非塹壕
+	var result_open := combat_system.calculate_indirect_impact_effect(
+		infantry, weapon, 3.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+
+	# 森林での同条件
+	var result_forest := combat_system.calculate_indirect_impact_effect(
+		infantry, weapon, 3.0, GameEnums.TerrainType.FOREST, false, 1
+	)
+
+	# 開けた場所は森林より高ダメージ
+	assert_gt(result_open.d_dmg, result_forest.d_dmg,
+		"Open terrain should cause more damage than forest")
+	# 森林は50%軽減されるはず
+	var expected_ratio := GameConstants.COVER_IF_FOREST / GameConstants.COVER_IF_OPEN
+	assert_almost_eq(result_forest.d_dmg / result_open.d_dmg, expected_ratio, 0.01,
+		"Forest should reduce damage by cover coefficient")
+	print("[Test] Open dmg: %.2f, Forest dmg: %.2f" % [result_open.d_dmg, result_forest.d_dmg])
+
+
+func test_entrenchment_drastically_reduces_indirect_damage() -> void:
+	# 塹壕は間接射撃ダメージを大幅に軽減
+	var infantry := _create_test_infantry()
+	var weapon := WeaponData.create_cw_howitzer_155()
+
+	# 至近弾（15m）、開けた場所
+	var result_exposed := combat_system.calculate_indirect_impact_effect(
+		infantry, weapon, 15.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+
+	# 塹壕あり
+	var result_entrenched := combat_system.calculate_indirect_impact_effect(
+		infantry, weapon, 15.0, GameEnums.TerrainType.OPEN, true, 1
+	)
+
+	# 塹壕は60%軽減（ENTRENCH_IF_MULT = 0.40）
+	assert_lt(result_entrenched.d_dmg, result_exposed.d_dmg * 0.5,
+		"Entrenchment should reduce damage by more than 50%")
+	print("[Test] Exposed dmg: %.2f, Entrenched dmg: %.2f" % [
+		result_exposed.d_dmg, result_entrenched.d_dmg
+	])
+
+
+func test_urban_terrain_best_cover() -> void:
+	# 市街地は最高の遮蔽を提供
+	var infantry := _create_test_infantry()
+	var weapon := WeaponData.create_cw_howitzer_155()
+
+	# 至近弾（10m）
+	var result_open := combat_system.calculate_indirect_impact_effect(
+		infantry, weapon, 10.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+	var result_urban := combat_system.calculate_indirect_impact_effect(
+		infantry, weapon, 10.0, GameEnums.TerrainType.URBAN, false, 1
+	)
+
+	# 市街地は65%軽減（COVER_IF_URBAN = 0.35）
+	assert_lt(result_urban.d_dmg, result_open.d_dmg * 0.4,
+		"Urban terrain should reduce damage by more than 60%")
+	print("[Test] Open dmg: %.2f, Urban dmg: %.2f" % [
+		result_open.d_dmg, result_urban.d_dmg
+	])
+
+
+func test_apc_takes_significant_damage_from_direct_hit() -> void:
+	# APCは155mm直撃で大ダメージ
+	var apc := _create_test_apc()
+	var weapon := WeaponData.create_cw_howitzer_155()
+
+	# 直撃（3m）
+	var result := combat_system.calculate_indirect_impact_effect(
+		apc, weapon, 3.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+
+	# APCは直撃で大ダメージを受けるべき（HEAVY_HE_VULN_DMG_LIGHT_DIRECT = 0.8）
+	assert_gt(result.d_dmg, 0.5, "APC should take significant damage from direct hit")
+	print("[Test] APC direct hit dmg: %.2f" % result.d_dmg)
+
+
+func test_apc_takes_damage_from_near_miss() -> void:
+	# APCは至近弾でもダメージを受ける
+	var apc := _create_test_apc()
+	var weapon := WeaponData.create_cw_howitzer_155()
+
+	# 至近弾（20m）
+	var result := combat_system.calculate_indirect_impact_effect(
+		apc, weapon, 20.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+
+	# APCは至近弾でもダメージを受ける（HEAVY_HE_VULN_DMG_LIGHT_INDIRECT = 0.5）
+	assert_gt(result.d_dmg, 0.0, "APC should take some damage from near miss")
+	print("[Test] APC near miss (20m) dmg: %.2f" % result.d_dmg)
+
+
+func test_mbt_resistant_to_near_miss() -> void:
+	# MBTは至近弾にほぼ耐性がある
+	var mbt := _create_test_mbt()
+	var weapon := WeaponData.create_cw_howitzer_155()
+
+	# 至近弾（20m）
+	var result := combat_system.calculate_indirect_impact_effect(
+		mbt, weapon, 20.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+
+	# MBTは至近弾で微小ダメージのみ
+	assert_lt(result.d_dmg, 0.3, "MBT should resist near miss damage")
+	# ただし抑圧は受ける
+	assert_gt(result.d_supp, 0.0, "MBT should still receive suppression")
+	print("[Test] MBT near miss dmg: %.2f, supp: %.2f" % [result.d_dmg, result.d_supp])
+
+
+func test_column_formation_vulnerable() -> void:
+	# 縦隊は砲撃に脆弱
+	var infantry := _create_test_infantry()
+	var weapon := WeaponData.create_cw_howitzer_155()
+
+	# 縦隊 (dispersion_mode = 0)
+	var result_column := combat_system.calculate_indirect_impact_effect(
+		infantry, weapon, 15.0, GameEnums.TerrainType.OPEN, false, 0  # Column
+	)
+
+	# 分散 (dispersion_mode = 2)
+	var result_dispersed := combat_system.calculate_indirect_impact_effect(
+		infantry, weapon, 15.0, GameEnums.TerrainType.OPEN, false, 2  # Dispersed
+	)
+
+	# 縦隊は分散より高ダメージ
+	assert_gt(result_column.d_dmg, result_dispersed.d_dmg,
+		"Column formation should take more damage than dispersed")
+	# 比率確認
+	var expected_ratio := GameConstants.DISPERSION_IF_COLUMN / GameConstants.DISPERSION_IF_DISPERSED
+	assert_almost_eq(result_column.d_dmg / result_dispersed.d_dmg, expected_ratio, 0.05,
+		"Damage ratio should match dispersion coefficients")
+	print("[Test] Column dmg: %.2f, Dispersed dmg: %.2f" % [
+		result_column.d_dmg, result_dispersed.d_dmg
+	])
+
+
+func test_combined_cover_and_entrenchment() -> void:
+	# 塹壕＋市街地の複合防御
+	var infantry := _create_test_infantry()
+	var weapon := WeaponData.create_cw_howitzer_155()
+
+	# 開けた場所、非塹壕
+	var result_worst := combat_system.calculate_indirect_impact_effect(
+		infantry, weapon, 10.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+
+	# 市街地、塹壕あり
+	var result_best := combat_system.calculate_indirect_impact_effect(
+		infantry, weapon, 10.0, GameEnums.TerrainType.URBAN, true, 1
+	)
+
+	# 複合防御で80%以上軽減（0.35 * 0.40 = 0.14）
+	var damage_ratio := result_best.d_dmg / result_worst.d_dmg
+	assert_lt(damage_ratio, 0.20, "Combined cover should reduce damage by >80%")
+	print("[Test] Worst case dmg: %.2f, Best case dmg: %.2f, Ratio: %.2f" % [
+		result_worst.d_dmg, result_best.d_dmg, damage_ratio
+	])
+
+
+# =============================================================================
 # ヘルパー関数
 # =============================================================================
 

@@ -263,12 +263,39 @@ const K_DF_SUPP: float = 0.12   ## 抑圧係数（約4-5秒でSuppressed）
 const K_DF_HIT: float = 0.50    ## ヒット確率係数（0.25→0.50: AT武器のヒット率改善）
 const K_DF_DMG: float = 3.0     ## ダメージ係数（約40秒で擃滅）
 
-## 間接の基準係数（1発あたり）(v0.1R)
-## バランス目標: 1発で15-20%抑圧、直撃付近で1-2人ダメージ
-const K_IF_SUPP: float = 3.0    ## 抑圧係数（1発で約15-20%抑圧）
+## 間接の基準係数（1発あたり）(v0.2)
+## バランス目標: 開けた場所では致命的、塹壕・建物で大幅軽減
+## 155mm直撃で歩兵分隊に3-5人ダメージ、至近弾で1-2人
+const K_IF_SUPP: float = 4.0    ## 抑圧係数（1発で約20-30%抑圧）
 const K_IF_HIT: float = 0.65    ## ヒット確率係数（v0.1R新規）
-const K_IF_DMG: float = 2.0     ## ダメージ係数（直撃で1-2人）
+const K_IF_DMG: float = 4.0     ## ダメージ係数（直撃で3-5人、至近弾で1-2人）
 const R_BLAST_M: float = 40.0   ## 爆風半径（m）
+
+## 大口径HE（155mm/152mm等）の装甲効果係数 (v0.2)
+## 仕様書: docs/indirect_fire_v0.2.md
+## 通常BLAST_FRAGは装甲に弱いが、大口径HEは直撃時に追加効果
+const HEAVY_HE_CALIBER_THRESHOLD: float = 120.0  ## この口径(mm)以上で大口径HE扱い
+
+## 大口径HE ダメージ脆弱性（装甲クラス別）(v0.2)
+## 仕様: 155mm/152mm直撃はAPC/IFVを破壊可能、MBTは外部機器損傷
+## 至近弾でも軽装甲は被害、MBTは乗員への衝撃のみ
+## 直撃時（direct_hit_radius_m以内）
+const HEAVY_HE_VULN_DMG_SOFT_DIRECT: float = 1.2       ## ソフトスキン（+20%ボーナス）
+const HEAVY_HE_VULN_DMG_LIGHT_DIRECT: float = 0.8      ## 軽装甲（APC）- 破壊可能
+const HEAVY_HE_VULN_DMG_MEDIUM_DIRECT: float = 0.5     ## 中装甲（IFV）- 大ダメージ
+const HEAVY_HE_VULN_DMG_HEAVY_DIRECT: float = 0.25     ## 重装甲（MBT）- 外部機器損傷
+## 至近弾時（直撃外、爆風半径内）
+const HEAVY_HE_VULN_DMG_SOFT_INDIRECT: float = 1.0
+const HEAVY_HE_VULN_DMG_LIGHT_INDIRECT: float = 0.5    ## 軽装甲も被害
+const HEAVY_HE_VULN_DMG_MEDIUM_INDIRECT: float = 0.25  ## IFVも被害
+const HEAVY_HE_VULN_DMG_HEAVY_INDIRECT: float = 0.1    ## MBT微小
+
+## 大口径HE 抑圧脆弱性（装甲クラス別）
+## 爆風の衝撃は装甲車両にも心理的影響を与える
+const HEAVY_HE_VULN_SUPP_SOFT: float = 1.0
+const HEAVY_HE_VULN_SUPP_LIGHT: float = 0.8
+const HEAVY_HE_VULN_SUPP_MEDIUM: float = 0.6
+const HEAVY_HE_VULN_SUPP_HEAVY: float = 0.4
 
 ## 抑圧回復
 const SUPP_RECOVERY_BASE: float = 1.2   ## 基本回復/秒
@@ -335,20 +362,23 @@ const COVER_DF_ROAD: float = 1.0
 const COVER_DF_FOREST: float = 0.50
 const COVER_DF_URBAN: float = 0.35
 
-## 地形遮蔽係数（間接）
-const COVER_IF_OPEN: float = 1.0
-const COVER_IF_ROAD: float = 0.9
-const COVER_IF_FOREST: float = 0.70
-const COVER_IF_URBAN: float = 0.55
+## 地形遮蔽係数（間接）(v0.2)
+## 開けた場所は遮蔽なし、森林・市街地は大幅軽減
+const COVER_IF_OPEN: float = 1.0      ## 遮蔽なし - 砲弾の破片が全方向から
+const COVER_IF_ROAD: float = 0.95     ## 道路も遮蔽ほぼなし
+const COVER_IF_FOREST: float = 0.50   ## 森林は樹木が破片を吸収（0.70→0.50）
+const COVER_IF_URBAN: float = 0.35    ## 市街地は建物が大幅に防護（0.55→0.35）
 
-## Dig-in係数
-const ENTRENCH_DF_MULT: float = 0.70
-const ENTRENCH_IF_MULT: float = 0.90
+## Dig-in係数（v0.2）
+## 塹壕は砲撃に対する最も効果的な防御手段
+const ENTRENCH_DF_MULT: float = 0.60  ## 直射への塹壕効果（0.70→0.60）
+const ENTRENCH_IF_MULT: float = 0.40  ## 間接への塹壕効果（0.90→0.40）- 劇的軽減
 
-## 分散モード係数（間接）
-const DISPERSION_IF_COLUMN: float = 1.15
-const DISPERSION_IF_DEPLOYED: float = 1.00
-const DISPERSION_IF_DISPERSED: float = 0.85
+## 分散モード係数（間接）(v0.2)
+## 縦隊は砲撃に脆弱、分散隊形は被害軽減
+const DISPERSION_IF_COLUMN: float = 1.3   ## 縦隊は密集=被害増（1.15→1.3）
+const DISPERSION_IF_DEPLOYED: float = 1.0 ## 展開隊形は標準
+const DISPERSION_IF_DISPERSED: float = 0.7 ## 分散隊形は被害軽減（0.85→0.7）
 
 ## 通信状態による抑圧回復倍率
 const COMM_RECOVERY_GOOD: float = 1.0

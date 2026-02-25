@@ -101,6 +101,9 @@ func run_all_tests() -> void:
 	print("\n[Infantry Commands Tests]")
 	test_infantry_commands()
 
+	print("\n[Indirect Fire v0.2 Tests]")
+	test_indirect_fire()
+
 
 # =============================================================================
 # WeaponData Tests
@@ -285,11 +288,12 @@ func test_combat_system_v01r() -> void:
 
 	var combat_system: RefCounted = CombatSystemClass.new()
 
-	# Test: v0.1R constants
+	# Test: v0.2 constants (indirect fire damage model update)
 	_current_test = "v01r_constants"
 	assert_almost_eq(GameConstants.K_DF_SUPP, 0.12, 0.01)
 	assert_almost_eq(GameConstants.K_DF_HIT, 0.50, 0.01)  # Updated: 0.25→0.50 for improved AT hit rate
-	assert_almost_eq(GameConstants.K_IF_SUPP, 3.0, 0.01)
+	assert_almost_eq(GameConstants.K_IF_SUPP, 4.0, 0.01)  # v0.2: 3.0→4.0 for increased suppression
+	assert_almost_eq(GameConstants.K_IF_DMG, 4.0, 0.01)   # v0.2: 2.0→4.0 for lethal indirect fire
 	assert_almost_eq(GameConstants.K_IF_HIT, 0.65, 0.01)
 	_pass()
 
@@ -4319,3 +4323,320 @@ func test_infantry_commands() -> void:
 	var category_mg: String = PieMenuClass.get_category_for_archetype("INF_MG")
 	assert_eq(category_mg, "INFANTRY")
 	_pass()
+
+
+# =============================================================================
+# Indirect Fire v0.2 Tests（大口径HE装甲効果）
+# =============================================================================
+
+func test_indirect_fire() -> void:
+	var WeaponDataClass: GDScript = load("res://scripts/data/weapon_data.gd")
+	var ElementDataClass: GDScript = load("res://scripts/data/element_data.gd")
+	var CombatSystemClass: GDScript = load("res://scripts/systems/combat_system.gd")
+
+	var combat_system: RefCounted = CombatSystemClass.new()
+
+	# ========================================
+	# テスト: 155mm榴弾砲の大口径HEクラス設定
+	# ========================================
+	_current_test = "howitzer_155_heavy_he_class"
+	var howitzer_155: RefCounted = WeaponDataClass.create_cw_howitzer_155()
+	assert_eq(howitzer_155.heavy_he_class, WeaponDataClass.HeavyHEClass.HEAVY_HE)
+	assert_eq(howitzer_155.caliber_mm, 155.0)
+	_pass()
+
+	# ========================================
+	# テスト: 152mm榴弾砲の大口径HEクラス設定
+	# ========================================
+	_current_test = "howitzer_152_heavy_he_class"
+	var howitzer_152: RefCounted = WeaponDataClass.create_cw_howitzer_152()
+	assert_eq(howitzer_152.heavy_he_class, WeaponDataClass.HeavyHEClass.HEAVY_HE)
+	assert_eq(howitzer_152.caliber_mm, 152.0)
+	_pass()
+
+	# ========================================
+	# テスト: 120mm迫撃砲の大口径HEクラス設定
+	# ========================================
+	_current_test = "mortar_120_heavy_he_class"
+	var mortar_120: RefCounted = WeaponDataClass.create_cw_mortar_120()
+	assert_eq(mortar_120.heavy_he_class, WeaponDataClass.HeavyHEClass.HEAVY_HE)
+	assert_eq(mortar_120.caliber_mm, 120.0)
+	_pass()
+
+	# ========================================
+	# テスト: 81mm迫撃砲は大口径HEではない
+	# ========================================
+	_current_test = "mortar_81_not_heavy_he"
+	var mortar_81: RefCounted = WeaponDataClass.create_cw_mortar_81()
+	assert_eq(mortar_81.heavy_he_class, WeaponDataClass.HeavyHEClass.NONE)
+	assert_eq(mortar_81.caliber_mm, 81.0)
+	_pass()
+
+	# ========================================
+	# テスト: 歩兵への間接射撃効果
+	# ========================================
+	_current_test = "indirect_fire_on_infantry"
+	var infantry: RefCounted = _create_indirect_test_infantry(ElementDataClass)
+	var result_inf: RefCounted = combat_system.calculate_indirect_impact_effect(
+		infantry, howitzer_155, 3.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+	assert_true(result_inf.is_valid)
+	assert_gt(result_inf.d_supp, 0.0)
+	assert_gt(result_inf.d_dmg, 0.0)
+	_pass()
+
+	# ========================================
+	# テスト: 大口径HEの直撃がMBTにダメージを与える
+	# ========================================
+	_current_test = "heavy_he_direct_hit_on_mbt"
+	var mbt: RefCounted = _create_indirect_test_mbt(ElementDataClass)
+	var result_mbt: RefCounted = combat_system.calculate_indirect_impact_effect(
+		mbt, howitzer_155, 3.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+	assert_true(result_mbt.is_valid)
+	assert_gt(result_mbt.d_supp, 0.0)  # Heavy HE should suppress MBT
+	assert_gt(result_mbt.d_dmg, 0.0)   # Heavy HE direct hit should damage MBT
+	_pass()
+
+	# ========================================
+	# テスト: 直撃は至近弾より効果が高い
+	# ========================================
+	_current_test = "direct_hit_more_effective"
+	var mbt2: RefCounted = _create_indirect_test_mbt(ElementDataClass)
+	var result_direct: RefCounted = combat_system.calculate_indirect_impact_effect(
+		mbt2, howitzer_155, 3.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+	var result_indirect: RefCounted = combat_system.calculate_indirect_impact_effect(
+		mbt2, howitzer_155, 15.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+	assert_gt(result_direct.d_dmg, result_indirect.d_dmg)  # Direct hit > indirect hit
+	_pass()
+
+	# ========================================
+	# テスト: 通常HE（81mm）はMBTにほぼ無効
+	# ========================================
+	_current_test = "regular_he_weak_on_mbt"
+	var mbt3: RefCounted = _create_indirect_test_mbt(ElementDataClass)
+	var result_regular: RefCounted = combat_system.calculate_indirect_impact_effect(
+		mbt3, mortar_81, 2.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+	# 81mmはMBTにほとんど効果がない（m_vuln = 0.05）
+	assert_lt(result_regular.d_dmg, result_mbt.d_dmg)  # 81mm less effective than 155mm on MBT
+	_pass()
+
+	# ========================================
+	# テスト: 装甲クラス別脆弱性スケーリング
+	# ========================================
+	_current_test = "vulnerability_scaling_by_armor"
+	var apc: RefCounted = _create_indirect_test_apc(ElementDataClass)
+	var ifv: RefCounted = _create_indirect_test_ifv(ElementDataClass)
+	var mbt4: RefCounted = _create_indirect_test_mbt(ElementDataClass)
+
+	var result_apc: RefCounted = combat_system.calculate_indirect_impact_effect(
+		apc, howitzer_155, 3.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+	var result_ifv: RefCounted = combat_system.calculate_indirect_impact_effect(
+		ifv, howitzer_155, 3.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+	var result_mbt4: RefCounted = combat_system.calculate_indirect_impact_effect(
+		mbt4, howitzer_155, 3.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+
+	# APC > IFV > MBT
+	assert_gt(result_apc.d_dmg, result_ifv.d_dmg)   # APC more vulnerable than IFV
+	assert_gt(result_ifv.d_dmg, result_mbt4.d_dmg)  # IFV more vulnerable than MBT
+	_pass()
+
+	# ========================================
+	# テスト: 爆風半径外は効果なし
+	# ========================================
+	_current_test = "no_effect_outside_blast_radius"
+	var infantry2: RefCounted = _create_indirect_test_infantry(ElementDataClass)
+	var result_outside: RefCounted = combat_system.calculate_indirect_impact_effect(
+		infantry2, howitzer_155, 50.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+	assert_false(result_outside.is_valid)
+	assert_eq(result_outside.d_supp, 0.0)
+	assert_eq(result_outside.d_dmg, 0.0)
+	_pass()
+
+	# ========================================
+	# テスト: 地形遮蔽で効果減少
+	# ========================================
+	_current_test = "cover_reduces_effect"
+	var infantry3: RefCounted = _create_indirect_test_infantry(ElementDataClass)
+	var result_open: RefCounted = combat_system.calculate_indirect_impact_effect(
+		infantry3, howitzer_155, 10.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+	var result_urban: RefCounted = combat_system.calculate_indirect_impact_effect(
+		infantry3, howitzer_155, 10.0, GameEnums.TerrainType.URBAN, false, 1
+	)
+	assert_gt(result_open.d_dmg, result_urban.d_dmg)  # Urban cover should reduce damage
+	_pass()
+
+	# ========================================
+	# v0.2 ダメージモデルテスト: 開けた場所の脆弱性
+	# ========================================
+	_current_test = "open_vs_forest_damage"
+	var infantry_v2: RefCounted = _create_indirect_test_infantry(ElementDataClass)
+	var result_open_v2: RefCounted = combat_system.calculate_indirect_impact_effect(
+		infantry_v2, howitzer_155, 3.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+	var result_forest: RefCounted = combat_system.calculate_indirect_impact_effect(
+		infantry_v2, howitzer_155, 3.0, GameEnums.TerrainType.FOREST, false, 1
+	)
+	# 開けた場所 > 森林（森林は50%軽減）
+	assert_gt(result_open_v2.d_dmg, result_forest.d_dmg)
+	_pass()
+
+	# ========================================
+	# v0.2 ダメージモデルテスト: 塹壕の効果（60%軽減）
+	# ========================================
+	_current_test = "entrenchment_reduces_damage"
+	var infantry_entrench: RefCounted = _create_indirect_test_infantry(ElementDataClass)
+	var result_exposed: RefCounted = combat_system.calculate_indirect_impact_effect(
+		infantry_entrench, howitzer_155, 15.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+	var result_entrenched: RefCounted = combat_system.calculate_indirect_impact_effect(
+		infantry_entrench, howitzer_155, 15.0, GameEnums.TerrainType.OPEN, true, 1
+	)
+	# 塹壕は60%以上軽減（ENTRENCH_IF_MULT = 0.40）
+	assert_lt(result_entrenched.d_dmg, result_exposed.d_dmg * 0.5)
+	_pass()
+
+	# ========================================
+	# v0.2 ダメージモデルテスト: 市街地は最高の防護
+	# ========================================
+	_current_test = "urban_best_cover"
+	var infantry_urban: RefCounted = _create_indirect_test_infantry(ElementDataClass)
+	var result_open_urban: RefCounted = combat_system.calculate_indirect_impact_effect(
+		infantry_urban, howitzer_155, 10.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+	var result_urban_v2: RefCounted = combat_system.calculate_indirect_impact_effect(
+		infantry_urban, howitzer_155, 10.0, GameEnums.TerrainType.URBAN, false, 1
+	)
+	# 市街地は65%以上軽減（COVER_IF_URBAN = 0.35）
+	assert_lt(result_urban_v2.d_dmg, result_open_urban.d_dmg * 0.4)
+	_pass()
+
+	# ========================================
+	# v0.2 ダメージモデルテスト: APCは至近弾でも被害
+	# ========================================
+	_current_test = "apc_near_miss_damage"
+	var apc_v2: RefCounted = _create_indirect_test_apc(ElementDataClass)
+	var result_apc_near: RefCounted = combat_system.calculate_indirect_impact_effect(
+		apc_v2, howitzer_155, 20.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+	# APCは至近弾でもダメージを受ける（HEAVY_HE_VULN_DMG_LIGHT_INDIRECT = 0.5）
+	assert_gt(result_apc_near.d_dmg, 0.0)
+	_pass()
+
+	# ========================================
+	# v0.2 ダメージモデルテスト: MBTは至近弾に耐性
+	# ========================================
+	_current_test = "mbt_resists_near_miss"
+	var mbt_v2: RefCounted = _create_indirect_test_mbt(ElementDataClass)
+	var result_mbt_near: RefCounted = combat_system.calculate_indirect_impact_effect(
+		mbt_v2, howitzer_155, 20.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+	# MBTは至近弾で微小ダメージ
+	assert_lt(result_mbt_near.d_dmg, 0.5)
+	# ただし抑圧は受ける
+	assert_gt(result_mbt_near.d_supp, 0.0)
+	_pass()
+
+	# ========================================
+	# v0.2 ダメージモデルテスト: 縦隊は砲撃に脆弱
+	# ========================================
+	_current_test = "column_vulnerable"
+	var infantry_formation: RefCounted = _create_indirect_test_infantry(ElementDataClass)
+	var result_column: RefCounted = combat_system.calculate_indirect_impact_effect(
+		infantry_formation, howitzer_155, 15.0, GameEnums.TerrainType.OPEN, false, 0  # Column
+	)
+	var result_dispersed: RefCounted = combat_system.calculate_indirect_impact_effect(
+		infantry_formation, howitzer_155, 15.0, GameEnums.TerrainType.OPEN, false, 2  # Dispersed
+	)
+	# 縦隊は分散より高ダメージ（1.3 / 0.7 ≈ 1.86倍）
+	assert_gt(result_column.d_dmg, result_dispersed.d_dmg)
+	_pass()
+
+	# ========================================
+	# v0.2 ダメージモデルテスト: 複合防御（市街地+塹壕）
+	# ========================================
+	_current_test = "combined_cover_entrench"
+	var infantry_combined: RefCounted = _create_indirect_test_infantry(ElementDataClass)
+	var result_worst: RefCounted = combat_system.calculate_indirect_impact_effect(
+		infantry_combined, howitzer_155, 10.0, GameEnums.TerrainType.OPEN, false, 1
+	)
+	var result_best: RefCounted = combat_system.calculate_indirect_impact_effect(
+		infantry_combined, howitzer_155, 10.0, GameEnums.TerrainType.URBAN, true, 1
+	)
+	# 複合防御で80%以上軽減（0.35 * 0.40 = 0.14）
+	var damage_ratio: float = result_best.d_dmg / result_worst.d_dmg
+	assert_lt(damage_ratio, 0.20)
+	_pass()
+
+
+# ヘルパー関数（間接射撃テスト用）
+func _create_indirect_test_infantry(ElementDataClass: GDScript) -> RefCounted:
+	var element_type: RefCounted = ElementDataClass.ElementType.new()
+	element_type.id = "test_infantry"
+	element_type.max_strength = 30
+	element_type.armor_class = 0
+
+	var element: RefCounted = ElementDataClass.ElementInstance.new()
+	element.element_type = element_type
+	element.id = "test_infantry_" + str(randi())
+	element.faction = GameEnums.Faction.BLUE
+	element.position = Vector2(500, 500)
+	element.suppression = 0.0
+	element.current_strength = 30
+	return element
+
+
+func _create_indirect_test_apc(ElementDataClass: GDScript) -> RefCounted:
+	var element_type: RefCounted = ElementDataClass.ElementType.new()
+	element_type.id = "test_apc"
+	element_type.max_strength = 4
+	element_type.armor_class = 1
+
+	var element: RefCounted = ElementDataClass.ElementInstance.new()
+	element.element_type = element_type
+	element.id = "test_apc_" + str(randi())
+	element.faction = GameEnums.Faction.BLUE
+	element.position = Vector2(500, 500)
+	element.suppression = 0.0
+	element.current_strength = 4
+	return element
+
+
+func _create_indirect_test_ifv(ElementDataClass: GDScript) -> RefCounted:
+	var element_type: RefCounted = ElementDataClass.ElementType.new()
+	element_type.id = "test_ifv"
+	element_type.max_strength = 4
+	element_type.armor_class = 2
+
+	var element: RefCounted = ElementDataClass.ElementInstance.new()
+	element.element_type = element_type
+	element.id = "test_ifv_" + str(randi())
+	element.faction = GameEnums.Faction.BLUE
+	element.position = Vector2(500, 500)
+	element.suppression = 0.0
+	element.current_strength = 4
+	return element
+
+
+func _create_indirect_test_mbt(ElementDataClass: GDScript) -> RefCounted:
+	var element_type: RefCounted = ElementDataClass.ElementType.new()
+	element_type.id = "test_mbt"
+	element_type.max_strength = 4
+	element_type.armor_class = 3
+
+	var element: RefCounted = ElementDataClass.ElementInstance.new()
+	element.element_type = element_type
+	element.id = "test_mbt_" + str(randi())
+	element.faction = GameEnums.Faction.RED
+	element.position = Vector2(600, 600)
+	element.suppression = 0.0
+	element.current_strength = 4
+	return element
