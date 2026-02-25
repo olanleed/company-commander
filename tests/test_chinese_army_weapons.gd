@@ -255,9 +255,9 @@ func test_type99a_secondary_weapons() -> void:
 	var catalog = VehicleCatalogClass.new()
 	catalog.load_all()
 	var vehicle = catalog.get_vehicle("CHN_Type99A")
-	assert_has(vehicle, "secondary_weapons", "Type 99A should have secondary_weapons")
-	assert_has(vehicle.secondary_weapons, "CW_TYPE86_COAX", "Type 99A should have Type 86 coax")
-	assert_has(vehicle.secondary_weapons, "CW_QJZ89_AA", "Type 99A should have QJZ-89 AA")
+	assert_not_null(vehicle.secondary_weapons, "Type 99A should have secondary_weapons")
+	assert_true(vehicle.secondary_weapons.has("CW_TYPE86_COAX"), "Type 99A should have Type 86 coax")
+	assert_true(vehicle.secondary_weapons.has("CW_QJC88_AA"), "Type 99A should have QJC-88 AA")
 
 
 func test_type99_uses_dtw125ii() -> void:
@@ -293,7 +293,7 @@ func test_type15_has_gp105_atgm() -> void:
 	var catalog = VehicleCatalogClass.new()
 	catalog.load_all()
 	var vehicle = catalog.get_vehicle("CHN_Type15")
-	assert_has(vehicle, "atgm", "Type 15 should have ATGM")
+	assert_not_null(vehicle.atgm, "Type 15 should have ATGM")
 	assert_eq(vehicle.atgm.weapon_id, "CW_ATGM_GP105", "Type 15 should have GP105 ATGM")
 
 
@@ -302,14 +302,14 @@ func test_zbd04a_has_weapons() -> void:
 	catalog.load_all()
 	var vehicle = catalog.get_vehicle("CHN_ZBD04A")
 	assert_not_null(vehicle, "ZBD-04A should exist")
-	assert_eq(vehicle.main_gun.weapon_id, "CW_AUTOCANNON_30_CHN", "ZBD-04A should use 30mm ZPT-99")
+	assert_eq(vehicle.main_gun.weapon_id, "CW_AUTOCANNON_100_CHN", "ZBD-04A should use 100mm gun-launcher")
 
 
 func test_zbd04a_has_hj8e() -> void:
 	var catalog = VehicleCatalogClass.new()
 	catalog.load_all()
 	var vehicle = catalog.get_vehicle("CHN_ZBD04A")
-	assert_has(vehicle, "atgm", "ZBD-04A should have ATGM")
+	assert_not_null(vehicle.atgm, "ZBD-04A should have ATGM")
 	assert_eq(vehicle.atgm.weapon_id, "CW_ATGM_HJ8E", "ZBD-04A should have HJ-8E ATGM")
 
 
@@ -324,7 +324,7 @@ func test_zbd09_has_hj73() -> void:
 	var catalog = VehicleCatalogClass.new()
 	catalog.load_all()
 	var vehicle = catalog.get_vehicle("CHN_ZBD09")
-	assert_has(vehicle, "atgm", "ZBD-09 should have ATGM")
+	assert_not_null(vehicle.atgm, "ZBD-09 should have ATGM")
 	assert_eq(vehicle.atgm.weapon_id, "CW_ATGM_HJ73", "ZBD-09 should have HJ-73 ATGM")
 
 
@@ -346,7 +346,7 @@ func test_ztl11_has_gp105() -> void:
 	var catalog = VehicleCatalogClass.new()
 	catalog.load_all()
 	var vehicle = catalog.get_vehicle("CHN_ZTL11")
-	assert_has(vehicle, "atgm", "ZTL-11 should have ATGM")
+	assert_not_null(vehicle.atgm, "ZTL-11 should have ATGM")
 	assert_eq(vehicle.atgm.weapon_id, "CW_ATGM_GP105", "ZTL-11 should have GP105 ATGM")
 
 

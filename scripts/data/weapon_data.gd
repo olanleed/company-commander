@@ -18,6 +18,15 @@ enum Mechanism {
 }
 
 # =============================================================================
+# 大口径HEメカニズム（装甲への追加効果）
+# =============================================================================
+
+enum HeavyHEClass {
+	NONE,            ## 通常の爆風・破片（装甲に弱い）
+	HEAVY_HE,        ## 大口径HE（155mm/152mm等、装甲にも効果あり）
+}
+
+# =============================================================================
 # 射撃モデル
 # =============================================================================
 
@@ -123,6 +132,12 @@ class WeaponType:
 
 	## 弾頭メカニズム
 	var mechanism: Mechanism = Mechanism.SMALL_ARMS
+
+	## 大口径HEクラス（BLAST_FRAGの場合に追加効果）
+	var heavy_he_class: HeavyHEClass = HeavyHEClass.NONE
+
+	## 口径（mm）：大口径判定用
+	var caliber_mm: float = 0.0
 
 	## 射撃モデル
 	var fire_model: FireModel = FireModel.CONTINUOUS
@@ -1115,44 +1130,48 @@ static func create_cw_autocannon_35() -> WeaponType:
 
 ## CW_HOWITZER_155: 155mm榴弾砲
 ## 自走砲用、長距離間接射撃
+## 大口径HEとして装甲目標にも効果あり（docs/indirect_fire_v0.2.md）
 static func create_cw_howitzer_155() -> WeaponType:
 	var w := WeaponType.new()
 	w.id = "CW_HOWITZER_155"
 	w.display_name = "155mm Howitzer"
 	w.mechanism = Mechanism.BLAST_FRAG
+	w.heavy_he_class = HeavyHEClass.HEAVY_HE  # 大口径HE
+	w.caliber_mm = 155.0
 	w.fire_model = FireModel.INDIRECT
 	w.min_range_m = 2000.0  # 最小射程2km
 	w.max_range_m = 30000.0  # 最大射程30km
 	w.range_band_thresholds_m = [5000.0, 15000.0]  # NEAR < 5km, MID < 15km, FAR >= 15km
 	w.threat_class = ThreatClass.HE_FRAG
 	w.preferred_target = PreferredTarget.SOFT
+	w.weapon_role = WeaponRole.HOWITZER
 	w.ammo_endurance_min = 15.0
 	w.rof_rpm = 6.0  # 6発/分
 	w.sigma_hit_m = 30.0  # 命中精度（CEP）
 	w.direct_hit_radius_m = 5.0
 	w.shock_radius_m = 50.0
-	w.blast_radius_m = 30.0
+	w.blast_radius_m = 35.0  # 30→35に拡大
 	w.requires_observer = true  # 前進観測員が必要
 
-	# 155mm HE - 大威力
+	# 155mm HE - 大威力（装甲目標へのlethality引き上げ）
 	w.lethality = {
 		RangeBand.NEAR: {
 			TargetClass.SOFT: 95,
-			TargetClass.LIGHT: 70,
-			TargetClass.HEAVY: 20,
-			TargetClass.FORTIFIED: 80,
+			TargetClass.LIGHT: 75,    # 70→75
+			TargetClass.HEAVY: 40,    # 20→40（大口径HE効果）
+			TargetClass.FORTIFIED: 85, # 80→85
 		},
 		RangeBand.MID: {
 			TargetClass.SOFT: 90,
-			TargetClass.LIGHT: 65,
-			TargetClass.HEAVY: 15,
-			TargetClass.FORTIFIED: 75,
+			TargetClass.LIGHT: 70,    # 65→70
+			TargetClass.HEAVY: 35,    # 15→35
+			TargetClass.FORTIFIED: 80, # 75→80
 		},
 		RangeBand.FAR: {
 			TargetClass.SOFT: 85,
-			TargetClass.LIGHT: 60,
-			TargetClass.HEAVY: 10,
-			TargetClass.FORTIFIED: 70,
+			TargetClass.LIGHT: 65,    # 60→65
+			TargetClass.HEAVY: 30,    # 10→30
+			TargetClass.FORTIFIED: 75, # 70→75
 		},
 	}
 	w.suppression_power = {
@@ -1170,43 +1189,48 @@ static func create_cw_howitzer_155() -> WeaponType:
 
 ## CW_MORTAR_120: 120mm迫撃砲（自走）
 ## 自走迫撃砲用、中距離間接射撃
+## 120mmは大口径HE扱い（docs/indirect_fire_v0.2.md）
 static func create_cw_mortar_120() -> WeaponType:
 	var w := WeaponType.new()
 	w.id = "CW_MORTAR_120"
 	w.display_name = "120mm Mortar"
 	w.mechanism = Mechanism.BLAST_FRAG
+	w.heavy_he_class = HeavyHEClass.HEAVY_HE  # 大口径HE
+	w.caliber_mm = 120.0
 	w.fire_model = FireModel.INDIRECT
 	w.min_range_m = 200.0
 	w.max_range_m = 8000.0
 	w.range_band_thresholds_m = [1500.0, 4000.0]  # NEAR < 1.5km, MID < 4km, FAR >= 4km
 	w.threat_class = ThreatClass.HE_FRAG
 	w.preferred_target = PreferredTarget.SOFT
+	w.weapon_role = WeaponRole.MORTAR
 	w.ammo_endurance_min = 10.0
 	w.rof_rpm = 10.0  # 10発/分
 	w.sigma_hit_m = 20.0
 	w.direct_hit_radius_m = 3.0
 	w.shock_radius_m = 30.0
-	w.blast_radius_m = 20.0
+	w.blast_radius_m = 25.0  # 20→25に拡大
 	w.requires_observer = true
 
+	# 装甲目標へのlethality引き上げ
 	w.lethality = {
 		RangeBand.NEAR: {
 			TargetClass.SOFT: 85,
-			TargetClass.LIGHT: 50,
-			TargetClass.HEAVY: 10,
-			TargetClass.FORTIFIED: 60,
+			TargetClass.LIGHT: 55,    # 50→55
+			TargetClass.HEAVY: 25,    # 10→25
+			TargetClass.FORTIFIED: 65, # 60→65
 		},
 		RangeBand.MID: {
 			TargetClass.SOFT: 80,
-			TargetClass.LIGHT: 45,
-			TargetClass.HEAVY: 8,
-			TargetClass.FORTIFIED: 55,
+			TargetClass.LIGHT: 50,    # 45→50
+			TargetClass.HEAVY: 20,    # 8→20
+			TargetClass.FORTIFIED: 60, # 55→60
 		},
 		RangeBand.FAR: {
 			TargetClass.SOFT: 75,
-			TargetClass.LIGHT: 40,
-			TargetClass.HEAVY: 5,
-			TargetClass.FORTIFIED: 50,
+			TargetClass.LIGHT: 45,    # 40→45
+			TargetClass.HEAVY: 15,    # 5→15
+			TargetClass.FORTIFIED: 55, # 50→55
 		},
 	}
 	w.suppression_power = {
@@ -1394,17 +1418,21 @@ static func create_cw_autocannon_25() -> WeaponType:
 
 
 ## CW_MORTAR_81: 81mm迫撃砲
+## CW_MORTAR_81: 81mm迫撃砲
+## 標準的な中隊支援火器、大口径HE扱いではない
 static func create_cw_mortar_81() -> WeaponType:
 	var w := WeaponType.new()
 	w.id = "CW_MORTAR_81"
 	w.display_name = "81mm Mortar"
 	w.mechanism = Mechanism.BLAST_FRAG
+	w.caliber_mm = 81.0
 	w.fire_model = FireModel.INDIRECT
 	w.min_range_m = 80.0
 	w.max_range_m = 5000.0
 	w.range_band_thresholds_m = [1000.0, 3000.0]
 	w.threat_class = ThreatClass.HE_FRAG
 	w.preferred_target = PreferredTarget.SOFT
+	w.weapon_role = WeaponRole.MORTAR
 	w.ammo_endurance_min = 15.0
 	w.rof_rpm = 20.0  # 81mmは高発射レート
 	w.sigma_hit_m = 25.0
@@ -1447,43 +1475,49 @@ static func create_cw_mortar_81() -> WeaponType:
 
 
 ## CW_HOWITZER_152: 152mm榴弾砲（ロシア）
+## CW_HOWITZER_152: 152mm榴弾砲（ロシア）
+## 大口径HEとして装甲目標にも効果あり（docs/indirect_fire_v0.2.md）
 static func create_cw_howitzer_152() -> WeaponType:
 	var w := WeaponType.new()
 	w.id = "CW_HOWITZER_152"
 	w.display_name = "152mm Howitzer"
 	w.mechanism = Mechanism.BLAST_FRAG
+	w.heavy_he_class = HeavyHEClass.HEAVY_HE  # 大口径HE
+	w.caliber_mm = 152.0
 	w.fire_model = FireModel.INDIRECT
 	w.min_range_m = 2000.0
 	w.max_range_m = 28000.0
 	w.range_band_thresholds_m = [5000.0, 14000.0]
 	w.threat_class = ThreatClass.HE_FRAG
 	w.preferred_target = PreferredTarget.SOFT
+	w.weapon_role = WeaponRole.HOWITZER
 	w.ammo_endurance_min = 12.0
 	w.rof_rpm = 5.0  # 155mmより若干遅い
 	w.sigma_hit_m = 35.0
 	w.direct_hit_radius_m = 5.0
 	w.shock_radius_m = 48.0
-	w.blast_radius_m = 28.0
+	w.blast_radius_m = 32.0  # 28→32に拡大
 	w.requires_observer = true
 
+	# 装甲目標へのlethality引き上げ（155mmよりやや低い）
 	w.lethality = {
 		RangeBand.NEAR: {
 			TargetClass.SOFT: 93,
-			TargetClass.LIGHT: 68,
-			TargetClass.HEAVY: 18,
-			TargetClass.FORTIFIED: 78,
+			TargetClass.LIGHT: 72,    # 68→72
+			TargetClass.HEAVY: 35,    # 18→35
+			TargetClass.FORTIFIED: 82, # 78→82
 		},
 		RangeBand.MID: {
 			TargetClass.SOFT: 88,
-			TargetClass.LIGHT: 63,
-			TargetClass.HEAVY: 13,
-			TargetClass.FORTIFIED: 73,
+			TargetClass.LIGHT: 67,    # 63→67
+			TargetClass.HEAVY: 30,    # 13→30
+			TargetClass.FORTIFIED: 77, # 73→77
 		},
 		RangeBand.FAR: {
 			TargetClass.SOFT: 83,
-			TargetClass.LIGHT: 58,
-			TargetClass.HEAVY: 8,
-			TargetClass.FORTIFIED: 68,
+			TargetClass.LIGHT: 62,    # 58→62
+			TargetClass.HEAVY: 25,    # 8→25
+			TargetClass.FORTIFIED: 72, # 68→72
 		},
 	}
 	w.suppression_power = {
@@ -3867,6 +3901,61 @@ static func create_cw_atgm_gp105() -> WeaponType:
 	return w
 
 
+## 12.7mm QJC-88 (Type 88 HMG) - Tank commander's AA mount
+## Standard 12.7mm HMG for Type 99/96 series MBTs
+static func create_cw_qjc88_aa() -> WeaponType:
+	var w := WeaponType.new()
+	w.id = "CW_QJC88_AA"
+	w.display_name = "12.7mm QJC-88"
+	w.mechanism = Mechanism.SMALL_ARMS
+	w.fire_model = FireModel.CONTINUOUS
+	w.threat_class = ThreatClass.SMALL_ARMS
+	w.preferred_target = PreferredTarget.SOFT
+	w.min_range_m = 0.0
+	w.max_range_m = 1800.0
+	w.range_band_thresholds_m = [300.0, 800.0]
+	w.rof_rpm = 600.0
+
+	w.lethality = {
+		RangeBand.NEAR: {
+			TargetClass.SOFT: 80,
+			TargetClass.LIGHT: 45,
+			TargetClass.HEAVY: 5,
+			TargetClass.FORTIFIED: 25,
+		},
+		RangeBand.MID: {
+			TargetClass.SOFT: 70,
+			TargetClass.LIGHT: 35,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 15,
+		},
+		RangeBand.FAR: {
+			TargetClass.SOFT: 55,
+			TargetClass.LIGHT: 25,
+			TargetClass.HEAVY: 0,
+			TargetClass.FORTIFIED: 10,
+		},
+	}
+
+	w.suppression_power = {
+		RangeBand.NEAR: 60,
+		RangeBand.MID: 50,
+		RangeBand.FAR: 35,
+	}
+
+	# 12.7mm API: 25mm @ 100m, 20mm @ 500m
+	w.pen_ke = {
+		RangeBand.NEAR: 5,    # 25mm
+		RangeBand.MID: 4,     # 20mm
+		RangeBand.FAR: 3,     # 15mm
+	}
+
+	w.projectile_speed_mps = 850.0
+	w.projectile_size = 0.15
+
+	return w
+
+
 ## 12.7mm QJZ-89 (Type 89 HMG) - AA mount
 static func create_cw_qjz89_aa() -> WeaponType:
 	var w := WeaponType.new()
@@ -4042,6 +4131,7 @@ static func get_all_concrete_weapons() -> Dictionary:
 		"CW_ATGM_HJ8E": create_cw_atgm_hj8e(),
 		"CW_ATGM_HJ73": create_cw_atgm_hj73(),
 		"CW_ATGM_GP105": create_cw_atgm_gp105(),
+		"CW_QJC88_AA": create_cw_qjc88_aa(),
 		"CW_QJZ89_AA": create_cw_qjz89_aa(),
 		"CW_TYPE86_COAX": create_cw_type86_coax(),
 	}
@@ -4086,7 +4176,7 @@ static func infer_weapon_role(weapon: WeaponType) -> WeaponRole:
 
 	# 重機関銃（12.7-14.5mm）
 	if id.contains("KPVT") or id.contains("M2HB") or id.contains("QJZ89") or \
-	   id.contains("KORD") or id.contains("HMG") or id.contains("_AA"):
+	   id.contains("QJC88") or id.contains("KORD") or id.contains("HMG") or id.contains("_AA"):
 		return WeaponRole.HMG
 
 	# 同軸機関銃

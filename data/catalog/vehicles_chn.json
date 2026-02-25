@@ -39,7 +39,7 @@
         "ammo_capacity_ready": 22,
         "ammo_types": ["DTC10-125 APFSDS", "DTB12-125 HEAT-FS", "DTB22-125 HE-Frag"]
       },
-      "secondary_weapons": ["CW_TYPE86_COAX", "CW_QJZ89_AA"],
+      "secondary_weapons": ["CW_TYPE86_COAX", "CW_QJC88_AA"],
       "protection": {
         "era_equipped": true,
         "era_type": "FY-5",
@@ -84,7 +84,7 @@
         "ammo_capacity_ready": 22,
         "ammo_types": ["DTW-125 Type II APFSDS", "DTB12-125 HEAT-FS", "DTB22-125 HE-Frag"]
       },
-      "secondary_weapons": ["CW_TYPE86_COAX", "CW_QJZ89_AA"],
+      "secondary_weapons": ["CW_TYPE86_COAX", "CW_QJC88_AA"],
       "protection": {
         "era_equipped": true,
         "era_type": "FY-4",
@@ -128,7 +128,7 @@
         "ammo_capacity_ready": 22,
         "ammo_types": ["DTW-125 Type II APFSDS", "DTB12-125 HEAT-FS", "DTB22-125 HE-Frag"]
       },
-      "secondary_weapons": ["CW_TYPE86_COAX", "CW_QJZ89_AA"],
+      "secondary_weapons": ["CW_TYPE86_COAX", "CW_QJC88_AA"],
       "protection": {
         "era_equipped": true,
         "era_type": "FY-4",
@@ -172,7 +172,7 @@
         "ammo_capacity_ready": 22,
         "ammo_types": ["DTW-125 APFSDS", "HEAT-FS", "HE-Frag"]
       },
-      "secondary_weapons": ["CW_TYPE86_COAX", "CW_QJZ89_AA"],
+      "secondary_weapons": ["CW_TYPE86_COAX", "CW_QJC88_AA"],
       "protection": {
         "era_equipped": false,
         "aps_equipped": false,
@@ -221,7 +221,7 @@
         "range_m": 5200,
         "count": 6
       },
-      "secondary_weapons": ["CW_TYPE86_COAX", "CW_QJZ89_AA"],
+      "secondary_weapons": ["CW_TYPE86_COAX", "CW_QJC88_AA"],
       "protection": {
         "era_equipped": true,
         "aps_equipped": false,
@@ -257,12 +257,13 @@
         "cross_speed": 1.05
       },
       "main_gun": {
-        "weapon_id": "CW_AUTOCANNON_30_CHN",
-        "caliber_mm": 30,
-        "type": "autocannon",
-        "ammo_capacity_total": 450,
-        "ammo_capacity_ready": 150,
-        "ammo_types": ["DTC10-30 APFSDS", "DTC041A-30 AP", "DTB02-30 HE"]
+        "weapon_id": "CW_AUTOCANNON_100_CHN",
+        "caliber_mm": 100,
+        "type": "gun_launcher",
+        "secondary_caliber_mm": 30,
+        "ammo_capacity_total": 40,
+        "ammo_capacity_ready": 22,
+        "ammo_types": ["HE-FRAG", "ATGM"]
       },
       "atgm": {
         "weapon_id": "CW_ATGM_HJ8E",
@@ -275,7 +276,7 @@
         "era_equipped": false,
         "aps_equipped": false
       },
-      "notes": "主力IFV、30mm前面防護、.50cal側面防護、2400両以上配備"
+      "notes": "主力IFV、100mm砲+30mm同軸機関砲、30mm前面防護、2400両以上配備"
     },
     {
       "id": "CHN_ZBD04",
@@ -313,12 +314,12 @@
         "ammo_capacity_ready": 22,
         "ammo_types": ["HE-FRAG", "3UBK10 ATGM (copy)"]
       },
-      "secondary_weapons": ["CW_AUTOCANNON_30_CHN", "CW_TYPE86_COAX"],
+      "secondary_weapons": ["CW_TYPE86_COAX"],
       "protection": {
         "era_equipped": false,
         "aps_equipped": false
       },
-      "notes": "BMP-3類似、100mm砲+30mm機関砲、水陸両用"
+      "notes": "BMP-3類似、100mm砲+30mm同軸機関砲、水陸両用"
     },
     {
       "id": "CHN_ZBD09",
@@ -560,7 +561,7 @@
         "cross_speed": 0.95
       },
       "main_gun": {
-        "weapon_id": "CW_MORTAR_120",
+        "weapon_id": "CW_HOWITZER_122_CHN",
         "caliber_mm": 122,
         "type": "howitzer",
         "range_km": 18,
@@ -729,16 +730,17 @@
       },
       "atgm": {
         "weapon_id": "CW_ATGM_HJ73",
-        "type": "HJ-73D",
+        "type": "HJ-73C",
         "range_m": 3000,
-        "count": 2
+        "count": 4,
+        "count_ready": 1
       },
       "secondary_weapons": ["CW_TYPE86_COAX"],
       "protection": {
         "era_equipped": false,
         "aps_equipped": false
       },
-      "notes": "空挺IFV、超軽量8t、空中投下可、30mm機関砲"
+      "notes": "空挺IFV、超軽量8t、空中投下可、30mm機関砲、HJ-73C×4発"
     },
     {
       "id": "CHN_Type63A",
