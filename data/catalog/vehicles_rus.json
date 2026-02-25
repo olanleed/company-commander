@@ -100,8 +100,8 @@
       },
       "atgm": {
         "weapon_id": "CW_ATGM_REFLEKS",
-        "type": "9M119 Svir",
-        "range_m": 4000,
+        "type": "9M119M Refleks",
+        "range_m": 5000,
         "count": 4
       },
       "secondary_weapons": ["CW_PKT_COAX", "CW_KORD_AA"],
@@ -112,7 +112,7 @@
         "aps_type": "Shtora-1",
         "composite_gen": 3
       },
-      "notes": "標準T-90A、溶接砲塔、Kontakt-5 ERA、Shtora-1 APS"
+      "notes": "標準T-90A、溶接砲塔、Kontakt-5 ERA、Shtora-1 APS、Refleks ATGM"
     },
     {
       "id": "RUS_T80BVM",
@@ -146,7 +146,7 @@
         "type": "smoothbore",
         "autoloader": true,
         "ammo_capacity_total": 38,
-        "ammo_capacity_ready": 22,
+        "ammo_capacity_ready": 28,
         "pen_ke_modifier": 1.05,
         "pen_ce_modifier": 1.05,
         "rof_modifier": 1.10,
@@ -263,8 +263,8 @@
       },
       "atgm": {
         "weapon_id": "CW_ATGM_REFLEKS",
-        "type": "9M119 Svir",
-        "range_m": 4000,
+        "type": "9M119M Refleks",
+        "range_m": 5000,
         "count": 4
       },
       "secondary_weapons": ["CW_PKT_COAX", "CW_KORD_AA"],
@@ -274,7 +274,7 @@
         "aps_equipped": false,
         "composite_gen": 2
       },
-      "notes": "T-72B近代化型、Kontakt-5 ERA、3BM42 Mango(500mm@2km)"
+      "notes": "T-72B近代化型、Kontakt-5 ERA、3BM42 Mango(500mm@2km)、Refleks ATGM"
     },
     {
       "id": "RUS_BMP3",
@@ -321,12 +321,12 @@
         "range_m": 4000,
         "count": 8
       },
-      "secondary_weapons": ["CW_AUTOCANNON_30_RUS", "CW_PKT_COAX"],
+      "secondary_weapons": ["CW_PKT_COAX"],
       "protection": {
         "era_equipped": false,
         "aps_equipped": false
       },
-      "notes": "100mm砲+30mm機関砲+ATGM、高火力だが装甲薄、水陸両用"
+      "notes": "100mm/30mm同軸+ATGM、高火力だが装甲薄、水陸両用"
     },
     {
       "id": "RUS_BMP3M",
@@ -373,7 +373,7 @@
         "range_m": 5500,
         "count": 8
       },
-      "secondary_weapons": ["CW_AUTOCANNON_30_RUS", "CW_PKT_COAX"],
+      "secondary_weapons": ["CW_PKT_COAX"],
       "protection": {
         "era_equipped": true,
         "aps_equipped": false
@@ -681,13 +681,13 @@
         "cross_speed": 0.80
       },
       "main_gun": {
-        "weapon_id": "CW_PKT_COAX",
-        "caliber_mm": 7.62,
-        "type": "mmg",
-        "ammo_capacity_total": 1000,
-        "ammo_capacity_ready": 250,
-        "pen_ke_modifier": 0.60,
-        "pen_ce_modifier": 0.60,
+        "weapon_id": "CW_HMG_KORD",
+        "caliber_mm": 12.7,
+        "type": "hmg",
+        "ammo_capacity_total": 450,
+        "ammo_capacity_ready": 150,
+        "pen_ke_modifier": 0.75,
+        "pen_ce_modifier": 0.70,
         "rof_modifier": 1.00,
         "accuracy_modifier": 0.85
       },
