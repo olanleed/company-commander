@@ -284,10 +284,10 @@ func test_chn_plz07_creation() -> void:
 	assert_not_null(element, "Should create element")
 	assert_eq(element.vehicle_id, "CHN_PLZ07")
 
-	# 122mm榴弾砲（CW_MORTAR_120として設定されている）
+	# 122mm榴弾砲
 	var has_weapon := false
 	for weapon in element.weapons:
-		if weapon.id == "CW_MORTAR_120":
+		if weapon.id == "CW_HOWITZER_122_CHN":
 			has_weapon = true
 			break
 	assert_true(has_weapon, "Should have artillery weapon")

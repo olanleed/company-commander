@@ -275,6 +275,14 @@ func get_all_vehicle_ids() -> Array[String]:
 	return result
 
 
+## 全車両を取得（テスト用）
+func get_all_vehicles() -> Array:
+	var result: Array = []
+	for vehicle_id in _all_vehicles:
+		result.append(_all_vehicles[vehicle_id])
+	return result
+
+
 ## カタログがロード済みか
 func is_loaded() -> bool:
 	return _all_vehicles.size() > 0

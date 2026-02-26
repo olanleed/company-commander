@@ -1,0 +1,690 @@
+[
+	{
+		"ammo_endurance_min": 15.0,
+		"blast_radius_m": 40.0,
+		"caliber_mm": 0.0,
+		"discrete_params": {
+			"direct_hit_radius_m": 2.0,
+			"rof_rpm": 7.0,
+			"shock_radius_m": 20.0,
+			"sigma_hit_m": 0.0
+		},
+		"display_name": "125mm 2A46M-5 (3BM60)",
+		"fire_model": "DISCRETE",
+		"heavy_he_class": "NONE",
+		"id": "CW_TANK_KE_125_RUS",
+		"indirect_params": {
+			"displace_time_sec": 30.0,
+			"requires_observer": false,
+			"setup_time_sec": 30.0
+		},
+		"lethality": {
+			"FAR": {
+				"FORTIFIED": 75,
+				"HEAVY": 80,
+				"LIGHT": 95,
+				"SOFT": 95
+			},
+			"MID": {
+				"FORTIFIED": 85,
+				"HEAVY": 90,
+				"LIGHT": 100,
+				"SOFT": 100
+			},
+			"NEAR": {
+				"FORTIFIED": 90,
+				"HEAVY": 95,
+				"LIGHT": 100,
+				"SOFT": 100
+			}
+		},
+		"mechanism": "KINETIC",
+		"pen_ce": {
+
+		},
+		"pen_ke": {
+			"FAR": 125,
+			"MID": 140,
+			"NEAR": 150
+		},
+		"preferred_target": "ARMOR",
+		"projectile": {
+			"size": 3.0,
+			"speed_mps": 1780.0
+		},
+		"range": {
+			"band_thresholds_m": [
+				1500.0,
+				3000.0
+			],
+			"max_m": 4000.0,
+			"min_m": 50.0
+		},
+		"suppression_power": {
+			"FAR": 85,
+			"MID": 95,
+			"NEAR": 100
+		},
+		"threat_class": "AT",
+		"weapon_role": "SMALL_ARMS"
+	},
+	{
+		"ammo_endurance_min": 8.0,
+		"blast_radius_m": 40.0,
+		"caliber_mm": 0.0,
+		"discrete_params": {
+			"direct_hit_radius_m": 2.0,
+			"rof_rpm": 550.0,
+			"shock_radius_m": 20.0,
+			"sigma_hit_m": 0.0
+		},
+		"display_name": "30mm 2A42/2A72",
+		"fire_model": "CONTINUOUS",
+		"heavy_he_class": "NONE",
+		"id": "CW_AUTOCANNON_30_RUS",
+		"indirect_params": {
+			"displace_time_sec": 30.0,
+			"requires_observer": false,
+			"setup_time_sec": 30.0
+		},
+		"lethality": {
+			"FAR": {
+				"FORTIFIED": 35,
+				"HEAVY": 5,
+				"LIGHT": 50,
+				"SOFT": 70
+			},
+			"MID": {
+				"FORTIFIED": 55,
+				"HEAVY": 15,
+				"LIGHT": 75,
+				"SOFT": 90
+			},
+			"NEAR": {
+				"FORTIFIED": 70,
+				"HEAVY": 25,
+				"LIGHT": 90,
+				"SOFT": 100
+			}
+		},
+		"mechanism": "KINETIC",
+		"pen_ce": {
+
+		},
+		"pen_ke": {
+			"FAR": 8,
+			"MID": 12,
+			"NEAR": 14
+		},
+		"preferred_target": "ANY",
+		"projectile": {
+			"size": 1.0,
+			"speed_mps": 1120.0
+		},
+		"range": {
+			"band_thresholds_m": [
+				800.0,
+				2000.0
+			],
+			"max_m": 4000.0,
+			"min_m": 0.0
+		},
+		"suppression_power": {
+			"FAR": 50,
+			"MID": 70,
+			"NEAR": 85
+		},
+		"threat_class": "AUTOCANNON",
+		"weapon_role": "SMALL_ARMS"
+	},
+	{
+		"ammo_endurance_min": 12.0,
+		"blast_radius_m": 8.0,
+		"caliber_mm": 0.0,
+		"discrete_params": {
+			"direct_hit_radius_m": 2.0,
+			"rof_rpm": 10.0,
+			"shock_radius_m": 20.0,
+			"sigma_hit_m": 0.0
+		},
+		"display_name": "100mm 2A70 低圧砲",
+		"fire_model": "DISCRETE",
+		"heavy_he_class": "NONE",
+		"id": "CW_AUTOCANNON_100_RUS",
+		"indirect_params": {
+			"displace_time_sec": 30.0,
+			"requires_observer": false,
+			"setup_time_sec": 30.0
+		},
+		"lethality": {
+			"FAR": {
+				"FORTIFIED": 55,
+				"HEAVY": 10,
+				"LIGHT": 60,
+				"SOFT": 85
+			},
+			"MID": {
+				"FORTIFIED": 70,
+				"HEAVY": 20,
+				"LIGHT": 75,
+				"SOFT": 95
+			},
+			"NEAR": {
+				"FORTIFIED": 80,
+				"HEAVY": 30,
+				"LIGHT": 85,
+				"SOFT": 100
+			}
+		},
+		"mechanism": "BLAST_FRAG",
+		"pen_ce": {
+			"FAR": 100,
+			"MID": 100,
+			"NEAR": 100
+		},
+		"pen_ke": {
+
+		},
+		"preferred_target": "SOFT",
+		"projectile": {
+			"size": 2.0,
+			"speed_mps": 355.0
+		},
+		"range": {
+			"band_thresholds_m": [
+				1000.0,
+				2500.0
+			],
+			"max_m": 4000.0,
+			"min_m": 50.0
+		},
+		"suppression_power": {
+			"FAR": 65,
+			"MID": 80,
+			"NEAR": 90
+		},
+		"threat_class": "HE_FRAG",
+		"weapon_role": "SMALL_ARMS"
+	},
+	{
+		"ammo_endurance_min": 8.0,
+		"blast_radius_m": 40.0,
+		"caliber_mm": 0.0,
+		"discrete_params": {
+			"direct_hit_radius_m": 2.0,
+			"rof_rpm": 600.0,
+			"shock_radius_m": 20.0,
+			"sigma_hit_m": 0.0
+		},
+		"display_name": "14.5mm KPVT",
+		"fire_model": "CONTINUOUS",
+		"heavy_he_class": "NONE",
+		"id": "CW_HMG_KPVT",
+		"indirect_params": {
+			"displace_time_sec": 30.0,
+			"requires_observer": false,
+			"setup_time_sec": 30.0
+		},
+		"lethality": {
+			"FAR": {
+				"FORTIFIED": 20,
+				"HEAVY": 0,
+				"LIGHT": 30,
+				"SOFT": 65
+			},
+			"MID": {
+				"FORTIFIED": 35,
+				"HEAVY": 5,
+				"LIGHT": 50,
+				"SOFT": 85
+			},
+			"NEAR": {
+				"FORTIFIED": 50,
+				"HEAVY": 10,
+				"LIGHT": 70,
+				"SOFT": 100
+			}
+		},
+		"mechanism": "SMALL_ARMS",
+		"pen_ce": {
+
+		},
+		"pen_ke": {
+			"FAR": 4,
+			"MID": 6,
+			"NEAR": 8
+		},
+		"preferred_target": "SOFT",
+		"projectile": {
+			"size": 0.6,
+			"speed_mps": 1000.0
+		},
+		"range": {
+			"band_thresholds_m": [
+				400.0,
+				1000.0
+			],
+			"max_m": 2000.0,
+			"min_m": 0.0
+		},
+		"suppression_power": {
+			"FAR": 55,
+			"MID": 70,
+			"NEAR": 85
+		},
+		"threat_class": "SMALL_ARMS",
+		"weapon_role": "SMALL_ARMS"
+	},
+	{
+		"ammo_endurance_min": 12.0,
+		"blast_radius_m": 40.0,
+		"caliber_mm": 0.0,
+		"discrete_params": {
+			"direct_hit_radius_m": 2.0,
+			"rof_rpm": 750.0,
+			"shock_radius_m": 20.0,
+			"sigma_hit_m": 0.0
+		},
+		"display_name": "7.62mm PKT 同軸機銃",
+		"fire_model": "CONTINUOUS",
+		"heavy_he_class": "NONE",
+		"id": "CW_PKT_COAX",
+		"indirect_params": {
+			"displace_time_sec": 30.0,
+			"requires_observer": false,
+			"setup_time_sec": 30.0
+		},
+		"lethality": {
+			"FAR": {
+				"FORTIFIED": 10,
+				"HEAVY": 0,
+				"LIGHT": 10,
+				"SOFT": 50
+			},
+			"MID": {
+				"FORTIFIED": 15,
+				"HEAVY": 0,
+				"LIGHT": 20,
+				"SOFT": 70
+			},
+			"NEAR": {
+				"FORTIFIED": 25,
+				"HEAVY": 0,
+				"LIGHT": 30,
+				"SOFT": 85
+			}
+		},
+		"mechanism": "SMALL_ARMS",
+		"pen_ce": {
+
+		},
+		"pen_ke": {
+
+		},
+		"preferred_target": "SOFT",
+		"projectile": {
+			"size": 0.3,
+			"speed_mps": 855.0
+		},
+		"range": {
+			"band_thresholds_m": [
+				200.0,
+				500.0
+			],
+			"max_m": 1000.0,
+			"min_m": 0.0
+		},
+		"suppression_power": {
+			"FAR": 40,
+			"MID": 55,
+			"NEAR": 70
+		},
+		"threat_class": "SMALL_ARMS",
+		"weapon_role": "SMALL_ARMS"
+	},
+	{
+		"ammo_endurance_min": 8.0,
+		"blast_radius_m": 40.0,
+		"caliber_mm": 0.0,
+		"discrete_params": {
+			"direct_hit_radius_m": 2.0,
+			"rof_rpm": 700.0,
+			"shock_radius_m": 20.0,
+			"sigma_hit_m": 0.0
+		},
+		"display_name": "12.7mm Kord",
+		"fire_model": "CONTINUOUS",
+		"heavy_he_class": "NONE",
+		"id": "CW_KORD_AA",
+		"indirect_params": {
+			"displace_time_sec": 30.0,
+			"requires_observer": false,
+			"setup_time_sec": 30.0
+		},
+		"lethality": {
+			"FAR": {
+				"FORTIFIED": 20,
+				"HEAVY": 0,
+				"LIGHT": 25,
+				"SOFT": 60
+			},
+			"MID": {
+				"FORTIFIED": 30,
+				"HEAVY": 0,
+				"LIGHT": 40,
+				"SOFT": 80
+			},
+			"NEAR": {
+				"FORTIFIED": 40,
+				"HEAVY": 5,
+				"LIGHT": 55,
+				"SOFT": 95
+			}
+		},
+		"mechanism": "SMALL_ARMS",
+		"pen_ce": {
+
+		},
+		"pen_ke": {
+			"FAR": 3,
+			"MID": 4,
+			"NEAR": 5
+		},
+		"preferred_target": "SOFT",
+		"projectile": {
+			"size": 0.5,
+			"speed_mps": 850.0
+		},
+		"range": {
+			"band_thresholds_m": [
+				300.0,
+				800.0
+			],
+			"max_m": 1500.0,
+			"min_m": 0.0
+		},
+		"suppression_power": {
+			"FAR": 50,
+			"MID": 65,
+			"NEAR": 80
+		},
+		"threat_class": "SMALL_ARMS",
+		"weapon_role": "SMALL_ARMS"
+	},
+	{
+		"ammo_endurance_min": 8.0,
+		"blast_radius_m": 40.0,
+		"caliber_mm": 0.0,
+		"discrete_params": {
+			"direct_hit_radius_m": 2.0,
+			"rof_rpm": 3.0,
+			"shock_radius_m": 20.0,
+			"sigma_hit_m": 0.0
+		},
+		"display_name": "9M133 Kornet",
+		"fire_model": "DISCRETE",
+		"heavy_he_class": "NONE",
+		"id": "CW_ATGM_KORNET",
+		"indirect_params": {
+			"displace_time_sec": 30.0,
+			"requires_observer": false,
+			"setup_time_sec": 30.0
+		},
+		"lethality": {
+			"FAR": {
+				"FORTIFIED": 85,
+				"HEAVY": 85,
+				"LIGHT": 95,
+				"SOFT": 95
+			},
+			"MID": {
+				"FORTIFIED": 90,
+				"HEAVY": 90,
+				"LIGHT": 100,
+				"SOFT": 100
+			},
+			"NEAR": {
+				"FORTIFIED": 95,
+				"HEAVY": 95,
+				"LIGHT": 100,
+				"SOFT": 100
+			}
+		},
+		"mechanism": "SHAPED_CHARGE",
+		"pen_ce": {
+			"FAR": 240,
+			"MID": 240,
+			"NEAR": 240
+		},
+		"pen_ke": {
+
+		},
+		"preferred_target": "ARMOR",
+		"projectile": {
+			"size": 1.5,
+			"speed_mps": 300.0
+		},
+		"range": {
+			"band_thresholds_m": [
+				1500.0,
+				4000.0
+			],
+			"max_m": 5500.0,
+			"min_m": 100.0
+		},
+		"suppression_power": {
+			"FAR": 80,
+			"MID": 85,
+			"NEAR": 90
+		},
+		"threat_class": "AT",
+		"weapon_role": "SMALL_ARMS"
+	},
+	{
+		"ammo_endurance_min": 6.0,
+		"blast_radius_m": 40.0,
+		"caliber_mm": 0.0,
+		"discrete_params": {
+			"direct_hit_radius_m": 2.0,
+			"rof_rpm": 3.0,
+			"shock_radius_m": 20.0,
+			"sigma_hit_m": 0.0
+		},
+		"display_name": "9M119M Refleks",
+		"fire_model": "DISCRETE",
+		"heavy_he_class": "NONE",
+		"id": "CW_ATGM_REFLEKS",
+		"indirect_params": {
+			"displace_time_sec": 30.0,
+			"requires_observer": false,
+			"setup_time_sec": 30.0
+		},
+		"lethality": {
+			"FAR": {
+				"FORTIFIED": 80,
+				"HEAVY": 70,
+				"LIGHT": 95,
+				"SOFT": 95
+			},
+			"MID": {
+				"FORTIFIED": 85,
+				"HEAVY": 80,
+				"LIGHT": 100,
+				"SOFT": 100
+			},
+			"NEAR": {
+				"FORTIFIED": 90,
+				"HEAVY": 85,
+				"LIGHT": 100,
+				"SOFT": 100
+			}
+		},
+		"mechanism": "SHAPED_CHARGE",
+		"pen_ce": {
+			"FAR": 180,
+			"MID": 180,
+			"NEAR": 180
+		},
+		"pen_ke": {
+
+		},
+		"preferred_target": "ARMOR",
+		"projectile": {
+			"size": 1.5,
+			"speed_mps": 350.0
+		},
+		"range": {
+			"band_thresholds_m": [
+				1500.0,
+				3500.0
+			],
+			"max_m": 5000.0,
+			"min_m": 100.0
+		},
+		"suppression_power": {
+			"FAR": 75,
+			"MID": 80,
+			"NEAR": 85
+		},
+		"threat_class": "AT",
+		"weapon_role": "SMALL_ARMS"
+	},
+	{
+		"ammo_endurance_min": 5.0,
+		"blast_radius_m": 40.0,
+		"caliber_mm": 0.0,
+		"discrete_params": {
+			"direct_hit_radius_m": 2.0,
+			"rof_rpm": 2.0,
+			"shock_radius_m": 20.0,
+			"sigma_hit_m": 0.0
+		},
+		"display_name": "9M113M Konkurs-M",
+		"fire_model": "DISCRETE",
+		"heavy_he_class": "NONE",
+		"id": "CW_ATGM_KONKURS",
+		"indirect_params": {
+			"displace_time_sec": 30.0,
+			"requires_observer": false,
+			"setup_time_sec": 30.0
+		},
+		"lethality": {
+			"FAR": {
+				"FORTIFIED": 70,
+				"HEAVY": 55,
+				"LIGHT": 90,
+				"SOFT": 90
+			},
+			"MID": {
+				"FORTIFIED": 80,
+				"HEAVY": 65,
+				"LIGHT": 95,
+				"SOFT": 95
+			},
+			"NEAR": {
+				"FORTIFIED": 85,
+				"HEAVY": 75,
+				"LIGHT": 100,
+				"SOFT": 100
+			}
+		},
+		"mechanism": "SHAPED_CHARGE",
+		"pen_ce": {
+			"FAR": 160,
+			"MID": 160,
+			"NEAR": 160
+		},
+		"pen_ke": {
+
+		},
+		"preferred_target": "ARMOR",
+		"projectile": {
+			"size": 1.2,
+			"speed_mps": 200.0
+		},
+		"range": {
+			"band_thresholds_m": [
+				1000.0,
+				2500.0
+			],
+			"max_m": 4000.0,
+			"min_m": 75.0
+		},
+		"suppression_power": {
+			"FAR": 65,
+			"MID": 75,
+			"NEAR": 80
+		},
+		"threat_class": "AT",
+		"weapon_role": "SMALL_ARMS"
+	},
+	{
+		"ammo_endurance_min": 5.0,
+		"blast_radius_m": 40.0,
+		"caliber_mm": 0.0,
+		"discrete_params": {
+			"direct_hit_radius_m": 2.0,
+			"rof_rpm": 3.0,
+			"shock_radius_m": 20.0,
+			"sigma_hit_m": 0.0
+		},
+		"display_name": "9M117 Bastion",
+		"fire_model": "DISCRETE",
+		"heavy_he_class": "NONE",
+		"id": "CW_ATGM_BASTION",
+		"indirect_params": {
+			"displace_time_sec": 30.0,
+			"requires_observer": false,
+			"setup_time_sec": 30.0
+		},
+		"lethality": {
+			"FAR": {
+				"FORTIFIED": 65,
+				"HEAVY": 45,
+				"LIGHT": 90,
+				"SOFT": 90
+			},
+			"MID": {
+				"FORTIFIED": 75,
+				"HEAVY": 55,
+				"LIGHT": 95,
+				"SOFT": 95
+			},
+			"NEAR": {
+				"FORTIFIED": 80,
+				"HEAVY": 65,
+				"LIGHT": 100,
+				"SOFT": 100
+			}
+		},
+		"mechanism": "SHAPED_CHARGE",
+		"pen_ce": {
+			"FAR": 110,
+			"MID": 110,
+			"NEAR": 110
+		},
+		"pen_ke": {
+
+		},
+		"preferred_target": "ARMOR",
+		"projectile": {
+			"size": 1.2,
+			"speed_mps": 370.0
+		},
+		"range": {
+			"band_thresholds_m": [
+				1000.0,
+				2500.0
+			],
+			"max_m": 4000.0,
+			"min_m": 100.0
+		},
+		"suppression_power": {
+			"FAR": 60,
+			"MID": 70,
+			"NEAR": 75
+		},
+		"threat_class": "AT",
+		"weapon_role": "SMALL_ARMS"
+	}
+]

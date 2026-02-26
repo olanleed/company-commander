@@ -226,10 +226,10 @@ func test_chn_weapons_count() -> void:
 	for key in weapons.keys():
 		if key.ends_with("_CHN") or key.ends_with("_CHN_STD") or key.ends_with("_CHN_OLD") or \
 		   key in ["CW_ATGM_HJ10", "CW_ATGM_HJ9", "CW_ATGM_HJ8E", "CW_ATGM_HJ73", "CW_ATGM_GP105",
-				   "CW_QJZ89_AA", "CW_TYPE86_COAX"]:
+				   "CW_QJZ89_AA", "CW_TYPE86_COAX", "CW_HOWITZER_122_CHN"]:
 			chn_weapons += 1
-	# 15 Chinese-specific weapons
-	assert_eq(chn_weapons, 15, "Should have 15 Chinese-specific weapons")
+	# 16 Chinese-specific weapons (including CW_HOWITZER_122_CHN)
+	assert_eq(chn_weapons, 16, "Should have 16 Chinese-specific weapons")
 
 
 # =============================================================================
