@@ -1522,7 +1522,7 @@ func test_us_vehicle_catalog_integration() -> void:
 	_pass()
 
 	_current_test = "stryker_dragoon_weapon_count"
-	assert_eq(stryker_dragoon.weapons.size(), 1)  # 30mm only (no secondary in catalog)
+	assert_eq(stryker_dragoon.weapons.size(), 2)  # 30mm + M240 coax
 	_pass()
 
 	# Test: Stryker ICV (basic)
@@ -2107,8 +2107,8 @@ func test_chinese_vehicle_catalog_integration() -> void:
 	assert_true(has_gp105)
 	_pass()
 
-	# Test: ZBD-04A has 30mm ZPT-99
-	_current_test = "zbd04a_has_30mm"
+	# Test: ZBD-04A has 100mm gun-launcher (BMP-3 style)
+	_current_test = "zbd04a_has_100mm"
 	var zbd04a = ElementFactoryClass.create_element_with_vehicle(
 		"CHN_ZBD04A",
 		1,
@@ -2116,7 +2116,7 @@ func test_chinese_vehicle_catalog_integration() -> void:
 		0.0
 	)
 	assert_true(zbd04a.primary_weapon != null)
-	assert_eq(zbd04a.primary_weapon.id, "CW_AUTOCANNON_30_CHN")
+	assert_eq(zbd04a.primary_weapon.id, "CW_AUTOCANNON_100_CHN")
 	_pass()
 
 	# Test: ZBD-04A has HJ-8E ATGM
@@ -2196,9 +2196,9 @@ func test_chinese_vehicle_catalog_integration() -> void:
 	assert_eq(type99a.weapons.size(), 3)
 	_pass()
 
-	# Test: ZBD-04A weapon count (3: main + atgm + coax)
+	# Test: ZBD-04A weapon count (4: 100mm + 30mm + atgm + coax)
 	_current_test = "zbd04a_weapon_count"
-	assert_eq(zbd04a.weapons.size(), 3)
+	assert_eq(zbd04a.weapons.size(), 4)
 	_pass()
 
 	# Reset ID counters for other tests
@@ -2871,11 +2871,11 @@ func test_hud_ammo_display() -> void:
 	assert_eq(ammo_type, "")
 	_pass()
 
-	# LAWはCE表示
-	_current_test = "law_displays_ce"
+	# LAWはHEAT表示（CW_RPG_HEAT にマッピングされるため）
+	_current_test = "law_displays_heat"
 	var law = WeaponDataClass.create_cw_law()
 	ammo_type = right_panel._get_ammo_type_display(law)
-	assert_eq(ammo_type, "CE")
+	assert_eq(ammo_type, "HEAT")
 	_pass()
 
 	right_panel.queue_free()

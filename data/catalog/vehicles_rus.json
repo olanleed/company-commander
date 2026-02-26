@@ -321,7 +321,7 @@
         "range_m": 4000,
         "count": 8
       },
-      "secondary_weapons": ["CW_PKT_COAX"],
+      "secondary_weapons": ["CW_AUTOCANNON_30_RUS", "CW_PKT_COAX"],
       "protection": {
         "era_equipped": false,
         "aps_equipped": false

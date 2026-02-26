@@ -39,7 +39,7 @@
         "ammo_capacity_ready": 22,
         "ammo_types": ["DTC10-125 APFSDS", "DTB12-125 HEAT-FS", "DTB22-125 HE-Frag"]
       },
-      "secondary_weapons": ["CW_TYPE86_COAX", "CW_QJC88_AA"],
+      "secondary_weapons": ["CW_TYPE86_COAX", "CW_QJZ89_AA"],
       "protection": {
         "era_equipped": true,
         "era_type": "FY-5",
@@ -271,7 +271,7 @@
         "range_m": 4000,
         "count": 2
       },
-      "secondary_weapons": ["CW_TYPE86_COAX"],
+      "secondary_weapons": ["CW_AUTOCANNON_30_CHN", "CW_TYPE86_COAX"],
       "protection": {
         "era_equipped": false,
         "aps_equipped": false
