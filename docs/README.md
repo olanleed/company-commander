@@ -8,9 +8,55 @@ Company Commander v0.1 の設計仕様書インデックスです。
 
 | ドキュメント | 内容 |
 |-------------|------|
+| [architecture_overview_v0.1.md](architecture_overview_v0.1.md) | **アーキテクチャ概要（プロジェクト全体像、システム一覧、データモデル）** |
 | [spec_v0.1.md](spec_v0.1.md) | ゲーム全体仕様（コンセプト、ターゲット、基本ルール） |
 | [ruleset_v0.1.md](ruleset_v0.1.md) | ルールセットパラメータ（定数、係数、閾値） |
 | [game_loop_v0.1.md](game_loop_v0.1.md) | ゲームループ（10Hz Sim Tick、Phase構成） |
+
+---
+
+## 装備知識ツリー（Root配下）
+
+**Root**: [military_equipment_2026_detailed.md](root/military_equipment_2026_detailed.md) - 装備知識の親ツリー（taxonomy正）
+
+### 設計・管理
+
+| ドキュメント | 内容 |
+|-------------|------|
+| [root/document_tree_architecture_v0.1.md](root/document_tree_architecture_v0.1.md) | **アーキテクチャ図・データフロー・責務境界** |
+| [root/document_tree_refactor_plan_v0.1.md](root/document_tree_refactor_plan_v0.1.md) | 設計方針・リファクタリング計画 |
+| [root/document_tree_refactor_execution_v0.1.md](root/document_tree_refactor_execution_v0.1.md) | 実施計画・インベントリ |
+| [root/catalog_docs_mapping.md](root/catalog_docs_mapping.md) | **カタログID⇔ドキュメント対応表** |
+
+### サブツリー
+
+| サブツリー | Index Doc | 内容 |
+|-----------|-----------|------|
+| **vehicles_tree** | [README.md](vehicles_tree/README.md) | 車両分類・装甲システム |
+| **weapons_tree** | [README.md](weapons_tree/README.md) | 武器分類・国別武装詳細 |
+
+### 主要ファイル（vehicles_tree）
+
+| ドキュメント | 種別 | 内容 |
+|-------------|------|------|
+| [military_vehicles_2026_detailed.md](vehicles_tree/military_vehicles_2026_detailed.md) | Taxonomy | 軍用車両分類 |
+| [armour_systems_2026_mainstream.md](vehicles_tree/armour_systems_2026_mainstream.md) | Taxonomy | 装甲システム分類 |
+
+### 主要ファイル（weapons_tree）
+
+| ドキュメント | 種別 | 内容 |
+|-------------|------|------|
+| [tank_guns_and_ammunition_2026_mainstream.md](weapons_tree/tank_guns_and_ammunition_2026_mainstream.md) | Taxonomy | 戦車砲・弾薬 |
+| [autocannons_2026_mainstream.md](weapons_tree/autocannons_2026_mainstream.md) | Taxonomy | 機関砲 |
+| [howitzers_2026_mainstream.md](weapons_tree/howitzers_2026_mainstream.md) | Taxonomy | 榴弾砲 |
+| [mortars_2026_mainstream.md](weapons_tree/mortars_2026_mainstream.md) | Taxonomy | 迫撃砲 |
+| [rockets_and_rocket_artillery_2026_mainstream.md](weapons_tree/rockets_and_rocket_artillery_2026_mainstream.md) | Taxonomy | ロケット砲 |
+| [man_portable_anti_tank_weapons_2026_mainstream.md](weapons_tree/man_portable_anti_tank_weapons_2026_mainstream.md) | Taxonomy | 携行対戦車火器 |
+| [missiles_guidance_tree.md](weapons_tree/missiles_guidance_tree.md) | Taxonomy | ミサイル誘導体系 |
+| [us_army_weapons_2026.md](weapons_tree/us_army_weapons_2026.md) | Detail | 米陸軍武装 |
+| [russian_army_weapons_2026.md](weapons_tree/russian_army_weapons_2026.md) | Detail | ロシア軍武装 |
+| [chinese_army_weapons_2026.md](weapons_tree/chinese_army_weapons_2026.md) | Detail | 中国軍武装 |
+| [jgsdf_weapons_2026.md](weapons_tree/jgsdf_weapons_2026.md) | Detail | 陸自武装 |
 
 ---
 
@@ -90,6 +136,19 @@ Company Commander v0.1 の設計仕様書インデックスです。
 ```
 docs/
 ├── README.md                    # このファイル（インデックス）
+├── root/                        # 装備知識ルート
+│   ├── military_equipment_2026_detailed.md  # Root（taxonomy親）
+│   ├── document_tree_refactor_plan_v0.1.md  # 設計方針
+│   ├── document_tree_refactor_execution_v0.1.md  # 実施計画
+│   └── catalog_docs_mapping.md  # カタログ対応表
+├── vehicles_tree/               # 車両知識サブツリー
+│   ├── README.md                # Index Doc
+│   ├── military_vehicles_2026_detailed.md
+│   └── armour_systems_2026_mainstream.md
+├── weapons_tree/                # 兵器知識サブツリー
+│   ├── README.md                # Index Doc
+│   ├── *_2026_mainstream.md     # Taxonomy（分類体系）
+│   └── *_weapons_2026.md        # Detail（国別具体値）
 ├── spec_v0.1.md                 # ゲーム全体仕様
 ├── ruleset_v0.1.md              # ルールセットパラメータ
 ├── game_loop_v0.1.md            # ゲームループ
@@ -116,6 +175,72 @@ docs/
 ├── ui_design_v0.1.md            # UI設計
 └── ui_input_v0.1.md             # 入力システム
 ```
+
+---
+
+## データアーキテクチャ（SSoT）
+
+ゲームデータは **Single Source of Truth (SSoT)** 原則に基づき、JSONファイルで一元管理されています。
+
+### データディレクトリ構成
+
+```
+data/
+├── weapons/                    # 武器データ (66種)
+│   ├── weapons_usa.json        # 米軍武器
+│   ├── weapons_rus.json        # ロシア軍武器
+│   ├── weapons_chn.json        # 中国軍武器
+│   ├── weapons_jpn.json        # 陸自武器
+│   └── weapons_common.json     # 共通武器
+├── ammunition/                 # 弾薬データ (33種)
+│   └── ammunition_profiles.json
+├── archetypes/                 # ユニットアーキタイプ (24種)
+│   └── element_archetypes.json
+├── protection/                 # 防護プロファイル (7種)
+│   └── protection_profiles.json
+└── catalog/                    # 車両カタログ
+    ├── vehicles_usa.json       # 米軍車両
+    ├── vehicles_rus.json       # ロシア軍車両
+    ├── vehicles_chn.json       # 中国軍車両
+    └── vehicles_jpn.json       # 陸自車両
+```
+
+### SSoT対応スクリプト
+
+| スクリプト | JSONパス | データ件数 | 内容 |
+|-----------|----------|-----------|------|
+| `weapon_data.gd` | `data/weapons/*.json` | 66武器 | 武器性能（射程、発射速度、貫通力） |
+| `ammunition_data.gd` | `data/ammunition/*.json` | 33弾薬 | 弾薬プロファイル（APFSDS、HEAT、HE等） |
+| `element_data.gd` | `data/archetypes/*.json` | 24アーキタイプ | ユニット定義（歩兵、戦車、IFV等） |
+| `protection_data.gd` | `data/protection/*.json` | 7プロファイル | 防護システム（ERA、APS、複合装甲） |
+| `vehicle_catalog.gd` | `data/catalog/*.json` | 4国 | 車両カタログ（武装、装甲、性能） |
+
+### エクスポートツール
+
+`tools/` ディレクトリにJSONエクスポートスクリプトがあります：
+
+```bash
+# 武器データをエクスポート
+godot --headless --script tools/export_weapons_to_json.gd
+
+# 弾薬データをエクスポート
+godot --headless --script tools/export_ammunition_to_json.gd
+
+# アーキタイプをエクスポート
+godot --headless --script tools/export_archetypes_to_json.gd
+
+# 防護プロファイルをエクスポート
+godot --headless --script tools/export_protection_to_json.gd
+```
+
+### アーカイブ
+
+旧ハードコード実装は `scripts/archive/` に保存されています：
+
+- `weapon_data_hardcoded.gd`
+- `ammunition_data_hardcoded.gd`
+- `element_data_hardcoded.gd`
+- `protection_data_hardcoded.gd`
 
 ---
 
