@@ -336,735 +336,152 @@ class ElementInstance:
 
 
 # =============================================================================
-# ElementArchetypes（8種のユニットアーキタイプ）
+# ElementArchetypes（JSONローダー・SSoT対応）
 # 仕様書: docs/units_v0.1.md, docs/concrete_weapons_v0.1.md
 # =============================================================================
 
 class ElementArchetypes:
-	## INF_LINE: ライフル小隊（30人）
-	## 3分隊 + 小隊本部(PL, PSG, RTO)
-	static func create_inf_line() -> ElementType:
-		var t := ElementType.new()
-		t.id = "INF_LINE"
-		t.display_name = "Rifle Platoon"
-		t.category = Category.INF
-		t.symbol_type = SymbolType.INF_RIFLE
-		t.armor_class = 0  # Soft
-		t.mobility_class = GameEnums.MobilityType.FOOT
-		t.road_speed = 5.0   # m/s
-		t.cross_speed = 3.5  # m/s
-		t.base_strength = 30
-		t.max_strength = 30   # 30人小隊
-		t.spot_range_base = 300.0
-		t.spot_range_moving = 200.0
-		return t
+	const ARCHETYPES_JSON_PATH := "res://data/archetypes/element_archetypes.json"
 
-	## INF_AT: 対戦車分隊（4人）
-	static func create_inf_at() -> ElementType:
-		var t := ElementType.new()
-		t.id = "INF_AT"
-		t.display_name = "AT Team"
-		t.category = Category.INF
-		t.symbol_type = SymbolType.FS_ATGM
-		t.armor_class = 0  # Soft
-		t.mobility_class = GameEnums.MobilityType.FOOT
-		t.road_speed = 4.5
-		t.cross_speed = 3.0
-		t.base_strength = 4
-		t.max_strength = 4
-		t.spot_range_base = 400.0
-		t.spot_range_moving = 250.0
-		return t
+	static var _archetypes: Dictionary = {}
+	static var _json_loaded: bool = false
 
-	## INF_MG: 機関銃班（3人）
-	static func create_inf_mg() -> ElementType:
-		var t := ElementType.new()
-		t.id = "INF_MG"
-		t.display_name = "MG Team"
-		t.category = Category.WEAP
-		t.symbol_type = SymbolType.INF_RIFLE  # MGシンボルがない場合
-		t.armor_class = 0  # Soft
-		t.mobility_class = GameEnums.MobilityType.FOOT
-		t.road_speed = 4.0
-		t.cross_speed = 2.5
-		t.base_strength = 3
-		t.max_strength = 3
-		t.spot_range_base = 350.0
-		t.spot_range_moving = 200.0
-		return t
 
-	## TANK_PLT: 戦車小隊（4両=1ユニット）
-	## RHA換算装甲値（スケール: 100 = 500mm RHA）
-	## M1A2/レオパルト2相当の第3世代MBT
-	## 正面は複合装甲で非常に強固、側面/後部はLAWでも貫通可能
-	## Strength = 車両数（4両）- 1両撃破ごとに-1
-	static func create_tank_plt() -> ElementType:
-		var t := ElementType.new()
-		t.id = "TANK_PLT"
-		t.display_name = "Tank Platoon"
-		t.category = Category.VEH
-		t.symbol_type = SymbolType.ARMOR_TANK
-		t.armor_class = 3  # Heavy
-		t.mobility_class = GameEnums.MobilityType.TRACKED
-		t.road_speed = 12.0
-		t.cross_speed = 8.0
-		t.base_strength = 4   # 車両数（4両/小隊）
-		t.max_strength = 4
-		t.spot_range_base = 2000.0  # 熱画像装置、レーザー測距儀で長距離識別
-		t.spot_range_moving = 1500.0
-		# v0.1R: ゾーン別装甲（RHA換算, スケール: 100 = 500mm）
-		# KE（APFSDS等）に対する装甲
-		# 正面: 約700mm RHA = 140, 側面: 約200mm = 40, 後部: 約80mm = 16
-		t.armor_ke = {
-			WeaponData.ArmorZone.FRONT: 140,  # 700mm RHA - APFSDSでも貫通困難
-			WeaponData.ArmorZone.SIDE: 40,    # 200mm RHA - 機関砲で貫通可能
-			WeaponData.ArmorZone.REAR: 16,    # 80mm RHA - 脆弱
-			WeaponData.ArmorZone.TOP: 6,      # 30mm RHA - トップアタックに弱い
-		}
-		# CE（HEAT/RPG等）に対する装甲（ERAなしの場合）
-		# 正面: 約700mm RHA = 140, 側面: 約120mm = 24, 後部: 約40mm = 8
-		t.armor_ce = {
-			WeaponData.ArmorZone.FRONT: 140,  # 700mm RHA相当 - LAWは貫通不可
-			WeaponData.ArmorZone.SIDE: 24,    # 120mm RHA相当 - LAW(60)で確実に貫通
-			WeaponData.ArmorZone.REAR: 8,     # 40mm RHA相当 - LAWで確実に貫通
-			WeaponData.ArmorZone.TOP: 4,      # 20mm RHA相当 - 極めて脆弱
-		}
-		return t
+	## JSONファイルからアーキタイプデータを読み込む
+	static func _ensure_json_loaded() -> void:
+		if _json_loaded:
+			return
 
-	## IFV_PLT: 歩兵戦闘車小隊（4両=1ユニット）
-	## RHA換算装甲値（スケール: 100 = 500mm RHA）
-	## BMP-3/89式/Bradley相当のIFV
-	## 機関砲+ATGMを装備、中装甲
-	## Strength = 車両数（4両）- 1両撃破ごとに-1
-	static func create_ifv_plt() -> ElementType:
-		var t := ElementType.new()
-		t.id = "IFV_PLT"
-		t.display_name = "IFV Platoon"
-		t.category = Category.VEH
-		t.symbol_type = SymbolType.ARMOR_IFV
-		t.armor_class = 2  # Medium
-		t.mobility_class = GameEnums.MobilityType.TRACKED
-		t.road_speed = 14.0
-		t.cross_speed = 9.0
-		t.base_strength = 4   # 車両数（4両/小隊）
-		t.max_strength = 4
-		t.spot_range_base = 1500.0  # Hunter-killerシステム、熱画像装置
-		t.spot_range_moving = 1000.0
-		# 輸送能力: 4両で1個分隊（30人）を輸送可能
-		t.can_transport_infantry = true
-		t.transport_capacity = 30
-		# v0.1R: ゾーン別装甲（RHA換算, スケール: 100 = 500mm）
-		# KE（機関砲等）に対する装甲
-		# 正面: 約150mm RHA = 30, 側面: 約50mm = 10, 後部: 約30mm = 6
-		t.armor_ke = {
-			WeaponData.ArmorZone.FRONT: 30,   # 150mm RHA - 30mm機関砲に耐える
-			WeaponData.ArmorZone.SIDE: 10,    # 50mm RHA - 14.5mmHMGに耐える
-			WeaponData.ArmorZone.REAR: 6,     # 30mm RHA - 12.7mmで危険
-			WeaponData.ArmorZone.TOP: 3,      # 15mm RHA - 砲弾破片に脆弱
-		}
-		# CE（HEAT/RPG等）に対する装甲
-		# 正面: 約200mm RHA = 40, 側面: 約60mm = 12, 後部: 約30mm = 6
-		t.armor_ce = {
-			WeaponData.ArmorZone.FRONT: 40,   # 200mm RHA相当 - LAW(60)で貫通
-			WeaponData.ArmorZone.SIDE: 12,    # 60mm RHA相当 - LAW(60)で確実貫通
-			WeaponData.ArmorZone.REAR: 6,     # 30mm RHA相当 - RPG-7で確実貫通
-			WeaponData.ArmorZone.TOP: 3,      # 15mm RHA相当 - トップアタックに脆弱
-		}
-		return t
+		var file := FileAccess.open(ARCHETYPES_JSON_PATH, FileAccess.READ)
+		if not file:
+			push_error("Cannot open archetypes JSON: %s" % ARCHETYPES_JSON_PATH)
+			return
 
-	## RECON_VEH: 偵察車両（軽装甲）
-	## RHA換算装甲値（スケール: 100 = 500mm RHA）
-	## BRDM/LAV相当の軽装甲偵察車両
-	## 小銃弾には耐えるが、AT火器には脆弱
-	## Strength = 車両数（2両）- 1両撃破ごとに-1
-	static func create_recon_veh() -> ElementType:
-		var t := ElementType.new()
-		t.id = "RECON_VEH"
-		t.display_name = "Recon Vehicle"
-		t.category = Category.REC
-		t.symbol_type = SymbolType.INF_RECON
-		t.armor_class = 1  # Light
-		t.mobility_class = GameEnums.MobilityType.WHEELED
-		t.road_speed = 18.0
-		t.cross_speed = 10.0
-		t.base_strength = 2   # 車両数（2両/分隊）
-		t.max_strength = 2
-		t.spot_range_base = 2000.0  # 偵察専用センサー、熱画像
-		t.spot_range_moving = 1500.0
-		# v0.1R: ゾーン別装甲（RHA換算, スケール: 100 = 500mm）
-		# 軽装甲: 7.62mmには耐えるが12.7mmで貫通、AT火器には無力
-		# KE（機関砲等）に対する装甲
-		t.armor_ke = {
-			WeaponData.ArmorZone.FRONT: 6,    # 30mm RHA - 12.7mm HMGで貫通
-			WeaponData.ArmorZone.SIDE: 3,     # 15mm RHA - 12.7mmで貫通
-			WeaponData.ArmorZone.REAR: 2,     # 10mm RHA - 7.62mmでも危険
-			WeaponData.ArmorZone.TOP: 1,      # 5mm RHA - 破片弾にも脆弱
-		}
-		# CE（HEAT/RPG等）に対する装甲
-		# LAW(60)でも全方位から確実に貫通
-		t.armor_ce = {
-			WeaponData.ArmorZone.FRONT: 5,    # 25mm RHA相当
-			WeaponData.ArmorZone.SIDE: 3,     # 15mm RHA相当
-			WeaponData.ArmorZone.REAR: 2,     # 10mm RHA相当
-			WeaponData.ArmorZone.TOP: 1,      # 5mm RHA相当
-		}
-		return t
+		var json_text := file.get_as_text()
+		file.close()
 
-	## RECON_TEAM: 偵察チーム（4人）
-	static func create_recon_team() -> ElementType:
-		var t := ElementType.new()
-		t.id = "RECON_TEAM"
-		t.display_name = "Recon Team"
-		t.category = Category.REC
-		t.symbol_type = SymbolType.INF_RECON
-		t.armor_class = 0  # Soft
-		t.mobility_class = GameEnums.MobilityType.FOOT
-		t.road_speed = 5.5
-		t.cross_speed = 4.0
-		t.base_strength = 4
-		t.max_strength = 4
-		t.spot_range_base = 500.0
-		t.spot_range_moving = 350.0
-		return t
+		var json := JSON.new()
+		var error := json.parse(json_text)
+		if error != OK:
+			push_error("JSON parse error in %s: %s" % [ARCHETYPES_JSON_PATH, json.get_error_message()])
+			return
 
-	## MORTAR_SEC: 迫撃砲班（6人 + 2門）
-	static func create_mortar_sec() -> ElementType:
-		var t := ElementType.new()
-		t.id = "MORTAR_SEC"
-		t.display_name = "Mortar Section"
-		t.category = Category.WEAP
-		t.symbol_type = SymbolType.FS_MORTAR
-		t.armor_class = 0  # Soft
-		t.mobility_class = GameEnums.MobilityType.FOOT
-		t.road_speed = 3.5
-		t.cross_speed = 2.0
-		t.base_strength = 6
-		t.max_strength = 6
-		t.spot_range_base = 200.0
-		t.spot_range_moving = 100.0
-		return t
+		var archetypes_array: Array = json.data
+		for archetype_data in archetypes_array:
+			var archetype := _dict_to_element_type(archetype_data)
+			_archetypes[archetype.id] = archetype
 
-	## LOG_TRUCK: 補給トラック
-	static func create_log_truck() -> ElementType:
-		var t := ElementType.new()
-		t.id = "LOG_TRUCK"
-		t.display_name = "Supply Truck"
-		t.category = Category.LOG
-		t.symbol_type = SymbolType.SUP_LOGISTICS
-		t.armor_class = 0  # Soft
-		t.mobility_class = GameEnums.MobilityType.WHEELED
-		t.road_speed = 15.0
-		t.cross_speed = 6.0
-		t.base_strength = 2
-		t.max_strength = 2
-		t.spot_range_base = 150.0
-		t.spot_range_moving = 100.0
-		return t
+		_json_loaded = true
+		print("Loaded %d archetypes from JSON" % _archetypes.size())
 
-	## CMD_HQ: 中隊本部（通信ハブ）
-	## データリンクの中心となる指揮ユニット
-	## comm_range内の全ユニットとLINK状態を維持
-	static func create_cmd_hq() -> ElementType:
+
+	## DictionaryをElementTypeに変換
+	static func _dict_to_element_type(data: Dictionary) -> ElementType:
 		var t := ElementType.new()
-		t.id = "CMD_HQ"
-		t.display_name = "Company HQ"
-		t.category = Category.HQ
-		t.symbol_type = SymbolType.CMD_HQ
-		t.armor_class = 0  # Soft（装甲車に搭乗なら別途設定）
-		t.mobility_class = GameEnums.MobilityType.WHEELED
-		t.road_speed = 12.0
-		t.cross_speed = 6.0
-		t.base_strength = 4   # HQ要員4名
-		t.max_strength = 4
-		t.spot_range_base = 300.0
-		t.spot_range_moving = 200.0
+
+		t.id = data.get("id", "")
+		t.display_name = data.get("display_name", "")
+		t.category = _string_to_category(data.get("category", "INF"))
+		t.symbol_type = _string_to_symbol_type(data.get("symbol_type", "INF_RIFLE"))
+		t.mobility_class = _string_to_mobility(data.get("mobility_class", "FOOT"))
+		t.armor_class = data.get("armor_class", 0)
+		t.road_speed = data.get("road_speed", 5.0)
+		t.cross_speed = data.get("cross_speed", 3.0)
+		t.base_strength = data.get("base_strength", 100)
+		t.max_strength = data.get("max_strength", 100)
+		t.spot_range_base = data.get("spot_range_base", 300.0)
+		t.spot_range_moving = data.get("spot_range_moving", 200.0)
+
 		# 通信ハブ設定
-		t.is_comm_hub = true
-		t.comm_range = 3000.0  # 3km通信範囲
+		t.is_comm_hub = data.get("is_comm_hub", false)
+		t.comm_range = data.get("comm_range", 2000.0)
+
+		# 輸送能力
+		t.can_transport_infantry = data.get("can_transport_infantry", false)
+		t.transport_capacity = data.get("transport_capacity", 0)
+
+		# 装甲データ
+		if data.has("armor_ke"):
+			t.armor_ke = _dict_to_armor(data.armor_ke)
+		if data.has("armor_ce"):
+			t.armor_ce = _dict_to_armor(data.armor_ce)
+
 		return t
 
-	## APC_PLT: 装甲兵員輸送車小隊（4両=1ユニット）
-	## RHA換算装甲値（スケール: 100 = 500mm RHA）
-	## M113/BTR-80相当のAPC
-	## 輸送任務が主、軽火器のみ装備
-	## Strength = 車両数（4両）- 1両撃破ごとに-1
-	static func create_apc_plt() -> ElementType:
-		var t := ElementType.new()
-		t.id = "APC_PLT"
-		t.display_name = "APC Platoon"
-		t.category = Category.VEH
-		t.symbol_type = SymbolType.ARMOR_APC
-		t.armor_class = 1  # Light
-		t.mobility_class = GameEnums.MobilityType.TRACKED
-		t.road_speed = 13.0
-		t.cross_speed = 8.0
-		t.base_strength = 4
-		t.max_strength = 4
-		t.spot_range_base = 500.0
-		t.spot_range_moving = 350.0
-		# 輸送能力: 4両で1個分隊（30人）を輸送可能
-		t.can_transport_infantry = true
-		t.transport_capacity = 30
-		# KE装甲（軽装甲: 7.62mm防護、14.5mm正面のみ）
-		t.armor_ke = {
-			WeaponData.ArmorZone.FRONT: 8,    # 40mm RHA - 14.5mm HMGに耐える
-			WeaponData.ArmorZone.SIDE: 4,     # 20mm RHA - 7.62mmに耐える
-			WeaponData.ArmorZone.REAR: 3,     # 15mm RHA - 小銃弾に耐える
-			WeaponData.ArmorZone.TOP: 2,      # 10mm RHA - 破片に脆弱
-		}
-		# CE装甲
-		t.armor_ce = {
-			WeaponData.ArmorZone.FRONT: 6,    # 30mm RHA相当
-			WeaponData.ArmorZone.SIDE: 4,     # 20mm RHA相当
-			WeaponData.ArmorZone.REAR: 3,     # 15mm RHA相当
-			WeaponData.ArmorZone.TOP: 2,      # 10mm RHA相当
-		}
-		return t
 
-	## LIGHT_VEH: 軽装甲車両（4両=1ユニット）
-	## ハンヴィー/軽装甲機動車相当
-	## 最低限の装甲（7.62mm防護）、高機動性
-	static func create_light_veh() -> ElementType:
-		var t := ElementType.new()
-		t.id = "LIGHT_VEH"
-		t.display_name = "Light Vehicle"
-		t.category = Category.VEH
-		t.symbol_type = SymbolType.INF_MECH
-		t.armor_class = 1  # Light（最低限の装甲）
-		t.mobility_class = GameEnums.MobilityType.WHEELED
-		t.road_speed = 20.0
-		t.cross_speed = 10.0
-		t.base_strength = 4
-		t.max_strength = 4
-		t.spot_range_base = 400.0
-		t.spot_range_moving = 300.0
-		# 軽装甲（7.62mm防護のみ）
-		t.armor_ke = {
-			WeaponData.ArmorZone.FRONT: 3,    # 15mm RHA - 7.62mmにかろうじて耐える
-			WeaponData.ArmorZone.SIDE: 2,     # 10mm RHA
-			WeaponData.ArmorZone.REAR: 2,     # 10mm RHA
-			WeaponData.ArmorZone.TOP: 1,      # 5mm RHA
-		}
-		t.armor_ce = {
-			WeaponData.ArmorZone.FRONT: 3,
-			WeaponData.ArmorZone.SIDE: 2,
-			WeaponData.ArmorZone.REAR: 2,
-			WeaponData.ArmorZone.TOP: 1,
-		}
-		return t
+	## 装甲DictionaryをArmorZone enumキーに変換
+	static func _dict_to_armor(data: Dictionary) -> Dictionary:
+		var result := {}
+		for zone_str in data:
+			var zone := _string_to_armor_zone(zone_str)
+			result[zone] = data[zone_str]
+		return result
 
-	## COMMAND_VEH: 指揮通信車（1両=1ユニット）
-	## 82式指揮通信車相当
-	## 通信ハブ機能、軽装甲
-	static func create_command_veh() -> ElementType:
-		var t := ElementType.new()
-		t.id = "COMMAND_VEH"
-		t.display_name = "Command Vehicle"
-		t.category = Category.HQ
-		t.symbol_type = SymbolType.CMD_HQ
-		t.armor_class = 1  # Light
-		t.mobility_class = GameEnums.MobilityType.WHEELED
-		t.road_speed = 16.0
-		t.cross_speed = 8.0
-		t.base_strength = 1
-		t.max_strength = 1
-		t.spot_range_base = 1200.0  # 指揮通信車は通常よりも良好なセンサー
-		t.spot_range_moving = 800.0
-		t.is_comm_hub = true
-		t.comm_range = 5000.0  # 5km通信範囲
-		# 軽装甲
-		t.armor_ke = {
-			WeaponData.ArmorZone.FRONT: 6,
-			WeaponData.ArmorZone.SIDE: 4,
-			WeaponData.ArmorZone.REAR: 3,
-			WeaponData.ArmorZone.TOP: 2,
-		}
-		t.armor_ce = {
-			WeaponData.ArmorZone.FRONT: 5,
-			WeaponData.ArmorZone.SIDE: 3,
-			WeaponData.ArmorZone.REAR: 2,
-			WeaponData.ArmorZone.TOP: 1,
-		}
-		return t
 
-	## SP_MORTAR: 自走迫撃砲（2両=1ユニット）
-	## 120mm自走迫撃砲相当
-	## 間接射撃能力、軽装甲
-	static func create_sp_mortar() -> ElementType:
-		var t := ElementType.new()
-		t.id = "SP_MORTAR"
-		t.display_name = "SP Mortar"
-		t.category = Category.WEAP
-		t.symbol_type = SymbolType.FS_MORTAR
-		t.armor_class = 1  # Light
-		t.mobility_class = GameEnums.MobilityType.WHEELED
-		t.road_speed = 14.0
-		t.cross_speed = 7.0
-		t.base_strength = 2
-		t.max_strength = 2
-		t.spot_range_base = 400.0
-		t.spot_range_moving = 250.0
-		# 軽装甲
-		t.armor_ke = {
-			WeaponData.ArmorZone.FRONT: 6,
-			WeaponData.ArmorZone.SIDE: 4,
-			WeaponData.ArmorZone.REAR: 3,
-			WeaponData.ArmorZone.TOP: 2,
-		}
-		t.armor_ce = {
-			WeaponData.ArmorZone.FRONT: 5,
-			WeaponData.ArmorZone.SIDE: 3,
-			WeaponData.ArmorZone.REAR: 2,
-			WeaponData.ArmorZone.TOP: 1,
-		}
-		return t
+	## 文字列をCategoryに変換
+	static func _string_to_category(s: String) -> Category:
+		match s:
+			"INF": return Category.INF
+			"VEH": return Category.VEH
+			"REC": return Category.REC
+			"WEAP": return Category.WEAP
+			"ENG": return Category.ENG
+			"LOG": return Category.LOG
+			"HQ": return Category.HQ
+			_: return Category.INF
 
-	## SP_ARTILLERY: 自走砲（2両=1ユニット）
-	## 155mm自走榴弾砲相当
-	## 長距離間接射撃能力、中装甲
-	static func create_sp_artillery() -> ElementType:
-		var t := ElementType.new()
-		t.id = "SP_ARTILLERY"
-		t.display_name = "SP Artillery"
-		t.category = Category.WEAP
-		t.symbol_type = SymbolType.FS_ARTILLERY
-		t.armor_class = 2  # Medium
-		t.mobility_class = GameEnums.MobilityType.TRACKED
-		t.road_speed = 10.0
-		t.cross_speed = 6.0
-		t.base_strength = 2
-		t.max_strength = 2
-		t.spot_range_base = 500.0
-		t.spot_range_moving = 300.0
-		# 中装甲（破片防護）
-		t.armor_ke = {
-			WeaponData.ArmorZone.FRONT: 12,   # 60mm RHA
-			WeaponData.ArmorZone.SIDE: 8,     # 40mm RHA
-			WeaponData.ArmorZone.REAR: 6,     # 30mm RHA
-			WeaponData.ArmorZone.TOP: 4,      # 20mm RHA
-		}
-		t.armor_ce = {
-			WeaponData.ArmorZone.FRONT: 10,
-			WeaponData.ArmorZone.SIDE: 6,
-			WeaponData.ArmorZone.REAR: 4,
-			WeaponData.ArmorZone.TOP: 3,
-		}
-		return t
 
-	## SPAAG: 自走高射機関砲（2両=1ユニット）
-	## 87式/ゲパルト相当
-	## 対空射撃能力、地上目標にも有効
-	static func create_spaag() -> ElementType:
-		var t := ElementType.new()
-		t.id = "SPAAG"
-		t.display_name = "SPAAG"
-		t.category = Category.VEH
-		t.symbol_type = SymbolType.ARMOR_IFV  # 専用シンボルがないためIFVを流用
-		t.armor_class = 2  # Medium
-		t.mobility_class = GameEnums.MobilityType.TRACKED
-		t.road_speed = 10.0
-		t.cross_speed = 6.0
-		t.base_strength = 2
-		t.max_strength = 2
-		t.spot_range_base = 1500.0  # 対空レーダー搭載で長距離索敵
-		t.spot_range_moving = 1000.0
-		# 中装甲
-		t.armor_ke = {
-			WeaponData.ArmorZone.FRONT: 14,
-			WeaponData.ArmorZone.SIDE: 8,
-			WeaponData.ArmorZone.REAR: 6,
-			WeaponData.ArmorZone.TOP: 4,
-		}
-		t.armor_ce = {
-			WeaponData.ArmorZone.FRONT: 12,
-			WeaponData.ArmorZone.SIDE: 6,
-			WeaponData.ArmorZone.REAR: 4,
-			WeaponData.ArmorZone.TOP: 3,
-		}
-		return t
+	## 文字列をSymbolTypeに変換
+	static func _string_to_symbol_type(s: String) -> SymbolType:
+		match s:
+			"INF_RIFLE": return SymbolType.INF_RIFLE
+			"INF_MECH": return SymbolType.INF_MECH
+			"INF_RECON": return SymbolType.INF_RECON
+			"INF_ENGINEER": return SymbolType.INF_ENGINEER
+			"ARMOR_TANK": return SymbolType.ARMOR_TANK
+			"ARMOR_IFV": return SymbolType.ARMOR_IFV
+			"ARMOR_APC": return SymbolType.ARMOR_APC
+			"FS_MORTAR": return SymbolType.FS_MORTAR
+			"FS_ATGM": return SymbolType.FS_ATGM
+			"FS_ARTILLERY": return SymbolType.FS_ARTILLERY
+			"RECON_UAV": return SymbolType.RECON_UAV
+			"SUP_LOGISTICS": return SymbolType.SUP_LOGISTICS
+			"SUP_MEDEVAC": return SymbolType.SUP_MEDEVAC
+			"CMD_HQ": return SymbolType.CMD_HQ
+			_: return SymbolType.INF_RIFLE
 
-	## SAM_VEH: 地対空ミサイル車両（1両=1ユニット）
-	## 93式/11式短SAM相当
-	## 対空ミサイル装備、軽装甲
-	static func create_sam_veh() -> ElementType:
-		var t := ElementType.new()
-		t.id = "SAM_VEH"
-		t.display_name = "SAM Vehicle"
-		t.category = Category.VEH
-		t.symbol_type = SymbolType.FS_ATGM  # 専用シンボルがないためATGMを流用
-		t.armor_class = 0  # Soft（軽車両ベース）
-		t.mobility_class = GameEnums.MobilityType.WHEELED
-		t.road_speed = 16.0
-		t.cross_speed = 8.0
-		t.base_strength = 1
-		t.max_strength = 1
-		t.spot_range_base = 2000.0  # 捜索レーダー搭載
-		t.spot_range_moving = 1500.0
-		# ソフトスキン（装甲なし）
-		return t
 
-	## LIGHT_TANK: 軽戦車小隊（4両=1ユニット）
-	## Type 15/M8 AGS相当
-	## 105mm主砲、中装甲、高機動性
-	static func create_light_tank() -> ElementType:
-		var t := ElementType.new()
-		t.id = "LIGHT_TANK"
-		t.display_name = "Light Tank Platoon"
-		t.category = Category.VEH
-		t.symbol_type = SymbolType.ARMOR_TANK
-		t.armor_class = 2  # Medium (軽戦車なのでMBTより軽い)
-		t.mobility_class = GameEnums.MobilityType.TRACKED
-		t.road_speed = 14.0  # MBTより高速
-		t.cross_speed = 10.0
-		t.base_strength = 4
-		t.max_strength = 4
-		t.spot_range_base = 1800.0  # 現代軽戦車の熱画像/FCS
-		t.spot_range_moving = 1200.0
-		# v0.1R: 中装甲（MBTより脆弱）
-		t.armor_ke = {
-			WeaponData.ArmorZone.FRONT: 60,   # 300mm RHA - 30mmに耐える
-			WeaponData.ArmorZone.SIDE: 20,    # 100mm RHA
-			WeaponData.ArmorZone.REAR: 10,    # 50mm RHA
-			WeaponData.ArmorZone.TOP: 4,      # 20mm RHA
-		}
-		t.armor_ce = {
-			WeaponData.ArmorZone.FRONT: 70,   # 350mm RHA - ATGM/LAWで貫通
-			WeaponData.ArmorZone.SIDE: 20,    # 100mm RHA
-			WeaponData.ArmorZone.REAR: 8,     # 40mm RHA
-			WeaponData.ArmorZone.TOP: 3,      # 15mm RHA
-		}
-		return t
+	## 文字列をMobilityTypeに変換
+	static func _string_to_mobility(s: String) -> GameEnums.MobilityType:
+		match s:
+			"FOOT": return GameEnums.MobilityType.FOOT
+			"WHEELED": return GameEnums.MobilityType.WHEELED
+			"TRACKED": return GameEnums.MobilityType.TRACKED
+			_: return GameEnums.MobilityType.FOOT
 
-	## MLRS: 多連装ロケット砲（2両=1ユニット）
-	## MLRS/BM-21相当
-	## 面制圧能力、軽装甲
-	static func create_mlrs() -> ElementType:
-		var t := ElementType.new()
-		t.id = "MLRS"
-		t.display_name = "MLRS"
-		t.category = Category.WEAP
-		t.symbol_type = SymbolType.FS_ARTILLERY
-		t.armor_class = 1  # Light
-		t.mobility_class = GameEnums.MobilityType.WHEELED
-		t.road_speed = 12.0
-		t.cross_speed = 6.0
-		t.base_strength = 2
-		t.max_strength = 2
-		t.spot_range_base = 400.0
-		t.spot_range_moving = 250.0
-		# 軽装甲
-		t.armor_ke = {
-			WeaponData.ArmorZone.FRONT: 6,
-			WeaponData.ArmorZone.SIDE: 4,
-			WeaponData.ArmorZone.REAR: 3,
-			WeaponData.ArmorZone.TOP: 2,
-		}
-		t.armor_ce = {
-			WeaponData.ArmorZone.FRONT: 5,
-			WeaponData.ArmorZone.SIDE: 3,
-			WeaponData.ArmorZone.REAR: 2,
-			WeaponData.ArmorZone.TOP: 1,
-		}
-		return t
 
-	## ENGINEER_VEH: 工兵車両（2両=1ユニット）
-	## CEV/地雷処理車相当
-	## 障害処理能力、中装甲
-	static func create_engineer_veh() -> ElementType:
-		var t := ElementType.new()
-		t.id = "ENGINEER_VEH"
-		t.display_name = "Engineer Vehicle"
-		t.category = Category.ENG
-		t.symbol_type = SymbolType.INF_ENGINEER
-		t.armor_class = 2  # Medium
-		t.mobility_class = GameEnums.MobilityType.TRACKED
-		t.road_speed = 10.0
-		t.cross_speed = 5.0
-		t.base_strength = 2
-		t.max_strength = 2
-		t.spot_range_base = 400.0
-		t.spot_range_moving = 250.0
-		# 中装甲
-		t.armor_ke = {
-			WeaponData.ArmorZone.FRONT: 20,
-			WeaponData.ArmorZone.SIDE: 10,
-			WeaponData.ArmorZone.REAR: 6,
-			WeaponData.ArmorZone.TOP: 4,
-		}
-		t.armor_ce = {
-			WeaponData.ArmorZone.FRONT: 18,
-			WeaponData.ArmorZone.SIDE: 8,
-			WeaponData.ArmorZone.REAR: 5,
-			WeaponData.ArmorZone.TOP: 3,
-		}
-		return t
+	## 文字列をArmorZoneに変換
+	static func _string_to_armor_zone(s: String) -> WeaponData.ArmorZone:
+		match s:
+			"FRONT": return WeaponData.ArmorZone.FRONT
+			"SIDE": return WeaponData.ArmorZone.SIDE
+			"REAR": return WeaponData.ArmorZone.REAR
+			"TOP": return WeaponData.ArmorZone.TOP
+			_: return WeaponData.ArmorZone.FRONT
 
-	## EW_VEH: 電子戦車両（1両=1ユニット）
-	## 電子妨害/情報収集能力
-	static func create_ew_veh() -> ElementType:
-		var t := ElementType.new()
-		t.id = "EW_VEH"
-		t.display_name = "EW Vehicle"
-		t.category = Category.REC
-		t.symbol_type = SymbolType.CMD_HQ  # 専用シンボルがないため流用
-		t.armor_class = 1  # Light
-		t.mobility_class = GameEnums.MobilityType.WHEELED
-		t.road_speed = 14.0
-		t.cross_speed = 7.0
-		t.base_strength = 1
-		t.max_strength = 1
-		t.spot_range_base = 1200.0  # 高性能センサー
-		t.spot_range_moving = 900.0
-		# 軽装甲
-		t.armor_ke = {
-			WeaponData.ArmorZone.FRONT: 6,
-			WeaponData.ArmorZone.SIDE: 4,
-			WeaponData.ArmorZone.REAR: 3,
-			WeaponData.ArmorZone.TOP: 2,
-		}
-		t.armor_ce = {
-			WeaponData.ArmorZone.FRONT: 5,
-			WeaponData.ArmorZone.SIDE: 3,
-			WeaponData.ArmorZone.REAR: 2,
-			WeaponData.ArmorZone.TOP: 1,
-		}
-		return t
 
-	## ISR_VEH: ISR車両（1両=1ユニット）
-	## 偵察/監視車両、UAV制御車両
-	static func create_isr_veh() -> ElementType:
-		var t := ElementType.new()
-		t.id = "ISR_VEH"
-		t.display_name = "ISR Vehicle"
-		t.category = Category.REC
-		t.symbol_type = SymbolType.RECON_UAV
-		t.armor_class = 0  # Soft
-		t.mobility_class = GameEnums.MobilityType.WHEELED
-		t.road_speed = 16.0
-		t.cross_speed = 8.0
-		t.base_strength = 1
-		t.max_strength = 1
-		t.spot_range_base = 1500.0  # 非常に高性能センサー/UAV
-		t.spot_range_moving = 1000.0
-		# ソフトスキン
-		return t
-
-	## MEDICAL_VEH: 衛生車両（2両=1ユニット）
-	## 戦場救護、後送能力
-	static func create_medical_veh() -> ElementType:
-		var t := ElementType.new()
-		t.id = "MEDICAL_VEH"
-		t.display_name = "Medical Vehicle"
-		t.category = Category.LOG
-		t.symbol_type = SymbolType.SUP_MEDEVAC
-		t.armor_class = 1  # Light
-		t.mobility_class = GameEnums.MobilityType.WHEELED
-		t.road_speed = 16.0
-		t.cross_speed = 8.0
-		t.base_strength = 2
-		t.max_strength = 2
-		t.spot_range_base = 300.0
-		t.spot_range_moving = 200.0
-		# 軽装甲
-		t.armor_ke = {
-			WeaponData.ArmorZone.FRONT: 6,
-			WeaponData.ArmorZone.SIDE: 4,
-			WeaponData.ArmorZone.REAR: 3,
-			WeaponData.ArmorZone.TOP: 2,
-		}
-		t.armor_ce = {
-			WeaponData.ArmorZone.FRONT: 5,
-			WeaponData.ArmorZone.SIDE: 3,
-			WeaponData.ArmorZone.REAR: 2,
-			WeaponData.ArmorZone.TOP: 1,
-		}
-		return t
-
-	## CBRN_VEH: NBC偵察車両（1両=1ユニット）
-	## 化学/生物/放射線検知能力
-	static func create_cbrn_veh() -> ElementType:
-		var t := ElementType.new()
-		t.id = "CBRN_VEH"
-		t.display_name = "CBRN Recon"
-		t.category = Category.REC
-		t.symbol_type = SymbolType.INF_RECON
-		t.armor_class = 1  # Light（NBC密閉車両）
-		t.mobility_class = GameEnums.MobilityType.WHEELED
-		t.road_speed = 14.0
-		t.cross_speed = 7.0
-		t.base_strength = 1
-		t.max_strength = 1
-		t.spot_range_base = 600.0
-		t.spot_range_moving = 400.0
-		# 軽装甲
-		t.armor_ke = {
-			WeaponData.ArmorZone.FRONT: 8,
-			WeaponData.ArmorZone.SIDE: 5,
-			WeaponData.ArmorZone.REAR: 4,
-			WeaponData.ArmorZone.TOP: 3,
-		}
-		t.armor_ce = {
-			WeaponData.ArmorZone.FRONT: 6,
-			WeaponData.ArmorZone.SIDE: 4,
-			WeaponData.ArmorZone.REAR: 3,
-			WeaponData.ArmorZone.TOP: 2,
-		}
-		return t
-
-	## 全アーキタイプを取得
+	## 全アーキタイプを取得（SSoT対応：JSONから読み込み）
 	static func get_all_archetypes() -> Dictionary:
-		return {
-			"INF_LINE": create_inf_line(),
-			"INF_AT": create_inf_at(),
-			"INF_MG": create_inf_mg(),
-			"TANK_PLT": create_tank_plt(),
-			"LIGHT_TANK": create_light_tank(),
-			"IFV_PLT": create_ifv_plt(),
-			"APC_PLT": create_apc_plt(),
-			"LIGHT_VEH": create_light_veh(),
-			"COMMAND_VEH": create_command_veh(),
-			"RECON_VEH": create_recon_veh(),
-			"RECON_TEAM": create_recon_team(),
-			"MORTAR_SEC": create_mortar_sec(),
-			"SP_MORTAR": create_sp_mortar(),
-			"SP_ARTILLERY": create_sp_artillery(),
-			"MLRS": create_mlrs(),
-			"SPAAG": create_spaag(),
-			"SAM_VEH": create_sam_veh(),
-			"ENGINEER_VEH": create_engineer_veh(),
-			"EW_VEH": create_ew_veh(),
-			"ISR_VEH": create_isr_veh(),
-			"MEDICAL_VEH": create_medical_veh(),
-			"CBRN_VEH": create_cbrn_veh(),
-			"LOG_TRUCK": create_log_truck(),
-			"CMD_HQ": create_cmd_hq(),
-		}
+		_ensure_json_loaded()
+		return _archetypes
 
-	## IDからアーキタイプを取得
+
+	## IDからアーキタイプを取得（SSoT対応：JSONから読み込み）
 	static func get_archetype(archetype_id: String) -> ElementType:
-		match archetype_id:
-			"INF_LINE": return create_inf_line()
-			"INF_AT": return create_inf_at()
-			"INF_MG": return create_inf_mg()
-			"TANK_PLT": return create_tank_plt()
-			"LIGHT_TANK": return create_light_tank()
-			"IFV_PLT": return create_ifv_plt()
-			"APC_PLT": return create_apc_plt()
-			"LIGHT_VEH": return create_light_veh()
-			"COMMAND_VEH": return create_command_veh()
-			"RECON_VEH": return create_recon_veh()
-			"RECON_TEAM": return create_recon_team()
-			"MORTAR_SEC": return create_mortar_sec()
-			"SP_MORTAR": return create_sp_mortar()
-			"SP_ARTILLERY": return create_sp_artillery()
-			"MLRS": return create_mlrs()
-			"SPAAG": return create_spaag()
-			"SAM_VEH": return create_sam_veh()
-			"ENGINEER_VEH": return create_engineer_veh()
-			"EW_VEH": return create_ew_veh()
-			"ISR_VEH": return create_isr_veh()
-			"MEDICAL_VEH": return create_medical_veh()
-			"CBRN_VEH": return create_cbrn_veh()
-			"LOG_TRUCK": return create_log_truck()
-			"CMD_HQ": return create_cmd_hq()
-			_: return create_inf_line()  # デフォルト
+		_ensure_json_loaded()
+		if archetype_id in _archetypes:
+			return _archetypes[archetype_id]
+		# デフォルト: INF_LINE
+		if "INF_LINE" in _archetypes:
+			return _archetypes["INF_LINE"]
+		return ElementType.new()
