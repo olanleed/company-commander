@@ -1,0 +1,58 @@
+[
+	{
+		"aps_type": "HARD_KILL_TROPHY",
+		"base_armor_ce": 80,
+		"base_armor_ke": 100,
+		"composite_gen": "GEN_3",
+		"era_type": "NONE",
+		"id": "MBT_FRONT_NATO"
+	},
+	{
+		"aps_type": "SOFT_KILL",
+		"base_armor_ce": 70,
+		"base_armor_ke": 90,
+		"composite_gen": "GEN_2",
+		"era_type": "RELIKT",
+		"id": "MBT_FRONT_RUS"
+	},
+	{
+		"aps_type": "HARD_KILL_AFGHANIT",
+		"base_armor_ce": 85,
+		"base_armor_ke": 100,
+		"composite_gen": "GEN_4",
+		"era_type": "MALACHIT",
+		"id": "MBT_FRONT_ARMATA"
+	},
+	{
+		"aps_type": "NONE",
+		"base_armor_ce": 25,
+		"base_armor_ke": 30,
+		"composite_gen": "NONE",
+		"era_type": "NXRA",
+		"id": "IFV_FRONT_NATO"
+	},
+	{
+		"aps_type": "NONE",
+		"base_armor_ce": 20,
+		"base_armor_ke": 25,
+		"composite_gen": "NONE",
+		"era_type": "KONTAKT_1",
+		"id": "IFV_FRONT_RUS"
+	},
+	{
+		"aps_type": "NONE",
+		"base_armor_ce": 8,
+		"base_armor_ke": 10,
+		"composite_gen": "NONE",
+		"era_type": "NONE",
+		"id": "LIGHT_ARMOR"
+	},
+	{
+		"aps_type": "NONE",
+		"base_armor_ce": 0,
+		"base_armor_ke": 0,
+		"composite_gen": "NONE",
+		"era_type": "NONE",
+		"id": "SOFT_SKIN"
+	}
+]

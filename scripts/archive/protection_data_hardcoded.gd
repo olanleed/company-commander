@@ -186,6 +186,87 @@ class ProtectionProfile:
 
 
 # =============================================================================
+# プリセット防護プロファイル
+# =============================================================================
+
+## MBT正面装甲 (M1A2 Abrams相当)
+static func create_mbt_front_nato() -> ProtectionProfile:
+	var p := ProtectionProfile.new()
+	p.base_armor_ke = 100   # 500mm RHA base
+	p.base_armor_ce = 80    # 400mm RHA base
+	p.composite_gen = CompositeGen.GEN_3
+	p.era_type = ERAType.NONE  # M1はERAなし
+	p.aps_type = APSType.HARD_KILL_TROPHY  # Trophy装備型
+	return p
+
+
+## MBT正面装甲 (T-90M相当)
+static func create_mbt_front_rus() -> ProtectionProfile:
+	var p := ProtectionProfile.new()
+	p.base_armor_ke = 90    # 450mm RHA base
+	p.base_armor_ce = 70    # 350mm RHA base
+	p.composite_gen = CompositeGen.GEN_2
+	p.era_type = ERAType.RELIKT
+	p.aps_type = APSType.SOFT_KILL  # Shtora
+	return p
+
+
+## MBT正面装甲 (T-14 Armata相当)
+static func create_mbt_front_armata() -> ProtectionProfile:
+	var p := ProtectionProfile.new()
+	p.base_armor_ke = 100   # 500mm RHA base
+	p.base_armor_ce = 85    # 425mm RHA base
+	p.composite_gen = CompositeGen.GEN_4
+	p.era_type = ERAType.MALACHIT
+	p.aps_type = APSType.HARD_KILL_AFGHANIT
+	return p
+
+
+## IFV正面装甲 (Bradley M2A3相当)
+static func create_ifv_front_nato() -> ProtectionProfile:
+	var p := ProtectionProfile.new()
+	p.base_armor_ke = 30    # 150mm RHA
+	p.base_armor_ce = 25    # 125mm RHA
+	p.composite_gen = CompositeGen.NONE
+	p.era_type = ERAType.NXRA
+	p.aps_type = APSType.NONE
+	return p
+
+
+## IFV正面装甲 (BMP-3相当)
+static func create_ifv_front_rus() -> ProtectionProfile:
+	var p := ProtectionProfile.new()
+	p.base_armor_ke = 25    # 125mm RHA
+	p.base_armor_ce = 20    # 100mm RHA
+	p.composite_gen = CompositeGen.NONE
+	p.era_type = ERAType.KONTAKT_1
+	p.aps_type = APSType.NONE
+	return p
+
+
+## 軽装甲車両 (MRAP/装輪装甲車相当)
+static func create_light_armor() -> ProtectionProfile:
+	var p := ProtectionProfile.new()
+	p.base_armor_ke = 10    # 50mm RHA (14.5mm防御)
+	p.base_armor_ce = 8     # 40mm RHA
+	p.composite_gen = CompositeGen.NONE
+	p.era_type = ERAType.NONE
+	p.aps_type = APSType.NONE
+	return p
+
+
+## ソフトスキン車両
+static func create_soft_skin() -> ProtectionProfile:
+	var p := ProtectionProfile.new()
+	p.base_armor_ke = 0
+	p.base_armor_ce = 0
+	p.composite_gen = CompositeGen.NONE
+	p.era_type = ERAType.NONE
+	p.aps_type = APSType.NONE
+	return p
+
+
+# =============================================================================
 # ゾーン別装甲修正
 # =============================================================================
 
@@ -208,147 +289,3 @@ static func get_zone_armor(profile: ProtectionProfile, zone: String, is_ke: bool
 		return int(float(profile.get_effective_armor_ke()) * mult)
 	else:
 		return int(float(profile.get_effective_armor_ce()) * mult)
-
-
-# =============================================================================
-# プリセット防護プロファイル（JSONローダー・SSoT対応）
-# =============================================================================
-
-const PROTECTION_JSON_PATH := "res://data/protection/protection_profiles.json"
-
-static var _profiles: Dictionary = {}
-static var _json_loaded: bool = false
-
-
-## JSONファイルから防護プロファイルデータを読み込む
-static func _ensure_json_loaded() -> void:
-	if _json_loaded:
-		return
-
-	var file := FileAccess.open(PROTECTION_JSON_PATH, FileAccess.READ)
-	if not file:
-		push_error("Cannot open protection JSON: %s" % PROTECTION_JSON_PATH)
-		return
-
-	var json_text := file.get_as_text()
-	file.close()
-
-	var json := JSON.new()
-	var error := json.parse(json_text)
-	if error != OK:
-		push_error("JSON parse error in %s: %s" % [PROTECTION_JSON_PATH, json.get_error_message()])
-		return
-
-	var profiles_array: Array = json.data
-	for profile_data in profiles_array:
-		var profile := _dict_to_protection_profile(profile_data)
-		var profile_id: String = profile_data.get("id", "")
-		_profiles[profile_id] = profile
-
-	_json_loaded = true
-	print("Loaded %d protection profiles from JSON" % _profiles.size())
-
-
-## DictionaryをProtectionProfileに変換
-static func _dict_to_protection_profile(data: Dictionary) -> ProtectionProfile:
-	var p := ProtectionProfile.new()
-
-	p.base_armor_ke = data.get("base_armor_ke", 0)
-	p.base_armor_ce = data.get("base_armor_ce", 0)
-	p.era_type = _string_to_era_type(data.get("era_type", "NONE"))
-	p.aps_type = _string_to_aps_type(data.get("aps_type", "NONE"))
-	p.composite_gen = _string_to_composite_gen(data.get("composite_gen", "NONE"))
-
-	return p
-
-
-## 文字列をERATypeに変換
-static func _string_to_era_type(s: String) -> ERAType:
-	match s:
-		"NONE": return ERAType.NONE
-		"KONTAKT_1": return ERAType.KONTAKT_1
-		"KONTAKT_5": return ERAType.KONTAKT_5
-		"RELIKT": return ERAType.RELIKT
-		"MALACHIT": return ERAType.MALACHIT
-		"BLAZER": return ERAType.BLAZER
-		"NXRA": return ERAType.NXRA
-		_: return ERAType.NONE
-
-
-## 文字列をAPSTypeに変換
-static func _string_to_aps_type(s: String) -> APSType:
-	match s:
-		"NONE": return APSType.NONE
-		"SOFT_KILL": return APSType.SOFT_KILL
-		"HARD_KILL_ARENA": return APSType.HARD_KILL_ARENA
-		"HARD_KILL_TROPHY": return APSType.HARD_KILL_TROPHY
-		"HARD_KILL_AFGHANIT": return APSType.HARD_KILL_AFGHANIT
-		"HARD_KILL_IRON_FIST": return APSType.HARD_KILL_IRON_FIST
-		_: return APSType.NONE
-
-
-## 文字列をCompositeGenに変換
-static func _string_to_composite_gen(s: String) -> CompositeGen:
-	match s:
-		"NONE": return CompositeGen.NONE
-		"GEN_1": return CompositeGen.GEN_1
-		"GEN_2": return CompositeGen.GEN_2
-		"GEN_3": return CompositeGen.GEN_3
-		"GEN_4": return CompositeGen.GEN_4
-		_: return CompositeGen.NONE
-
-
-## 全防護プロファイルを取得
-static func get_all_profiles() -> Dictionary:
-	_ensure_json_loaded()
-	return _profiles
-
-
-## IDから防護プロファイルを取得
-static func get_profile(profile_id: String) -> ProtectionProfile:
-	_ensure_json_loaded()
-	if profile_id in _profiles:
-		return _profiles[profile_id]
-	# デフォルト: SOFT_SKIN
-	if "SOFT_SKIN" in _profiles:
-		return _profiles["SOFT_SKIN"]
-	return ProtectionProfile.new()
-
-
-# =============================================================================
-# 後方互換用ファクトリ関数（SSoT対応：JSONから読み込み）
-# =============================================================================
-
-## MBT正面装甲 (M1A2 Abrams相当)
-static func create_mbt_front_nato() -> ProtectionProfile:
-	return get_profile("MBT_FRONT_NATO")
-
-
-## MBT正面装甲 (T-90M相当)
-static func create_mbt_front_rus() -> ProtectionProfile:
-	return get_profile("MBT_FRONT_RUS")
-
-
-## MBT正面装甲 (T-14 Armata相当)
-static func create_mbt_front_armata() -> ProtectionProfile:
-	return get_profile("MBT_FRONT_ARMATA")
-
-
-## IFV正面装甲 (Bradley M2A3相当)
-static func create_ifv_front_nato() -> ProtectionProfile:
-	return get_profile("IFV_FRONT_NATO")
-
-
-## IFV正面装甲 (BMP-3相当)
-static func create_ifv_front_rus() -> ProtectionProfile:
-	return get_profile("IFV_FRONT_RUS")
-
-
-## 軽装甲車両 (MRAP/装輪装甲車相当)
-static func create_light_armor() -> ProtectionProfile:
-	return get_profile("LIGHT_ARMOR")
-
-
-## ソフトスキン車両
-static func create_soft_skin() -> ProtectionProfile:
-	return get_profile("SOFT_SKIN")
