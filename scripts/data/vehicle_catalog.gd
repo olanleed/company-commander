@@ -407,6 +407,10 @@ func apply_weapons_to_element(
 		if atgm_id in all_weapons:
 			var atgm_weapon: WeaponData.WeaponType = _duplicate_weapon(all_weapons[atgm_id])
 			element.weapons.append(atgm_weapon)
+			# main_gunがない場合、ATGMを主武装として設定（ATGM車両用）
+			if element.primary_weapon == null:
+				element.primary_weapon = atgm_weapon
+				element.current_weapon = atgm_weapon
 
 	# 副武装（secondary_weapons）
 	for weapon_entry in vehicle_config.secondary_weapons:
@@ -444,6 +448,9 @@ func _duplicate_weapon(original: WeaponData.WeaponType) -> WeaponData.WeaponType
 	dup.blast_radius_m = original.blast_radius_m
 	dup.projectile_speed_mps = original.projectile_speed_mps
 	dup.projectile_size = original.projectile_size
+
+	# weapon_role（JSONから読み込まれた値を保持）
+	dup.weapon_role = original.weapon_role
 
 	# Dictionaryの複製
 	dup.lethality = original.lethality.duplicate(true)

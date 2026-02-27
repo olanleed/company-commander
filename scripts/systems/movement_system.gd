@@ -77,8 +77,13 @@ func issue_move_order(element: ElementData.ElementInstance, target: Vector2, use
 	element.is_moving = true
 	element.use_road_only = use_route
 	element.order_target_position = target
-	element.current_order_type = GameEnums.OrderType.MOVE
+	# ATTACKやATTACK_MOVE命令の場合は上書きしない（目標追跡を維持）
+	if element.current_order_type != GameEnums.OrderType.ATTACK and element.current_order_type != GameEnums.OrderType.ATTACK_MOVE:
+		element.current_order_type = GameEnums.OrderType.MOVE
 	element.is_reversing = false  # 通常移動
+
+	# ATGMは移動中射撃不可のため、射撃対象をクリア
+	_cancel_atgm_engagement_on_move(element)
 
 	return true
 
@@ -122,6 +127,9 @@ func issue_reverse_order(element: ElementData.ElementInstance, distance: float =
 	element.current_order_type = GameEnums.OrderType.RETREAT
 	element.forced_target_id = ""
 
+	# ATGMは移動中射撃不可のため、射撃対象をクリア
+	_cancel_atgm_engagement_on_move(element)
+
 	print("[MovementSystem] %s -> REVERSE to %s" % [element.id, target])
 	return true
 
@@ -158,6 +166,9 @@ func issue_break_contact_order(element: ElementData.ElementInstance, retreat_pos
 	element.current_order_type = GameEnums.OrderType.BREAK_CONTACT
 	element.forced_target_id = ""
 	element.break_contact_smoke_requested = true  # 煙幕要請フラグ
+
+	# ATGMは移動中射撃不可のため、射撃対象をクリア
+	_cancel_atgm_engagement_on_move(element)
 
 	print("[MovementSystem] %s -> BREAK_CONTACT to %s" % [element.id, clamped_target])
 	return true
@@ -474,3 +485,19 @@ func get_eta(element: ElementData.ElementInstance) -> float:
 		return INF
 
 	return distance / speed
+
+
+## ATGM使用中に移動を開始した場合、射撃対象をクリアする
+## ATGMは静止射撃専用のため、移動開始時に射撃を中断する
+func _cancel_atgm_engagement_on_move(element: ElementData.ElementInstance) -> void:
+	if not element:
+		return
+
+	# 現在の武器がATGMかチェック
+	if element.current_weapon:
+		WeaponData.ensure_weapon_role(element.current_weapon)
+		if element.current_weapon.weapon_role == WeaponData.WeaponRole.ATGM:
+			# ATGMは移動中射撃不可のため、射撃対象をクリア
+			if element.current_target_id != "":
+				print("[MovementSystem] %s: ATGM engagement cancelled (moving)" % element.id)
+				element.current_target_id = ""

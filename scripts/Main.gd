@@ -267,159 +267,96 @@ func _spawn_test_units() -> void:
 	if catalog and catalog.is_loaded():
 		print("[VehicleCatalog] Loaded %d vehicles" % catalog.get_all_vehicle_ids().size())
 
-	# === BLUE陣営 (米軍) - 全ユニット配置テスト ===
-	# 全ユニットHOLD FIRE
+	# ==========================================================================
+	# BLUE陣営 - 日米の全ATGM（対戦車ミサイル）ユニット
+	# ==========================================================================
+	# 全ユニット HOLD_FIRE
 
-	# --- 戦車 ---
-	var blue_m1a2_sepv3 := ElementFactory.create_element_with_vehicle("USA_M1A2_SEPv3", GameEnums.Faction.BLUE, Vector2(100, 400))
-	blue_m1a2_sepv3.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_m1a2_sepv3)
+	# --- 米軍 ATGMプラットフォーム ---
 
-	var blue_m1a2_sepv2 := ElementFactory.create_element_with_vehicle("USA_M1A2_SEPv2", GameEnums.Faction.BLUE, Vector2(150, 400))
-	blue_m1a2_sepv2.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_m1a2_sepv2)
-
-	# --- IFV (Bradley) + 歩兵乗車 ---
-	var blue_m2a4 := ElementFactory.create_element_with_vehicle("USA_M2A4_Bradley", GameEnums.Faction.BLUE, Vector2(200, 400))
+	# M2A4 Bradley (TOW-2B搭載)
+	var blue_m2a4 := ElementFactory.create_element_with_vehicle("USA_M2A4_Bradley", GameEnums.Faction.BLUE, Vector2(100, 400))
 	blue_m2a4.sop_mode = GameEnums.SOPMode.HOLD_FIRE
 	world_model.add_element(blue_m2a4)
-	# M2A4に歩兵を乗車
-	var blue_inf_m2a4 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, Vector2(200, 400))
-	blue_inf_m2a4.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_inf_m2a4)
-	transport_system.embark_initial(blue_m2a4, blue_inf_m2a4)
 
-	var blue_m2a3 := ElementFactory.create_element_with_vehicle("USA_M2A3_Bradley", GameEnums.Faction.BLUE, Vector2(250, 400))
+	# M2A3 Bradley (TOW-2B搭載)
+	var blue_m2a3 := ElementFactory.create_element_with_vehicle("USA_M2A3_Bradley", GameEnums.Faction.BLUE, Vector2(100, 500))
 	blue_m2a3.sop_mode = GameEnums.SOPMode.HOLD_FIRE
 	world_model.add_element(blue_m2a3)
-	# M2A3に歩兵を乗車
-	var blue_inf_m2a3 := ElementFactory.create_element("INF_AT", GameEnums.Faction.BLUE, Vector2(250, 400))
-	blue_inf_m2a3.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_inf_m2a3)
-	transport_system.embark_initial(blue_m2a3, blue_inf_m2a3)
 
-	# --- 偵察 (M3A3 CFV) ---
-	var blue_m3a3 := ElementFactory.create_element_with_vehicle("USA_M3A3_CFV", GameEnums.Faction.BLUE, Vector2(300, 400))
+	# M3A3 CFV (TOW-2B搭載、偵察型)
+	var blue_m3a3 := ElementFactory.create_element_with_vehicle("USA_M3A3_CFV", GameEnums.Faction.BLUE, Vector2(100, 600))
 	blue_m3a3.sop_mode = GameEnums.SOPMode.HOLD_FIRE
 	world_model.add_element(blue_m3a3)
 
-	# --- Stryker ---
-	var blue_stryker_dragoon := ElementFactory.create_element_with_vehicle("USA_Stryker_Dragoon", GameEnums.Faction.BLUE, Vector2(350, 400))
-	blue_stryker_dragoon.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_stryker_dragoon)
-	# Stryker Dragoonに歩兵を乗車
-	var blue_inf_dragoon := ElementFactory.create_element("INF_MG", GameEnums.Faction.BLUE, Vector2(350, 400))
-	blue_inf_dragoon.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_inf_dragoon)
-	transport_system.embark_initial(blue_stryker_dragoon, blue_inf_dragoon)
+	# 米軍 歩兵ATチーム (Javelin携行)
+	var blue_inf_javelin := ElementFactory.create_element("INF_AT", GameEnums.Faction.BLUE, Vector2(100, 700))
+	blue_inf_javelin.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_inf_javelin)
 
-	var blue_stryker_icv := ElementFactory.create_element_with_vehicle("USA_Stryker_ICV", GameEnums.Faction.BLUE, Vector2(400, 400))
-	blue_stryker_icv.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_stryker_icv)
-	# Stryker ICVに歩兵を乗車
-	var blue_inf_icv := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, Vector2(400, 400))
-	blue_inf_icv.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_inf_icv)
-	transport_system.embark_initial(blue_stryker_icv, blue_inf_icv)
+	# --- 自衛隊 ATGMプラットフォーム ---
 
-	var blue_stryker_dvh := ElementFactory.create_element_with_vehicle("USA_Stryker_DVH", GameEnums.Faction.BLUE, Vector2(450, 400))
-	blue_stryker_dvh.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_stryker_dvh)
+	# 89式IFV (79式重MAT搭載)
+	var blue_type89 := ElementFactory.create_element_with_vehicle("JPN_Type89", GameEnums.Faction.BLUE, Vector2(100, 900))
+	blue_type89.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_type89)
 
-	var blue_stryker_rv := ElementFactory.create_element_with_vehicle("USA_Stryker_RV", GameEnums.Faction.BLUE, Vector2(500, 400))
-	blue_stryker_rv.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_stryker_rv)
+	# 自衛隊 歩兵ATチーム (01式LMAT携行)
+	var blue_inf_lmat := ElementFactory.create_element("INF_AT", GameEnums.Faction.BLUE, Vector2(100, 1000))
+	blue_inf_lmat.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_inf_lmat)
 
-	# --- APC ---
-	var blue_m1283_ampv := ElementFactory.create_element_with_vehicle("USA_M1283_AMPV", GameEnums.Faction.BLUE, Vector2(100, 300))
-	blue_m1283_ampv.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_m1283_ampv)
+	# MMPM搭載高機動車 (中距離多目的誘導弾)
+	var blue_mmpm := ElementFactory.create_element_with_vehicle("JPN_HMV_MMPM", GameEnums.Faction.BLUE, Vector2(100, 1100))
+	blue_mmpm.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_mmpm)
 
-	var blue_m113a3 := ElementFactory.create_element_with_vehicle("USA_M113A3", GameEnums.Faction.BLUE, Vector2(150, 300))
-	blue_m113a3.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_m113a3)
+	# ==========================================================================
+	# RED陣営 - 戦車×3
+	# ==========================================================================
+	# 全ユニット HOLD_FIRE
 
-	# --- 軽車両 (JLTV) ---
-	var blue_jltv_gp := ElementFactory.create_element_with_vehicle("USA_JLTV_GP", GameEnums.Faction.BLUE, Vector2(200, 300))
-	blue_jltv_gp.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_jltv_gp)
+	# T-90M戦車 #1
+	var red_tank1 := ElementFactory.create_element_with_vehicle("RUS_T90M", GameEnums.Faction.RED, Vector2(1800, 400))
+	red_tank1.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(red_tank1)
 
-	var blue_jltv_hgc := ElementFactory.create_element_with_vehicle("USA_JLTV_HGC", GameEnums.Faction.BLUE, Vector2(250, 300))
-	blue_jltv_hgc.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_jltv_hgc)
+	# T-90M戦車 #2
+	var red_tank2 := ElementFactory.create_element_with_vehicle("RUS_T90M", GameEnums.Faction.RED, Vector2(1800, 600))
+	red_tank2.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(red_tank2)
 
-	var blue_m1117 := ElementFactory.create_element_with_vehicle("USA_M1117_Guardian", GameEnums.Faction.BLUE, Vector2(300, 300))
-	blue_m1117.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_m1117)
-
-	# --- 砲兵 ---
-	var blue_m109a7 := ElementFactory.create_element_with_vehicle("USA_M109A7_Paladin", GameEnums.Faction.BLUE, Vector2(100, 900))
-	blue_m109a7.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_m109a7)
-
-	var blue_m109a6 := ElementFactory.create_element_with_vehicle("USA_M109A6_Paladin", GameEnums.Faction.BLUE, Vector2(150, 900))
-	blue_m109a6.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_m109a6)
-
-	var blue_ampv_mc := ElementFactory.create_element_with_vehicle("USA_M1287_AMPV_MC", GameEnums.Faction.BLUE, Vector2(200, 900))
-	blue_ampv_mc.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_ampv_mc)
-
-	var blue_stryker_mc := ElementFactory.create_element_with_vehicle("USA_M1129_Stryker_MC", GameEnums.Faction.BLUE, Vector2(250, 900))
-	blue_stryker_mc.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_stryker_mc)
-
-	# --- 防空 ---
-	var blue_mshorad := ElementFactory.create_element_with_vehicle("USA_M_SHORAD", GameEnums.Faction.BLUE, Vector2(100, 850))
-	blue_mshorad.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_mshorad)
-
-	# --- 支援車両 ---
-	var blue_m88a2 := ElementFactory.create_element_with_vehicle("USA_M88A2_Hercules", GameEnums.Faction.BLUE, Vector2(150, 850))
-	blue_m88a2.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_m88a2)
-
-	# --- 指揮通信車両 ---
-	var blue_m1068 := ElementFactory.create_element_with_vehicle("USA_M1068A3_SICPS", GameEnums.Faction.BLUE, Vector2(200, 850))
-	blue_m1068.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_m1068)
-
-	# === RED陣営 (ロシア) - 全てHOLD FIRE ===
-	# 歩兵小隊×1
-	var red_inf := ElementFactory.create_element("INF_LINE", GameEnums.Faction.RED, Vector2(750, 250))
-	red_inf.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(red_inf)
-
-	# BMP-3×1（IFV）
-	var red_ifv := ElementFactory.create_element_with_vehicle("RUS_BMP3", GameEnums.Faction.RED, Vector2(850, 200))
-	red_ifv.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(red_ifv)
-
-	# T-90M戦車×1
-	var red_tank := ElementFactory.create_element_with_vehicle("RUS_T90M", GameEnums.Faction.RED, Vector2(800, 150))
-	red_tank.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(red_tank)
+	# T-90M戦車 #3
+	var red_tank3 := ElementFactory.create_element_with_vehicle("RUS_T90M", GameEnums.Faction.RED, Vector2(1800, 800))
+	red_tank3.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(red_tank3)
 
 	# スポーン後に衝突を解消
 	for element in world_model.elements:
 		movement_system.resolve_hard_collisions(element)
 
-	print("テストユニット生成完了: ", world_model.elements.size(), " elements")
-	print("=== BLUE陣営 (米軍) - 全ユニット配置テスト ===")
-	print("  戦車: M1A2 SEPv3, M1A2 SEPv2")
-	print("  IFV: M2A4 Bradley (+INF_LINE), M2A3 Bradley (+INF_AT)")
-	print("  偵察: M3A3 CFV")
-	print("  Stryker: Dragoon (+INF_MG), ICV (+INF_LINE), DVH, RV")
-	print("  APC: M1283 AMPV, M113A3")
-	print("  軽車両: JLTV GP, JLTV HGC, M1117 Guardian")
-	print("  砲兵: M109A7, M109A6, AMPV-MC, Stryker MC")
-	print("  防空: M-SHORAD")
-	print("  支援: M88A2 Hercules")
-	print("  指揮通信: M1068A3 SICPS")
-	print("  ※全ユニットHOLD FIRE、歩兵4個小隊乗車済み")
-	print("=== RED陣営 (ロシア) - 全てHOLD FIRE ===")
-	print("  歩兵 + BMP-3 + T-90M")
 	print("==========================================")
+	print("ミサイルシステムテストシナリオ")
+	print("==========================================")
+	print("テストユニット生成完了: %d elements" % world_model.elements.size())
+	print("")
+	print("=== BLUE陣営 (日米ATGMユニット) ===")
+	print("  [米軍]")
+	print("    M2A4 Bradley (TOW-2B)")
+	print("    M2A3 Bradley (TOW-2B)")
+	print("    M3A3 CFV (TOW-2B)")
+	print("    歩兵ATチーム (Javelin)")
+	print("  [自衛隊]")
+	print("    89式IFV (79式重MAT)")
+	print("    歩兵ATチーム (01式LMAT)")
+	print("    MMPM搭載高機動車 (中距離多目的誘導弾)")
+	print("")
+	print("=== RED陣営 (戦車×3) ===")
+	print("    T-90M × 3")
+	print("")
+	print("※ 全ユニット HOLD_FIRE")
+	print("==========================================")
+
 	for element in world_model.elements:
 		var weapons_str := ""
 		for w in element.weapons:
@@ -427,16 +364,13 @@ func _spawn_test_units() -> void:
 		var extra_info := ""
 		if element.element_type and element.element_type.armor_class > 0:
 			extra_info = " (ArmorClass=%d)" % element.element_type.armor_class
-		if element.element_type and element.element_type.is_comm_hub:
-			extra_info += " [COMM_HUB: range=%dm]" % int(element.element_type.comm_range)
 		if element.vehicle_id != "":
 			extra_info += " [Vehicle: %s]" % element.vehicle_id
-		print("  %s (%s): Str=%d, Weapons=[%s], primary=%s%s" % [
+		print("  %s (%s): Str=%d, Weapons=[%s]%s" % [
 			element.id,
 			element.element_type.display_name if element.element_type else "?",
 			element.current_strength,
 			weapons_str.strip_edges(),
-			element.primary_weapon.id if element.primary_weapon else "NONE",
 			extra_info
 		])
 
@@ -707,8 +641,9 @@ func _on_tick_advanced(tick: int) -> void:
 	world_model.save_prev_states()
 
 	# データリンク状態を更新（HQの通信範囲内はLINKED、範囲外はISOLATED）
+	# ハブがない陣営では全員LINKEDにする（後方互換）
 	if data_link_system:
-		data_link_system.update_comm_states(world_model.elements)
+		data_link_system.update_comm_states_no_hub_fallback(world_model.elements)
 
 	# ATTACK命令中のユニットの移動制御
 	_update_attack_movement()
@@ -866,6 +801,23 @@ func _update_combat(tick: int, dt: float) -> void:
 		# 射撃対象を選択
 		var target := _select_target(shooter, tick)
 		if not target:
+			# ATTACK命令で移動中、forced_targetがATGM射程内なら停止して待機
+			if shooter.current_order_type == GameEnums.OrderType.ATTACK and shooter.is_moving and shooter.forced_target_id != "":
+				var forced_target := world_model.get_element_by_id(shooter.forced_target_id)
+				if forced_target and forced_target.state != GameEnums.UnitState.DESTROYED:
+					var dist := shooter.position.distance_to(forced_target.position)
+					# ATGMが射程内か確認
+					for weapon in shooter.weapons:
+						WeaponData.ensure_weapon_role(weapon)
+						if weapon.weapon_role == WeaponData.WeaponRole.ATGM and weapon.is_in_range(dist):
+							# ATGMを使うために停止して待機（目標発見を待つ）
+							shooter.current_path = PackedVector2Array()
+							shooter.is_moving = false
+							print("[Combat] %s: stopping at ATGM range (%.0fm), waiting to spot %s" % [
+								shooter.id, dist, forced_target.id
+							])
+							break
+
 			# デバッグ: 100tickごとにターゲットが見つからないユニットを報告
 			if tick % 100 == 0:
 				var contacts := vision_system.get_contacts_for_faction(shooter.faction)
@@ -874,9 +826,9 @@ func _update_combat(tick: int, dt: float) -> void:
 				for c in contacts:
 					if c.state == GameEnums.ContactState.CONFIRMED:
 						confirmed_count += 1
-				print("[NoTarget] %s (faction=%d): contacts=%d (conf=%d), fireable=%d, supp=%.2f" % [
+				print("[NoTarget] %s (faction=%d): contacts=%d (conf=%d), fireable=%d, supp=%.2f, order=%d, forced=%s" % [
 					shooter.id, shooter.faction, contacts.size(), confirmed_count, fireable.size(),
-					shooter.suppression
+					shooter.suppression, shooter.current_order_type, shooter.forced_target_id
 				])
 				# 詳細デバッグ: 敵ユニットとの距離と視界
 				var enemy_faction := GameEnums.Faction.BLUE if shooter.faction == GameEnums.Faction.RED else GameEnums.Faction.RED
@@ -903,6 +855,25 @@ func _update_combat(tick: int, dt: float) -> void:
 
 		# 最適武器を選択
 		var selected_weapon := combat_system.select_best_weapon(shooter, target, distance, false)
+
+		# ATTACK命令で移動中かつATGMが使えるなら停止
+		if not selected_weapon and shooter.is_moving and shooter.current_order_type == GameEnums.OrderType.ATTACK:
+			# ATGMが射程内か確認
+			var atgm_in_range := false
+			for weapon in shooter.weapons:
+				WeaponData.ensure_weapon_role(weapon)
+				if weapon.weapon_role == WeaponData.WeaponRole.ATGM and weapon.is_in_range(distance):
+					atgm_in_range = true
+					break
+
+			if atgm_in_range:
+				# ATGMを使うために停止
+				shooter.current_path = PackedVector2Array()
+				shooter.is_moving = false
+				print("[Combat] %s: stopping to fire ATGM at %s (dist=%.0fm)" % [shooter.id, target.id, distance])
+				# 再度武器選択（停止後）
+				selected_weapon = combat_system.select_best_weapon(shooter, target, distance, false)
+
 		if not selected_weapon:
 			continue
 
@@ -1113,9 +1084,14 @@ func _update_combat(tick: int, dt: float) -> void:
 				print("[Combat] %s -> %s%s [%s]: supp=%.2f dmg=%.2f%s" % [shooter.id, target.id, armor_str, weapon_name, d_supp, d_dmg, accum_str])
 
 	# 射撃していないユニットの current_target_id をクリア
+	# ただし、ATTACK命令で強制目標が設定されている場合は維持（ロックオン表示用）
 	for element in world_model.elements:
 		if not shooters_firing.has(element.id):
-			element.current_target_id = ""
+			if element.forced_target_id != "":
+				# ATTACK命令の目標をロックオンとして表示
+				element.current_target_id = element.forced_target_id
+			else:
+				element.current_target_id = ""
 
 	# 抑圧回復を適用
 	for element in world_model.elements:
@@ -1149,7 +1125,21 @@ func _update_attack_movement() -> void:
 			continue
 
 		# VisionSystemで射撃可能か判定（視界範囲 + DataLink考慮）
-		var can_fire := vision_system.can_fire_at(element, element.forced_target_id) if vision_system else false
+		var can_see := vision_system.can_fire_at(element, element.forced_target_id) if vision_system else false
+
+		# 射程内の武器があるか確認
+		var dist := element.position.distance_to(target.position)
+		var has_weapon_in_range := false
+		var has_atgm_in_range := false
+		for weapon in element.weapons:
+			if weapon.is_in_range(dist):
+				WeaponData.ensure_weapon_role(weapon)
+				if weapon.weapon_role == WeaponData.WeaponRole.ATGM:
+					has_atgm_in_range = true
+				if weapon.weapon_role != WeaponData.WeaponRole.ATGM or not element.is_moving:
+					has_weapon_in_range = true
+
+		var can_fire := can_see and has_weapon_in_range
 
 		if can_fire:
 			# 射撃可能：移動停止
@@ -1158,7 +1148,8 @@ func _update_attack_movement() -> void:
 				element.is_moving = false
 				element.velocity = Vector2.ZERO
 		else:
-			# 射撃不可：目標に向かって移動（まだ移動していない場合）
+			# 射撃不可（視界外または射程外）：目標に向かって移動
+			# 視界が開けるまで前進を継続
 			if not element.is_moving:
 				movement_system.issue_move_order(element, target.position, false)
 			else:
@@ -1551,7 +1542,20 @@ func _execute_attack_command(attackers: Array[ElementData.ElementInstance], targ
 		element.current_order_type = GameEnums.OrderType.ATTACK
 
 		# VisionSystemで射撃可能か判定（視界範囲 + DataLink考慮）
-		var can_fire := vision_system.can_fire_at(element, target.id) if vision_system else false
+		var can_see := vision_system.can_fire_at(element, target.id) if vision_system else false
+
+		# 射程内の武器があるか確認
+		var dist := element.position.distance_to(target.position)
+		var has_weapon_in_range := false
+		for weapon in element.weapons:
+			if weapon.is_in_range(dist):
+				# 移動中の場合、ATGMは使えない
+				WeaponData.ensure_weapon_role(weapon)
+				if weapon.weapon_role != WeaponData.WeaponRole.ATGM or not element.is_moving:
+					has_weapon_in_range = true
+					break
+
+		var can_fire := can_see and has_weapon_in_range
 
 		# 砲兵の射撃任務を解除（直接攻撃命令）
 		_cancel_fire_mission(element)
@@ -1565,7 +1569,15 @@ func _execute_attack_command(attackers: Array[ElementData.ElementInstance], targ
 			var use_road: bool = input_controller.is_alt_held() if input_controller else false
 			movement_system.issue_move_order(element, target.position, use_road)
 
-		print("[Order] %s -> ATTACK %s (can_fire=%s)" % [element.id, target.id, can_fire])
+		# デバッグ情報を追加
+		var contact_state := "N/A"
+		if vision_system:
+			var contact := vision_system.get_contact_for_unit(element, target.id)
+			if contact:
+				contact_state = str(contact.state)
+		print("[Order] %s -> ATTACK %s (can_see=%s, in_range=%s, can_fire=%s, dist=%.0fm, contact=%s, is_moving=%s)" % [
+			element.id, target.id, can_see, has_weapon_in_range, can_fire, dist, contact_state, element.is_moving
+		])
 
 
 ## 煙幕コマンドを実行（発煙弾発射）
@@ -2089,10 +2101,11 @@ func _select_target(shooter: ElementData.ElementInstance, _tick: int) -> Element
 		var forced_target := world_model.get_element_by_id(shooter.forced_target_id)
 		if forced_target and forced_target.state != GameEnums.UnitState.DESTROYED:
 			# VisionSystemで射撃可能か判定（DataLink + 視界範囲を一元管理）
-			if vision_system.can_fire_at(shooter, shooter.forced_target_id):
+			var can_engage := vision_system.can_fire_at(shooter, shooter.forced_target_id, true)
+			if can_engage:
 				return forced_target
-			# 射程外または視界外でも、目標が存在する限り他の目標には切り替えない
-			# （目標に近づくため移動を続ける）
+			# 強制目標が視界外の場合：他の目標には切り替えない
+			# （目標変換を明確にするため、指定した目標のみを攻撃する設計）
 			return null
 		else:
 			# 目標が破壊されたら強制目標をクリア

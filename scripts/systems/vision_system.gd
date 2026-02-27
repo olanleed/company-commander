@@ -250,6 +250,10 @@ func _check_line_of_sight(from: Vector2, to: Vector2) -> Dictionary:
 	# SoftOcclusion: 森林の透過率計算
 	var forest_distance := _calculate_forest_crossing_distance(from, to)
 	var t_forest := exp(-forest_distance / GameConstants.FOREST_LOS_DECAY_M)
+	# DEBUG: 森林計算の詳細
+	if forest_distance > 0:
+		print("[LoS] from=(%.0f,%.0f) to=(%.0f,%.0f): forest_dist=%.0f, t_forest=%.3f" % [
+			from.x, from.y, to.x, to.y, forest_distance, t_forest])
 
 	# SoftOcclusion: 煙の透過率計算（v0.1では煙幕未実装）
 	var t_smoke := 1.0
@@ -363,16 +367,25 @@ func get_element_visibility_state(viewer_faction: GameEnums.Faction, element_id:
 
 ## 指定ユニットから見た敵のContact状態を取得（DataLink考慮）
 ## ISOLATEDの場合は自分の視界のみ、LINKEDの場合は全LINKEDユニットの視界を共有
-func get_contact_for_unit(viewer: ElementData.ElementInstance, target_id: String) -> ContactRecord:
+func get_contact_for_unit(viewer: ElementData.ElementInstance, target_id: String, debug: bool = false) -> ContactRecord:
 	# DataLinkSystemがない場合は通常のContact取得
 	if not _data_link_system:
+		if debug:
+			print("[get_contact_for_unit] %s -> %s: no DataLinkSystem, using faction contact" % [viewer.id, target_id])
 		return get_contact(viewer.faction, target_id)
 
 	# ISOLATEDの場合は自分の視界のみ
 	if viewer.comm_state == GameEnums.CommState.ISOLATED:
+		if debug:
+			print("[get_contact_for_unit] %s -> %s: ISOLATED, using single observer" % [viewer.id, target_id])
 		return _get_contact_from_single_observer(viewer, target_id)
 
 	# LINKED（またはDEGRADED）の場合は陣営全体のContactを共有
+	if debug:
+		var contact := get_contact(viewer.faction, target_id)
+		var state_str := str(contact.state) if contact else "null"
+		print("[get_contact_for_unit] %s -> %s: LINKED (comm=%s), faction contact=%s" % [
+			viewer.id, target_id, viewer.comm_state, state_str])
 	return get_contact(viewer.faction, target_id)
 
 
@@ -425,21 +438,40 @@ func is_visible_now(observer: ElementData.ElementInstance, target: ElementData.E
 
 ## shooterがtargetを射撃可能か（DataLink考慮）
 ## 条件: Contact=CONFIRMED AND 今この瞬間見えている
-func can_fire_at(shooter: ElementData.ElementInstance, target_id: String) -> bool:
+func can_fire_at(shooter: ElementData.ElementInstance, target_id: String, debug: bool = false) -> bool:
 	if not _world_model:
+		if debug:
+			print("[can_fire_at] %s -> %s: no world_model" % [shooter.id, target_id])
 		return false
 
 	# Contact状態を確認（DataLink考慮）
-	var contact := get_contact_for_unit(shooter, target_id)
+	var contact := get_contact_for_unit(shooter, target_id, debug)
 	if not contact or contact.state != GameEnums.ContactState.CONFIRMED:
+		if debug:
+			var state_str := str(contact.state) if contact else "NO_CONTACT"
+			print("[can_fire_at] %s -> %s: contact not confirmed (%s)" % [shooter.id, target_id, state_str])
 		return false
 
 	# 今この瞬間見えているか確認
 	var target := _world_model.get_element_by_id(target_id)
 	if not target:
+		if debug:
+			print("[can_fire_at] %s -> %s: target not found" % [shooter.id, target_id])
 		return false
 
-	return is_visible_now(shooter, target)
+	var visible := is_visible_now(shooter, target)
+	if debug and not visible:
+		var dist := shooter.position.distance_to(target.position)
+		var r_eff := _calculate_effective_range(shooter, target)
+		var los := _check_line_of_sight(shooter.position, target.position)
+		var forest_dist := _calculate_forest_crossing_distance(shooter.position, target.position)
+		print("[can_fire_at] %s -> %s: not visible (dist=%.0f, r_eff=%.0f, t_los=%.2f, forest=%.0fm)" % [
+			shooter.id, target_id, dist, r_eff, los.transmittance, forest_dist
+		])
+		print("    shooter_pos=(%.0f,%.0f), target_pos=(%.0f,%.0f)" % [
+			shooter.position.x, shooter.position.y, target.position.x, target.position.y
+		])
+	return visible
 
 
 ## shooterが射撃可能な全目標を返す（DataLink考慮）

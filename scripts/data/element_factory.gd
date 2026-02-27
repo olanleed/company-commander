@@ -34,6 +34,7 @@ const ARCHETYPE_WEAPONS: Dictionary = {
 	"SP_ARTILLERY": ["CW_HOWITZER_155"],  # 155mm榴弾砲
 	"SPAAG": ["CW_AUTOCANNON_35"],  # 35mm連装機関砲
 	"SAM_VEH": [],  # 対空ミサイル（未実装）
+	"ATGM_VEH": ["CW_ATGM_MMPM"],  # 対戦車ミサイル車両
 	"LOG_TRUCK": [],  # 武装なし
 	"CMD_HQ": ["CW_RIFLE_STD"],  # 軽火器のみ
 }
@@ -233,6 +234,9 @@ static func _copy_weapon(original: WeaponData.WeaponType) -> WeaponData.WeaponTy
 	copy.blast_radius_m = original.blast_radius_m
 	copy.projectile_speed_mps = original.projectile_speed_mps
 	copy.projectile_size = original.projectile_size
+
+	# weapon_role（JSONから読み込まれた値を保持）
+	copy.weapon_role = original.weapon_role
 
 	# Dictionaryは深いコピー
 	copy.lethality = original.lethality.duplicate(true)
