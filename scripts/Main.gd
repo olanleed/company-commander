@@ -48,6 +48,7 @@ var projectile_manager: ProjectileManager
 var tactical_overlay: TacticalOverlay
 var data_link_system  # DataLinkSystemClass
 var transport_system  # TransportSystemClass
+var missile_system: MissileSystem  # ミサイル誘導システム
 
 ## 中隊AI（陣営別）
 var company_ais: Dictionary = {}  # faction -> CompanyControllerAI
@@ -168,6 +169,10 @@ func _setup_systems() -> void:
 	transport_system = TransportSystemClass.new()
 	transport_system.setup(world_model)
 
+	# MissileSystem
+	missile_system = MissileSystem.new()
+	missile_system.missile_impact.connect(_on_missile_impact)
+
 
 func _load_test_map_async() -> void:
 	var map_path := "res://maps/MVP_01_CROSSROADS/"
@@ -187,7 +192,7 @@ func _load_test_map_async() -> void:
 		_setup_capture_point_views()
 
 		# MovementSystem をセットアップ (nav_managerへの参照を先に設定)
-		movement_system.setup(nav_manager, map_data, world_model)
+		movement_system.setup(nav_manager, map_data, world_model, missile_system)
 
 		# VisionSystem をセットアップ（DataLinkSystemと連携）
 		vision_system.setup(world_model, map_data, data_link_system)
@@ -490,6 +495,96 @@ func _on_projectile_impact(target_id: String, damage_info: Dictionary) -> void:
 	combat_system.apply_tank_damage_result(target, damage_info, current_tick)
 
 
+## ミサイル着弾時のダメージ処理
+func _on_missile_impact(missile_id: String, shooter_id: String, target_id: String, attack_profile: int, profile: MissileData.MissileProfile) -> void:
+	var current_tick: int = sim_runner.tick_index if sim_runner else 0
+
+	var target: ElementData.ElementInstance = world_model.get_element_by_id(target_id)
+	if not target:
+		print("[Missile] Impact on unknown target: %s" % target_id)
+		return
+
+	var shooter: ElementData.ElementInstance = world_model.get_element_by_id(shooter_id)
+	var shooter_pos: Vector2 = shooter.position if shooter else target.position
+	var distance := shooter_pos.distance_to(target.position)
+
+	# 武器IDからWeaponDataを取得
+	var weapon: WeaponData.WeaponType = null
+	if shooter:
+		for w in shooter.weapons:
+			if w.id == profile.weapon_id:
+				weapon = w
+				break
+
+	if not weapon:
+		# 武器が見つからない場合はプロファイルからダメージ計算
+		print("[Missile] Weapon not found for %s, using profile penetration" % profile.weapon_id)
+		# 簡易ダメージ処理（CE貫通力から計算）
+		if target.is_armored_vehicle():
+			var p_pen := combat_system.calculate_penetration_probability(
+				profile.penetration_ce,
+				target.element_type.armor_front if target.element_type else 100
+			)
+			var roll := randf()
+			if roll < p_pen:
+				combat_system.apply_vehicle_damage(
+					target,
+					WeaponData.ThreatClass.AT,
+					1.0,
+					current_tick
+				)
+				print("[Missile] %s hit %s (pen=%.0f%%, roll=%.2f)" % [
+					missile_id, target_id, p_pen * 100, roll
+				])
+		# 射手の待機命令をチェック（射手拘束は既に解除済み）
+		if shooter:
+			movement_system.check_and_execute_pending_orders(shooter)
+		return
+
+	# 通常のダメージ計算
+	var t_los := _estimate_los(shooter, target) if shooter else 1.0
+	var terrain := map_data.get_terrain_at(target.position) if map_data else GameEnums.TerrainType.OPEN
+
+	# トップアタックの場合はTOP面で計算
+	var aspect := WeaponData.ArmorZone.FRONT
+	if attack_profile == MissileData.AttackProfile.TOP_ATTACK:
+		aspect = WeaponData.ArmorZone.TOP
+	elif shooter:
+		aspect = combat_system.calculate_aspect_v01r(
+			shooter_pos, target.position, target.facing
+		)
+
+	if target.is_armored_vehicle():
+		var result := combat_system.calculate_direct_fire_vs_armor(
+			shooter, target, weapon, distance, 0.1, t_los, terrain, false
+		)
+		if result.is_valid:
+			# 着弾時は確定ヒット（飛翔中の命中判定は済み）
+			combat_system.apply_vehicle_damage(
+				target,
+				weapon.threat_class,
+				result.exposure,
+				current_tick
+			)
+			combat_system.apply_damage(target, result.d_supp, 0.0, current_tick, weapon.threat_class)
+			print("[Missile] %s hit %s (dmg=%.2f, supp=%.2f)" % [
+				missile_id, target_id, result.d_dmg, result.d_supp
+			])
+	else:
+		var result := combat_system.calculate_direct_fire_effect(
+			shooter, target, weapon, distance, 0.1, t_los, terrain, false
+		)
+		if result.is_valid:
+			combat_system.apply_damage(target, result.d_supp, result.d_dmg, current_tick, weapon.threat_class)
+			print("[Missile] %s hit %s (dmg=%.2f, supp=%.2f)" % [
+				missile_id, target_id, result.d_dmg, result.d_supp
+			])
+
+	# 射手の待機命令をチェック（射手拘束は既に解除済み）
+	if shooter:
+		movement_system.check_and_execute_pending_orders(shooter)
+
+
 ## プレイヤー陣営に生存中のユニットがいるか確認
 func _has_alive_friendly_unit() -> bool:
 	for element in world_model.elements:
@@ -669,6 +764,10 @@ func _on_tick_advanced(tick: int) -> void:
 
 	# 視界更新
 	vision_system.update(tick, GameConstants.SIM_DT)
+
+	# ミサイル飛翔更新（着弾判定、誘導処理）
+	if missile_system:
+		missile_system.update(tick)
 
 	# 戦闘更新
 	_update_combat(tick, GameConstants.SIM_DT)
@@ -889,7 +988,72 @@ func _update_combat(tick: int, dt: float) -> void:
 		var d_dmg: float = 0.0
 		var is_valid: bool = false
 
-		# v0.2: 戦車戦モデルを使用するか判定
+		# ATGM判定: MissileSystemで発射（ダメージは着弾時）
+		# 戦車戦モデルより前に判定し、ATGMはミサイルシステムで処理
+		WeaponData.ensure_weapon_role(selected_weapon)
+		if selected_weapon.weapon_role == WeaponData.WeaponRole.ATGM:
+			var missile_profile := MissileData.get_profile_for_weapon(selected_weapon.id)
+			if missile_profile:
+				# DISCRETE武器の発射レート制御
+				var can_fire_atgm := true
+				if shooter.last_fire_tick >= 0 and selected_weapon.rof_rpm > 0:
+					var ticks_per_shot := int(600.0 / selected_weapon.rof_rpm)
+					var elapsed := tick - shooter.last_fire_tick
+					if elapsed < ticks_per_shot:
+						can_fire_atgm = false
+
+				if can_fire_atgm:
+					# ミサイル発射
+					var missile_id := missile_system.launch_missile(
+						shooter.id,
+						shooter.position,
+						target.id,
+						target.position,
+						missile_profile,
+						missile_profile.default_attack_profile,
+						tick
+					)
+					if missile_id != "":
+						shooter.last_fire_tick = tick
+						shooter.current_target_id = target.id
+						shooters_firing[shooter.id] = true
+
+						# 発射エフェクト
+						if combat_visualizer:
+							combat_visualizer.add_fire_event(
+								shooter.id,
+								target.id,
+								shooter.position,
+								target.position,
+								shooter.faction,
+								0.0,  # ダメージは着弾時
+								0.0,
+								true,
+								selected_weapon.mechanism,
+								selected_weapon.fire_model
+							)
+
+						# ミサイル軌跡表示（ダメージは_on_missile_impactで処理）
+						if projectile_manager:
+							projectile_manager.fire_projectile(
+								shooter.position,
+								target.position,
+								selected_weapon,
+								shooter.faction,
+								true  # ヒット扱い（視覚のみ）
+							)
+
+						print("[ATGM] %s fired %s at %s (missile_id=%s, constrained=%s)" % [
+							shooter.id, selected_weapon.id, target.id, missile_id,
+							str(missile_system.is_shooter_constrained(shooter.id))
+						])
+				else:
+					# リロード中は照準維持
+					shooter.current_target_id = target.id
+					shooters_firing[shooter.id] = true
+				continue  # ATGM発射処理完了、次のユニットへ
+
+		# v0.2: 戦車戦モデルを使用するか判定（ATGMは上で処理済み）
 		if combat_system.should_use_tank_combat(shooter, target, selected_weapon):
 			# 戦車対重装甲: v0.2離散発砲モデル
 			var tank_result := combat_system.process_tank_engagement(

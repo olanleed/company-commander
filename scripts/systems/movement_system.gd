@@ -26,21 +26,24 @@ const ROTATION_SPEED: float = PI
 var nav_manager: NavigationManager
 var map_data: MapData
 var world_model: WorldModel
+var missile_system  ## MissileSystem（SACLOS射手拘束チェック用）
 
 # =============================================================================
 # 初期化
 # =============================================================================
 
-func setup(p_nav_manager: NavigationManager, p_map_data: MapData, p_world_model: WorldModel = null) -> void:
+func setup(p_nav_manager: NavigationManager, p_map_data: MapData, p_world_model: WorldModel = null, p_missile_system = null) -> void:
 	nav_manager = p_nav_manager
 	map_data = p_map_data
 	world_model = p_world_model
+	missile_system = p_missile_system
 
 # =============================================================================
 # 移動命令
 # =============================================================================
 
 ## 移動命令を発行
+## SACLOS誘導中は待機命令として保存し、着弾後に実行
 func issue_move_order(element: ElementData.ElementInstance, target: Vector2, use_route: bool = false) -> bool:
 	if not element or not element.element_type:
 		print("MovementSystem: Invalid element")
@@ -49,6 +52,15 @@ func issue_move_order(element: ElementData.ElementInstance, target: Vector2, use
 	if not nav_manager:
 		print("MovementSystem: nav_manager is null")
 		return false
+
+	# SACLOS誘導中は移動を待機（着弾後に実行）
+	if _is_shooter_constrained(element.id):
+		element.pending_move_order = {
+			"target": target,
+			"use_route": use_route
+		}
+		print("[MovementSystem] %s: Move order QUEUED (SACLOS constraint active)" % element.id)
+		return true  # 命令は受け付けた（待機中）
 
 	# マップ範囲内にクランプ（マップ外クリック対策）
 	var clamped_target := target
@@ -82,6 +94,9 @@ func issue_move_order(element: ElementData.ElementInstance, target: Vector2, use
 		element.current_order_type = GameEnums.OrderType.MOVE
 	element.is_reversing = false  # 通常移動
 
+	# 待機命令をクリア（実行したので）
+	element.pending_move_order = {}
+
 	# ATGMは移動中射撃不可のため、射撃対象をクリア
 	_cancel_atgm_engagement_on_move(element)
 
@@ -89,6 +104,7 @@ func issue_move_order(element: ElementData.ElementInstance, target: Vector2, use
 
 
 ## 停止命令を発行（即座に移動を停止）
+## 待機中の移動命令もクリアする
 func issue_stop_order(element: ElementData.ElementInstance) -> void:
 	if not element:
 		return
@@ -96,10 +112,12 @@ func issue_stop_order(element: ElementData.ElementInstance) -> void:
 	_stop_movement(element)
 	element.current_order_type = GameEnums.OrderType.HOLD
 	element.forced_target_id = ""
+	element.pending_move_order = {}  # 待機命令もクリア
 	print("[MovementSystem] %s -> STOP" % element.id)
 
 
 ## 後退命令を発行（正面を維持したまま後退）
+## SACLOS誘導中は待機命令として保存
 func issue_reverse_order(element: ElementData.ElementInstance, distance: float = 100.0) -> bool:
 	if not element or not element.element_type:
 		return false
@@ -112,6 +130,16 @@ func issue_reverse_order(element: ElementData.ElementInstance, distance: float =
 	if map_data:
 		target.x = clampf(target.x, 0.0, map_data.size_m.x)
 		target.y = clampf(target.y, 0.0, map_data.size_m.y)
+
+	# SACLOS誘導中は移動を待機（着弾後に実行）
+	if _is_shooter_constrained(element.id):
+		element.pending_move_order = {
+			"target": target,
+			"use_route": false,
+			"is_reverse": true
+		}
+		print("[MovementSystem] %s: Reverse order QUEUED (SACLOS constraint active)" % element.id)
+		return true
 
 	# パスを生成（後退中は経路探索をシンプルに）
 	var path := PackedVector2Array()
@@ -126,6 +154,7 @@ func issue_reverse_order(element: ElementData.ElementInstance, distance: float =
 	element.order_target_position = target
 	element.current_order_type = GameEnums.OrderType.RETREAT
 	element.forced_target_id = ""
+	element.pending_move_order = {}  # 待機命令をクリア
 
 	# ATGMは移動中射撃不可のため、射撃対象をクリア
 	_cancel_atgm_engagement_on_move(element)
@@ -135,6 +164,7 @@ func issue_reverse_order(element: ElementData.ElementInstance, distance: float =
 
 
 ## 離脱命令を発行（戦闘離脱：後退＋煙幕）
+## SACLOS誘導中は待機命令として保存
 func issue_break_contact_order(element: ElementData.ElementInstance, retreat_pos: Vector2) -> bool:
 	if not element or not element.element_type:
 		return false
@@ -144,6 +174,16 @@ func issue_break_contact_order(element: ElementData.ElementInstance, retreat_pos
 	if map_data:
 		clamped_target.x = clampf(retreat_pos.x, 0.0, map_data.size_m.x)
 		clamped_target.y = clampf(retreat_pos.y, 0.0, map_data.size_m.y)
+
+	# SACLOS誘導中は移動を待機（着弾後に実行）
+	if _is_shooter_constrained(element.id):
+		element.pending_move_order = {
+			"target": clamped_target,
+			"use_route": false,
+			"is_break_contact": true
+		}
+		print("[MovementSystem] %s: Break contact order QUEUED (SACLOS constraint active)" % element.id)
+		return true
 
 	# 経路探索
 	var path := PackedVector2Array()
@@ -166,6 +206,7 @@ func issue_break_contact_order(element: ElementData.ElementInstance, retreat_pos
 	element.current_order_type = GameEnums.OrderType.BREAK_CONTACT
 	element.forced_target_id = ""
 	element.break_contact_smoke_requested = true  # 煙幕要請フラグ
+	element.pending_move_order = {}  # 待機命令をクリア
 
 	# ATGMは移動中射撃不可のため、射撃対象をクリア
 	_cancel_atgm_engagement_on_move(element)
@@ -515,3 +556,71 @@ func _cancel_atgm_engagement_on_move(element: ElementData.ElementInstance) -> vo
 				# 誘導中ターゲットを保存（UI表示用）
 				element.atgm_guided_target_id = element.current_target_id
 				element.current_target_id = ""
+
+
+# =============================================================================
+# SACLOS射手拘束
+# =============================================================================
+
+## 射手がSACLOS誘導で拘束中かどうか
+func _is_shooter_constrained(shooter_id: String) -> bool:
+	if not missile_system:
+		return false
+	return missile_system.is_shooter_constrained(shooter_id)
+
+
+## 待機中の移動命令を実行（拘束解除後に呼び出し）
+func execute_pending_move_order(element: ElementData.ElementInstance) -> bool:
+	if not element:
+		return false
+
+	if element.pending_move_order.is_empty():
+		return false
+
+	# まだ拘束中なら実行しない
+	if _is_shooter_constrained(element.id):
+		return false
+
+	var target: Vector2 = element.pending_move_order.get("target", Vector2.ZERO)
+	var use_route: bool = element.pending_move_order.get("use_route", false)
+	var is_reverse: bool = element.pending_move_order.get("is_reverse", false)
+	var is_break_contact: bool = element.pending_move_order.get("is_break_contact", false)
+
+	# 待機命令をクリア
+	element.pending_move_order = {}
+
+	print("[MovementSystem] %s: Executing pending move order" % element.id)
+
+	# 命令タイプに応じて実行
+	if is_reverse:
+		var distance := element.position.distance_to(target)
+		return issue_reverse_order(element, distance)
+	elif is_break_contact:
+		return issue_break_contact_order(element, target)
+	else:
+		return issue_move_order(element, target, use_route)
+
+
+## 待機中の移動命令があるかチェック
+func has_pending_move_order(element: ElementData.ElementInstance) -> bool:
+	if not element:
+		return false
+	return not element.pending_move_order.is_empty()
+
+
+## 待機命令のチェックと実行（毎tick呼び出し用）
+## 拘束が解除されていれば待機命令を実行
+func check_and_execute_pending_orders(element: ElementData.ElementInstance) -> void:
+	if not element:
+		return
+
+	# 待機命令がなければ何もしない
+	if element.pending_move_order.is_empty():
+		return
+
+	# まだ拘束中なら何もしない
+	if _is_shooter_constrained(element.id):
+		return
+
+	# 拘束解除されたので待機命令を実行
+	execute_pending_move_order(element)

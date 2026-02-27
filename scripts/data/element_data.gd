@@ -129,6 +129,7 @@ class ElementInstance:
 	var current_order_type: GameEnums.OrderType = GameEnums.OrderType.HOLD
 	var order_target_position: Vector2 = Vector2.ZERO
 	var order_target_id: String = ""  ## 命令の対象ID（ATTACKコマンドなど）
+	var pending_move_order: Dictionary = {}  ## SACLOS誘導中の待機移動命令 {target: Vector2, use_route: bool}
 
 	## 戦闘
 	var primary_weapon: WeaponData.WeaponType = null  ## 主武装（後方互換）
