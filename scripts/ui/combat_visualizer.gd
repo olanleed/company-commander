@@ -77,6 +77,7 @@ class FireEvent:
 	var is_hit: bool  ## 命中したかどうか（false=外れ/抑圧射撃）
 	var weapon_mechanism: WeaponData.Mechanism  ## 弾頭メカニズム
 	var fire_model: WeaponData.FireModel = WeaponData.FireModel.CONTINUOUS  ## 射撃モデル（CONTINUOUS/DISCRETE）
+	var draw_count: int = 0  ## _drawで描画された回数（実際に描画されたことを保証）
 
 ## マズルフラッシュ
 class MuzzleFlash:
@@ -118,11 +119,21 @@ var show_tracers: bool = true
 
 func _ready() -> void:
 	z_index = 50  # ユニットの上、UIの下
+	# Main.gdより後に_processが実行されるようにする
+	# （Main.gdでadd_fire_eventが呼ばれた後に描画処理が行われることを保証）
+	process_priority = 100
 
 func _process(delta: float) -> void:
+	# deltaを加算（ポーズ中は進まない）
 	_current_time += delta
-	_cleanup_expired_effects()
+
+	# 描画を要求（_drawは_processの後に呼ばれる）
 	queue_redraw()
+
+	# クリーンアップは次フレームの_processの最初に実行
+	# （今フレームの_drawでdraw_countがインクリメントされた後）
+	# → call_deferredで遅延させても_drawより先に実行されてしまうため、
+	#   _drawの最後でクリーンアップを呼ぶ方式に変更
 
 func _draw() -> void:
 	if show_fire_lines:
@@ -136,6 +147,10 @@ func _draw() -> void:
 
 	if show_impacts:
 		_draw_impacts()
+
+	# クリーンアップは_drawの最後に実行
+	# （draw_countがインクリメントされた後なので安全）
+	_cleanup_expired_effects()
 
 # =============================================================================
 # 射撃イベント登録
@@ -178,6 +193,8 @@ func add_fire_event(
 	# 新規イベントの場合はtime_createdを設定
 	if is_new:
 		event.time_created = _current_time
+		# 新規イベント追加時は即座に再描画を強制
+		queue_redraw()
 
 	# last_update_timeは常に更新（有効期限判定用）
 	event.last_update_time = _current_time
@@ -244,6 +261,9 @@ func _add_impact(pos: Vector2, mechanism: WeaponData.Mechanism = WeaponData.Mech
 
 func _draw_fire_lines() -> void:
 	for event in _fire_events:
+		# 描画カウントをインクリメント（実際に_drawで処理されたことを記録）
+		event.draw_count += 1
+
 		# last_update_time からの経過時間でフェードアウト
 		var since_update := _current_time - event.last_update_time
 		var alpha := 1.0 - (since_update / event.duration)
@@ -586,9 +606,19 @@ func _cleanup_expired_effects() -> void:
 	var valid_events: Array[FireEvent] = []
 	var expired_keys: Array[String] = []
 
+	# 最低でも1回は_drawで描画されることを保証
+	# draw_count が0のイベントは絶対に削除しない
+	const MIN_DRAW_COUNT := 1
+
 	for event in _fire_events:
+		# まだ一度も描画されていない場合は必ず保持
+		if event.draw_count < MIN_DRAW_COUNT:
+			valid_events.append(event)
+			continue
+
 		# last_update_time から duration 経過していなければ有効
-		if _current_time - event.last_update_time < event.duration:
+		var elapsed := _current_time - event.last_update_time
+		if elapsed < event.duration:
 			valid_events.append(event)
 		else:
 			# アクティブエンゲージメントからも削除
