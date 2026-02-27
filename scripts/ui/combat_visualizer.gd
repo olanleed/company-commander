@@ -12,11 +12,11 @@ extends Node2D
 # =============================================================================
 
 ## 射線の色（陣営別）- 視認性向上のため透明度を上げる
-const FIRE_LINE_BLUE := Color(0.2, 0.5, 1.0, 0.8)
-const FIRE_LINE_RED := Color(1.0, 0.3, 0.2, 0.8)
+const FIRE_LINE_BLUE := Color(0.2, 0.6, 1.0, 1.0)  # より明るい青、完全不透明
+const FIRE_LINE_RED := Color(1.0, 0.3, 0.2, 1.0)   # 完全不透明
 
 ## 射線の幅 - 視認性向上のため太くする
-const FIRE_LINE_WIDTH := 3.0
+const FIRE_LINE_WIDTH := 4.0  # 少し太く
 
 ## マズルフラッシュ
 const MUZZLE_FLASH_COLOR := Color(1.0, 0.9, 0.3, 0.9)
@@ -157,6 +157,8 @@ func _draw() -> void:
 # =============================================================================
 
 ## 射撃イベントを追加
+## DISCRETE武器（戦車砲、ATGM等）は毎回新しいイベントを作成
+## CONTINUOUS武器（機関銃等）は同じターゲットへの射撃を更新
 func add_fire_event(
 	shooter_id: String,
 	target_id: String,
@@ -170,20 +172,28 @@ func add_fire_event(
 	fire_model: WeaponData.FireModel = WeaponData.FireModel.CONTINUOUS,
 	custom_duration: float = -1.0  ## カスタム表示時間（-1なら自動計算）
 ) -> void:
-	var engagement_key := shooter_id + "->" + target_id
-
-	# 既存のエンゲージメントを更新するか、新規作成
 	var event: FireEvent
-	var is_new := not _active_engagements.has(engagement_key)
+	var is_new := true
 
-	if is_new:
+	# DISCRETE武器は毎回新しいイベントを作成（draw_countをリセット）
+	# CONTINUOUS武器は同じshooter->targetの組み合わせで既存イベントを更新
+	if fire_model == WeaponData.FireModel.CONTINUOUS:
+		var engagement_key := shooter_id + "->" + target_id
+		if _active_engagements.has(engagement_key):
+			event = _active_engagements[engagement_key]
+			is_new = false
+		else:
+			event = FireEvent.new()
+			event.shooter_id = shooter_id
+			event.target_id = target_id
+			_fire_events.append(event)
+			_active_engagements[engagement_key] = event
+	else:
+		# DISCRETE: 常に新しいイベントを作成
 		event = FireEvent.new()
 		event.shooter_id = shooter_id
 		event.target_id = target_id
 		_fire_events.append(event)
-		_active_engagements[engagement_key] = event
-	else:
-		event = _active_engagements[engagement_key]
 
 	# 位置とステータスを更新
 	event.shooter_pos = shooter_pos
@@ -193,6 +203,7 @@ func add_fire_event(
 	# 新規イベントの場合はtime_createdを設定
 	if is_new:
 		event.time_created = _current_time
+		event.draw_count = 0  # 明示的にリセット
 		# 新規イベント追加時は即座に再描画を強制
 		queue_redraw()
 

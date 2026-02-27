@@ -10,6 +10,7 @@ extends Node2D
 
 var world_model: WorldModel
 var vision_system: VisionSystem
+var missile_system  # MissileSystemへの参照（SACLOS誘導ターゲット表示用）
 var _selected_elements: Array[ElementData.ElementInstance] = []
 
 # =============================================================================
@@ -45,9 +46,10 @@ func _ready() -> void:
 	z_index = 100
 
 
-func setup(p_world_model: WorldModel, p_vision_system: VisionSystem = null) -> void:
+func setup(p_world_model: WorldModel, p_vision_system: VisionSystem = null, p_missile_system = null) -> void:
 	world_model = p_world_model
 	vision_system = p_vision_system
+	missile_system = p_missile_system
 
 
 func set_selected_elements(elements: Array[ElementData.ElementInstance]) -> void:
@@ -136,20 +138,37 @@ func _draw_engagement_lines() -> void:
 		if not element or element.state == GameEnums.UnitState.DESTROYED:
 			continue
 
-		# 交戦目標がある場合のみ描画
-		if element.current_target_id == "":
-			continue
+		var target_pos: Vector2 = Vector2.ZERO
+		var has_target := false
 
-		var target := world_model.get_element_by_id(element.current_target_id)
-		if not target:
-			continue
+		# 1. 通常の交戦目標をチェック
+		if element.current_target_id != "":
+			var target := world_model.get_element_by_id(element.current_target_id)
+			if target and target.state != GameEnums.UnitState.DESTROYED:
+				target_pos = target.position
+				has_target = true
 
-		# 破壊されたターゲットへの交戦線は描画しない
-		if target.state == GameEnums.UnitState.DESTROYED:
-			continue
+		# 2. ATGM誘導中ターゲットをチェック（移動中も表示）
+		if not has_target and element.atgm_guided_target_id != "":
+			var target := world_model.get_element_by_id(element.atgm_guided_target_id)
+			if target and target.state != GameEnums.UnitState.DESTROYED:
+				target_pos = target.position
+				has_target = true
 
-		# ターゲットマーカーのみ描画（射撃線と被らないよう線は描画しない）
-		_draw_target_marker(target.position)
+		# 3. MissileSystem経由のSACLOS誘導中ミサイルターゲットをチェック
+		if not has_target and missile_system:
+			var missiles = missile_system.get_missiles_by_shooter(element.id)
+			for missile in missiles:
+				if missile.is_in_flight():
+					var target := world_model.get_element_by_id(missile.target_id)
+					if target and target.state != GameEnums.UnitState.DESTROYED:
+						target_pos = target.position
+						has_target = true
+						break
+
+		# ターゲットマーカーを描画
+		if has_target:
+			_draw_target_marker(target_pos)
 
 
 ## ターゲットマーカーを描画（菱形）

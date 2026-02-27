@@ -271,6 +271,17 @@ func _stop_movement(element: ElementData.ElementInstance) -> void:
 	element.current_path.clear()
 	element.path_index = 0
 
+	# ATGM誘導中ターゲットがあれば復元（停止後に射撃再開できるように）
+	_restore_atgm_target_on_stop(element)
+
+
+## 停止時にATGM誘導ターゲットを復元
+func _restore_atgm_target_on_stop(element: ElementData.ElementInstance) -> void:
+	if element.atgm_guided_target_id != "" and element.current_target_id == "":
+		element.current_target_id = element.atgm_guided_target_id
+		element.atgm_guided_target_id = ""
+		print("[MovementSystem] %s: ATGM target restored: %s" % [element.id, element.current_target_id])
+
 
 func _rotate_toward(current: float, target: float, max_delta: float) -> float:
 	var diff := wrapf(target - current, -PI, PI)
@@ -489,6 +500,7 @@ func get_eta(element: ElementData.ElementInstance) -> float:
 
 ## ATGM使用中に移動を開始した場合、射撃対象をクリアする
 ## ATGMは静止射撃専用のため、移動開始時に射撃を中断する
+## ただし、誘導中ターゲットはUI表示用に保持する
 func _cancel_atgm_engagement_on_move(element: ElementData.ElementInstance) -> void:
 	if not element:
 		return
@@ -499,5 +511,7 @@ func _cancel_atgm_engagement_on_move(element: ElementData.ElementInstance) -> vo
 		if element.current_weapon.weapon_role == WeaponData.WeaponRole.ATGM:
 			# ATGMは移動中射撃不可のため、射撃対象をクリア
 			if element.current_target_id != "":
-				print("[MovementSystem] %s: ATGM engagement cancelled (moving)" % element.id)
+				print("[MovementSystem] %s: ATGM engagement paused (moving), target saved for display" % element.id)
+				# 誘導中ターゲットを保存（UI表示用）
+				element.atgm_guided_target_id = element.current_target_id
 				element.current_target_id = ""

@@ -136,6 +136,7 @@ class ElementInstance:
 	var current_weapon: WeaponData.WeaponType = null  ## 現在使用中の武器
 	var current_target_id: String = ""  ## 現在の射撃目標
 	var forced_target_id: String = ""  ## プレイヤー指定の強制交戦目標
+	var atgm_guided_target_id: String = ""  ## ATGM誘導中のターゲット（移動中も表示用に保持）
 	var last_fire_tick: int = -1  ## 最後に射撃したtick
 	var last_hit_tick: int = 0    ## 最後に被弾したtick（RETURN_FIRE判定用）
 	var sop_mode: GameEnums.SOPMode = GameEnums.SOPMode.FIRE_AT_WILL  ## 射撃ルール
