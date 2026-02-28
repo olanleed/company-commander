@@ -725,8 +725,9 @@ func _normalize_angle(angle: float) -> float:
 	return angle
 
 
-## TOP_ATTACK軌道の飛翔時間を計算（詳細版）
-## 上昇→水平飛翔→急降下の3段階
+## TOP_ATTACK軌道の飛翔時間を計算（ゲームバランス版）
+## 実際のJavelinは15-20秒程度かかるが、ゲームプレイ上は
+## DIRECT攻撃より10-15%程度長い程度に抑える
 func calculate_top_attack_flight_time(
 	profile: MissileData.MissileProfile,
 	distance_m: float
@@ -734,27 +735,22 @@ func calculate_top_attack_flight_time(
 	if distance_m <= 0:
 		return 0.0
 
-	var altitude := profile.top_attack_altitude_m
-	var dive_angle := deg_to_rad(profile.dive_angle_deg)
-	var climb_angle := deg_to_rad(30.0)  # 上昇角度は30度固定
+	# 基本飛行時間（直線軌道）
+	var direct_time := profile.calculate_flight_time(distance_m)
 
-	# 各段階の距離計算
-	var climb_dist := altitude / sin(climb_angle)  # 上昇距離
-	var dive_dist := altitude / sin(dive_angle)    # 降下距離
+	# TOP_ATTACKは直線より10-15%長い（迂回軌道のペナルティ）
+	# 近距離（<500m）: ほぼペナルティなし（上昇する余裕がない）
+	# 中距離（500-1500m）: 5-10%増加
+	# 遠距離（>1500m）: 10-15%増加
+	var penalty_factor: float
+	if distance_m < 500.0:
+		penalty_factor = 1.02  # 2%増加
+	elif distance_m < 1500.0:
+		penalty_factor = 1.08  # 8%増加
+	else:
+		penalty_factor = 1.12  # 12%増加
 
-	# 水平距離の計算
-	var climb_horizontal := climb_dist * cos(climb_angle)
-	var dive_horizontal := dive_dist * cos(dive_angle)
-	var level_horizontal := maxf(0.0, distance_m - climb_horizontal - dive_horizontal)
-
-	# 総飛翔距離
-	var total_dist := climb_dist + level_horizontal + dive_dist
-
-	# ブースト段階を考慮
-	var boost_dist := profile.speed_mps * profile.boost_duration_sec * 0.5
-	var remaining_dist := maxf(0.0, total_dist - boost_dist)
-
-	return profile.boost_duration_sec + remaining_dist / profile.speed_mps
+	return direct_time * penalty_factor
 
 
 ## 攻撃プロファイル別の終末段階開始条件を取得

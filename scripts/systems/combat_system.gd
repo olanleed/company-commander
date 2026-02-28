@@ -368,6 +368,7 @@ func calculate_area_attack_effect(
 # =============================================================================
 
 ## 着弾効果を計算（1発あたり）
+## 仕様書: docs/indirect_fire_v0.2.md
 func calculate_indirect_impact_effect(
 	target: ElementData.ElementInstance,
 	weapon: WeaponData.WeaponType,
@@ -387,13 +388,18 @@ func calculate_indirect_impact_effect(
 
 	result.is_valid = true
 
+	# 直撃判定（direct_hit_radius_m以内）
+	var is_direct_hit := distance_from_impact <= weapon.direct_hit_radius_m
+
 	# レーティング取得（間接はMid固定）
 	var target_class := _get_target_class(target)
 	var lethality := weapon.get_lethality(400.0, target_class)  # Mid距離固定
 	var supp_power := weapon.get_suppression_power(400.0)
 
-	# 距離減衰
-	var falloff := clampf(1.0 - distance_from_impact / blast_radius, 0.0, 1.0)
+	# 距離減衰（直撃半径内は最大効果）
+	var falloff := 1.0
+	if not is_direct_hit:
+		falloff = clampf(1.0 - distance_from_impact / blast_radius, 0.0, 1.0)
 
 	# 遮蔽係数
 	var m_cover := get_cover_coefficient_if(target_terrain)
@@ -410,28 +416,49 @@ func calculate_indirect_impact_effect(
 			m_dispersion = GameConstants.DISPERSION_IF_DISPERSED
 
 	var m_total := m_cover * m_entrench * m_dispersion
-	var m_vuln := _get_indirect_vulnerability(target, weapon)
 
-	# 抑圧増加
-	result.d_supp = GameConstants.K_IF_SUPP * (float(supp_power) / 100.0) * falloff * m_total
+	# 脆弱性取得（大口径HE対応）
+	var m_vuln_dmg := _get_indirect_vulnerability_dmg(target, weapon, is_direct_hit)
+	var m_vuln_supp := _get_indirect_vulnerability_supp(target, weapon)
+
+	# 抑圧増加（装甲車両にも効果あり）
+	result.d_supp = GameConstants.K_IF_SUPP * (float(supp_power) / 100.0) * falloff * m_total * m_vuln_supp
 
 	# ダメージ
-	result.d_dmg = GameConstants.K_IF_DMG * (float(lethality) / 100.0) * falloff * m_total * m_vuln
+	result.d_dmg = GameConstants.K_IF_DMG * (float(lethality) / 100.0) * falloff * m_total * m_vuln_dmg
 
 	return result
 
 
-## 間接火力に対する脆弱性
-func _get_indirect_vulnerability(
+## 間接火力に対するダメージ脆弱性（v0.2: 大口径HE対応）
+func _get_indirect_vulnerability_dmg(
 	target: ElementData.ElementInstance,
-	weapon: WeaponData.WeaponType
+	weapon: WeaponData.WeaponType,
+	is_direct_hit: bool
 ) -> float:
 	if not target.element_type:
 		return 1.0
 
 	var armor_class := target.element_type.armor_class
 
-	# BLAST_FRAGは装甲に弱い
+	# 大口径HE（155mm/152mm等）は装甲にも効果がある
+	if weapon.heavy_he_class == WeaponData.HeavyHEClass.HEAVY_HE:
+		if is_direct_hit:
+			# 直撃時は高い効果
+			match armor_class:
+				0: return GameConstants.HEAVY_HE_VULN_DMG_SOFT_DIRECT
+				1: return GameConstants.HEAVY_HE_VULN_DMG_LIGHT_DIRECT
+				2: return GameConstants.HEAVY_HE_VULN_DMG_MEDIUM_DIRECT
+				_: return GameConstants.HEAVY_HE_VULN_DMG_HEAVY_DIRECT
+		else:
+			# 至近弾は低い効果
+			match armor_class:
+				0: return GameConstants.HEAVY_HE_VULN_DMG_SOFT_INDIRECT
+				1: return GameConstants.HEAVY_HE_VULN_DMG_LIGHT_INDIRECT
+				2: return GameConstants.HEAVY_HE_VULN_DMG_MEDIUM_INDIRECT
+				_: return GameConstants.HEAVY_HE_VULN_DMG_HEAVY_INDIRECT
+
+	# 通常のBLAST_FRAGは装甲に弱い
 	if weapon.mechanism == WeaponData.Mechanism.BLAST_FRAG:
 		match armor_class:
 			0: return 1.0
@@ -440,6 +467,44 @@ func _get_indirect_vulnerability(
 			_: return 0.05
 
 	return 1.0
+
+
+## 間接火力に対する抑圧脆弱性（v0.2: 大口径HE対応）
+## 大口径HEの衝撃は装甲車両乗員にも心理的影響を与える
+func _get_indirect_vulnerability_supp(
+	target: ElementData.ElementInstance,
+	weapon: WeaponData.WeaponType
+) -> float:
+	if not target.element_type:
+		return 1.0
+
+	var armor_class := target.element_type.armor_class
+
+	# 大口径HEは装甲車両にも抑圧効果がある
+	if weapon.heavy_he_class == WeaponData.HeavyHEClass.HEAVY_HE:
+		match armor_class:
+			0: return GameConstants.HEAVY_HE_VULN_SUPP_SOFT
+			1: return GameConstants.HEAVY_HE_VULN_SUPP_LIGHT
+			2: return GameConstants.HEAVY_HE_VULN_SUPP_MEDIUM
+			_: return GameConstants.HEAVY_HE_VULN_SUPP_HEAVY
+
+	# 通常のBLAST_FRAGは装甲への抑圧効果が低い（従来通り）
+	if weapon.mechanism == WeaponData.Mechanism.BLAST_FRAG:
+		match armor_class:
+			0: return 1.0
+			1: return 0.5
+			2: return 0.2
+			_: return 0.1
+
+	return 1.0
+
+
+## 後方互換性のためのラッパー（非推奨）
+func _get_indirect_vulnerability(
+	target: ElementData.ElementInstance,
+	weapon: WeaponData.WeaponType
+) -> float:
+	return _get_indirect_vulnerability_dmg(target, weapon, false)
 
 
 # =============================================================================
@@ -860,6 +925,101 @@ func calculate_direct_fire_vs_armor(
 		result.p_hit = 1.0 - pow(1.0 - p_hit_1s, dt)
 
 	return result
+
+
+## v0.1R: 装甲目標への直接射撃ダメージ計算（アスペクト強制指定版）
+## トップアタックミサイル等、アスペクトを外部から指定する場合に使用
+func calculate_direct_fire_vs_armor_with_aspect(
+	shooter: ElementData.ElementInstance,
+	target: ElementData.ElementInstance,
+	weapon: WeaponData.WeaponType,
+	distance_m: float,
+	dt: float,
+	t_los: float = 1.0,
+	target_terrain: GameEnums.TerrainType = GameEnums.TerrainType.OPEN,
+	is_entrenched: bool = false,
+	forced_aspect: WeaponData.ArmorZone = WeaponData.ArmorZone.FRONT
+) -> DirectFireResultV01R:
+	var result := DirectFireResultV01R.new()
+
+	# 射程チェック
+	if not weapon.is_in_range(distance_m):
+		return result
+
+	# LoSチェック
+	if t_los < GameConstants.LOS_BLOCK_THRESHOLD:
+		return result
+
+	result.is_valid = true
+	result.is_continuous = (weapon.fire_model == WeaponData.FireModel.CONTINUOUS)
+
+	# アスペクトは外部から強制指定（トップアタック等）
+	var aspect := forced_aspect
+
+	# 貫徹確率を取得
+	var p_pen := get_penetration_probability(shooter, target, weapon, distance_m, aspect)
+
+	# 抑圧レーティング
+	var supp_power := weapon.get_suppression_power(distance_m)
+
+	# 各種係数
+	var m_shooter := calculate_shooter_coefficient(shooter)
+	var m_strength := get_strength_fire_coefficient(shooter)
+	var m_visibility := _calculate_visibility_coefficient(t_los)
+	var m_evasion := get_target_evasion_coefficient(target)
+	var m_cover := get_cover_coefficient_df(target_terrain)
+	var m_entrench := GameConstants.ENTRENCH_DF_MULT if is_entrenched else 1.0
+	var m_vuln_supp := get_vulnerability_supp(target, weapon.threat_class)
+	var m_aspect := get_aspect_multiplier(target, aspect)
+
+	# 抑圧増加（連続）- 貫徹に関係なく発生
+	result.d_supp = GameConstants.K_DF_SUPP * (float(supp_power) / 100.0) * m_shooter * m_strength * m_visibility * m_evasion * m_cover * m_entrench * m_vuln_supp * dt
+
+	# 期待危険度 E（貫徹確率 × アスペクト倍率を含む）
+	var base_exposure := calculate_exposure_df(
+		shooter, target, weapon, distance_m, t_los, target_terrain, is_entrenched
+	)
+	result.exposure = base_exposure * p_pen * m_aspect
+
+	# CONTINUOUS武器: 累積ダメージモデル
+	if result.is_continuous:
+		var target_class := _get_target_class(target)
+		var lethality := weapon.get_lethality(distance_m, target_class)
+		var m_vuln_dmg := get_vulnerability_dmg(target, weapon.threat_class)
+		result.d_dmg = GameConstants.K_DF_DMG * (float(lethality) / 100.0) * p_pen * m_aspect * m_shooter * m_strength * m_visibility * m_evasion * m_cover * m_entrench * m_vuln_dmg * dt
+		result.p_hit = 1.0 if result.d_dmg > 0 else 0.0
+	# DISCRETE武器: ヒット/ミス判定モデル
+	else:
+		var p_hit_1s := calculate_hit_probability(result.exposure)
+		result.p_hit = 1.0 - pow(1.0 - p_hit_1s, dt)
+
+	return result
+
+
+## 指定アスペクトの装甲値を取得
+## is_ke: true=KE装甲, false=CE装甲
+func get_armor_at_aspect(
+	target: ElementData.ElementInstance,
+	aspect: WeaponData.ArmorZone,
+	is_ke: bool = true
+) -> int:
+	if not target.element_type:
+		return 0
+
+	var armor_dict: Dictionary
+	if is_ke:
+		armor_dict = target.element_type.armor_ke if target.element_type.armor_ke else {}
+	else:
+		armor_dict = target.element_type.armor_ce if target.element_type.armor_ce else {}
+
+	if armor_dict.has(aspect):
+		return armor_dict[aspect]
+
+	# フォールバック: FRONTを返す
+	if armor_dict.has(WeaponData.ArmorZone.FRONT):
+		return armor_dict[WeaponData.ArmorZone.FRONT]
+
+	return 0
 
 
 # =============================================================================
@@ -1474,6 +1634,13 @@ func select_best_weapon(
 		if not weapon.is_in_range(distance_m):
 			if debug_log:
 				print("  [SKIP] %s: out of range (max=%.0fm)" % [weapon.id, weapon.max_range_m])
+			continue
+
+		# ATGMは移動中は使用不可（静止射撃のみ）
+		WeaponData.ensure_weapon_role(weapon)
+		if weapon.weapon_role == WeaponData.WeaponRole.ATGM and shooter.is_moving:
+			if debug_log:
+				print("  [SKIP] %s: ATGM cannot fire while moving" % weapon.id)
 			continue
 
 		var score := _calculate_weapon_score(weapon, target, target_class, distance_m, is_armored)

@@ -11,6 +11,9 @@ extends Node2D
 ## 砲弾が着弾した時に発火（target_id, damage_info）
 signal projectile_impact(target_id: String, damage_info: Dictionary)
 
+## 間接射撃の砲弾が着弾した時に発火（shooter_id, impact_pos, weapon）
+signal indirect_impact(shooter_id: String, impact_pos: Vector2, weapon: WeaponData.WeaponType, faction: GameEnums.Faction)
+
 # =============================================================================
 # 砲弾データ
 # =============================================================================
@@ -33,6 +36,12 @@ class Projectile:
 	var target_id: String = ""                 ## 目標ユニットID
 	var damage_info: Dictionary = {}           ## ダメージ情報（kill, mission_kill, catastrophic等）
 
+	## 間接射撃用（範囲ダメージ）
+	var is_indirect: bool = false              ## 間接射撃かどうか
+	var shooter_id: String = ""                ## 発射元ユニットID
+	var impact_pos: Vector2 = Vector2.ZERO     ## 実際の着弾位置（CEP考慮後）
+	var weapon_ref: WeaponData.WeaponType = null  ## 武器参照（ダメージ計算用）
+
 # =============================================================================
 # 状態
 # =============================================================================
@@ -51,7 +60,8 @@ const COLOR_TRAIL: float = 0.3  # トレイル（軌跡）の透明度
 
 func _ready() -> void:
 	# 常に再描画（砲弾が動くため）
-	pass
+	# 他のノードより前面に描画
+	z_index = 100
 
 
 # =============================================================================
@@ -138,6 +148,113 @@ func fire_projectile_with_damage(
 	_projectiles.append(proj)
 
 
+## 間接射撃の砲弾を発射（範囲ダメージ用）
+## 着弾時にindirect_impactシグナルで通知し、呼び出し元で範囲ダメージを計算
+func fire_indirect_projectile(
+	shooter_id: String,
+	shooter_pos: Vector2,
+	impact_pos: Vector2,
+	weapon: WeaponData.WeaponType,
+	faction: GameEnums.Faction
+) -> void:
+	# 弾速が0の場合は即着弾
+	if weapon.projectile_speed_mps <= 0:
+		indirect_impact.emit(shooter_id, impact_pos, weapon, faction)
+		return
+
+	var proj := Projectile.new()
+	proj.id = _next_id
+	_next_id += 1
+
+	proj.start_pos = shooter_pos
+	proj.target_pos = impact_pos
+	proj.current_pos = shooter_pos
+	proj.speed_mps = weapon.projectile_speed_mps
+	proj.size = weapon.projectile_size
+	proj.faction = faction
+	proj.is_hit = true  # 間接射撃は位置に対して必ず着弾
+	proj.weapon_id = weapon.id
+	proj.flight_time = 0.0
+
+	# 間接射撃フラグを設定
+	proj.is_indirect = true
+	proj.shooter_id = shooter_id
+	proj.impact_pos = impact_pos
+	proj.weapon_ref = weapon
+
+	# 総飛翔時間を計算
+	var distance := shooter_pos.distance_to(impact_pos)
+	proj.total_flight_time = distance / proj.speed_mps
+
+	_projectiles.append(proj)
+
+
+## ミサイル/ATGMのトレーサーを発射
+## 武器オブジェクトなしで直接パラメータ指定
+func fire_missile_tracer(
+	shooter_pos: Vector2,
+	target_pos: Vector2,
+	faction: GameEnums.Faction,
+	speed_mps: float,
+	size: float = 4.0
+) -> void:
+	if speed_mps <= 0:
+		return
+
+	var proj := Projectile.new()
+	proj.id = _next_id
+	_next_id += 1
+
+	proj.start_pos = shooter_pos
+	proj.target_pos = target_pos
+	proj.current_pos = shooter_pos
+	proj.speed_mps = speed_mps
+	proj.size = size
+	proj.faction = faction
+	proj.is_hit = true  # ミサイルは誘導されるので基本的にヒット扱い
+	proj.weapon_id = "MISSILE"
+	proj.flight_time = 0.0
+
+	# 総飛翔時間を計算
+	var distance := shooter_pos.distance_to(target_pos)
+	proj.total_flight_time = distance / proj.speed_mps
+
+	_projectiles.append(proj)
+
+
+## ミサイル/ATGMのトレーサーを発射（飛行時間を直接指定）
+## missile_systemと同期した表示用
+func fire_missile_tracer_with_flight_time(
+	shooter_pos: Vector2,
+	target_pos: Vector2,
+	faction: GameEnums.Faction,
+	flight_time_sec: float,
+	size: float = 4.0
+) -> void:
+	if flight_time_sec <= 0:
+		return
+
+	var proj := Projectile.new()
+	proj.id = _next_id
+	_next_id += 1
+
+	proj.start_pos = shooter_pos
+	proj.target_pos = target_pos
+	proj.current_pos = shooter_pos
+	proj.size = size
+	proj.faction = faction
+	proj.is_hit = true  # ミサイルは誘導されるので基本的にヒット扱い
+	proj.weapon_id = "MISSILE"
+	proj.flight_time = 0.0
+
+	# 飛行時間を直接指定（速度は逆算）
+	var distance := shooter_pos.distance_to(target_pos)
+	proj.total_flight_time = flight_time_sec
+	proj.speed_mps = distance / flight_time_sec if flight_time_sec > 0 else 100.0
+
+	_projectiles.append(proj)
+
+
 # =============================================================================
 # 更新
 # =============================================================================
@@ -145,7 +262,8 @@ func fire_projectile_with_damage(
 ## 砲弾を更新（毎フレーム呼ばれる）
 func update_projectiles(delta: float) -> void:
 	var to_remove: Array[int] = []
-	var impacts: Array[Projectile] = []
+	var direct_impacts: Array[Projectile] = []
+	var indirect_impacts: Array[Projectile] = []
 
 	for i in range(_projectiles.size()):
 		var proj := _projectiles[i]
@@ -156,9 +274,12 @@ func update_projectiles(delta: float) -> void:
 		# 到達判定
 		if proj.flight_time >= proj.total_flight_time:
 			to_remove.append(i)
+			# 間接射撃の着弾処理
+			if proj.is_indirect:
+				indirect_impacts.append(proj)
 			# 遅延ダメージ情報があれば着弾処理へ
-			if proj.has_damage_info:
-				impacts.append(proj)
+			elif proj.has_damage_info:
+				direct_impacts.append(proj)
 			continue
 
 		# 位置を補間
@@ -169,9 +290,13 @@ func update_projectiles(delta: float) -> void:
 	for i in range(to_remove.size() - 1, -1, -1):
 		_projectiles.remove_at(to_remove[i])
 
-	# 着弾したダメージを通知
-	for proj in impacts:
+	# 直接射撃の着弾ダメージを通知
+	for proj in direct_impacts:
 		projectile_impact.emit(proj.target_id, proj.damage_info)
+
+	# 間接射撃の着弾を通知（範囲ダメージは呼び出し元で計算）
+	for proj in indirect_impacts:
+		indirect_impact.emit(proj.shooter_id, proj.impact_pos, proj.weapon_ref, proj.faction)
 
 	# 再描画
 	queue_redraw()

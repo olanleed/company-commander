@@ -498,10 +498,11 @@ func _on_projectile_impact(target_id: String, damage_info: Dictionary) -> void:
 ## ミサイル着弾時のダメージ処理
 func _on_missile_impact(missile_id: String, shooter_id: String, target_id: String, attack_profile: int, profile: MissileData.MissileProfile) -> void:
 	var current_tick: int = sim_runner.tick_index if sim_runner else 0
+	var attack_mode := "TOP" if attack_profile == MissileData.AttackProfile.TOP_ATTACK else "DIRECT"
 
 	var target: ElementData.ElementInstance = world_model.get_element_by_id(target_id)
 	if not target:
-		print("[Missile] Impact on unknown target: %s" % target_id)
+		print("[Missile] %s MISS - target %s no longer exists" % [missile_id, target_id])
 		return
 
 	var shooter: ElementData.ElementInstance = world_model.get_element_by_id(shooter_id)
@@ -518,25 +519,23 @@ func _on_missile_impact(missile_id: String, shooter_id: String, target_id: Strin
 
 	if not weapon:
 		# 武器が見つからない場合はプロファイルからダメージ計算
-		print("[Missile] Weapon not found for %s, using profile penetration" % profile.weapon_id)
-		# 簡易ダメージ処理（CE貫通力から計算）
 		if target.is_armored_vehicle():
-			var p_pen := combat_system.calculate_penetration_probability(
-				profile.penetration_ce,
-				target.element_type.armor_front if target.element_type else 100
-			)
+			var armor_value: int = target.element_type.armor_front if target.element_type else 100
+			var p_pen := combat_system.calculate_penetration_probability(profile.penetration_ce, armor_value)
 			var roll := randf()
 			if roll < p_pen:
-				combat_system.apply_vehicle_damage(
-					target,
-					WeaponData.ThreatClass.AT,
-					1.0,
-					current_tick
-				)
-				print("[Missile] %s hit %s (pen=%.0f%%, roll=%.2f)" % [
-					missile_id, target_id, p_pen * 100, roll
+				var was_destroyed := target.is_destroyed
+				combat_system.apply_vehicle_damage(target, WeaponData.ThreatClass.AT, 1.0, current_tick)
+				var result_str := "KILL" if (target.is_destroyed and not was_destroyed) else "HIT"
+				print("[Missile] %s -> %s (%s attack): %s (pen %dmm vs %dmm armor, p=%.0f%%, roll=%.2f)" % [
+					missile_id, target_id, attack_mode, result_str, profile.penetration_ce, armor_value, p_pen * 100, roll
 				])
-		# 射手の待機命令をチェック（射手拘束は既に解除済み）
+			else:
+				print("[Missile] %s -> %s (%s attack): NO PEN (pen %dmm vs %dmm armor, p=%.0f%%, roll=%.2f)" % [
+					missile_id, target_id, attack_mode, profile.penetration_ce, armor_value, p_pen * 100, roll
+				])
+		else:
+			print("[Missile] %s -> %s (%s attack): HIT (soft target)" % [missile_id, target_id, attack_mode])
 		if shooter:
 			movement_system.check_and_execute_pending_orders(shooter)
 		return
@@ -550,34 +549,62 @@ func _on_missile_impact(missile_id: String, shooter_id: String, target_id: Strin
 	if attack_profile == MissileData.AttackProfile.TOP_ATTACK:
 		aspect = WeaponData.ArmorZone.TOP
 	elif shooter:
-		aspect = combat_system.calculate_aspect_v01r(
-			shooter_pos, target.position, target.facing
-		)
+		aspect = combat_system.calculate_aspect_v01r(shooter_pos, target.position, target.facing)
+
+	# アスペクト名
+	var aspect_names := {
+		WeaponData.ArmorZone.FRONT: "FRONT",
+		WeaponData.ArmorZone.SIDE: "SIDE",
+		WeaponData.ArmorZone.REAR: "REAR",
+		WeaponData.ArmorZone.TOP: "TOP"
+	}
+	var aspect_name: String = aspect_names.get(aspect, "UNKNOWN")
 
 	if target.is_armored_vehicle():
-		var result := combat_system.calculate_direct_fire_vs_armor(
-			shooter, target, weapon, distance, 0.1, t_los, terrain, false
-		)
-		if result.is_valid:
-			# 着弾時は確定ヒット（飛翔中の命中判定は済み）
-			combat_system.apply_vehicle_damage(
-				target,
-				weapon.threat_class,
-				result.exposure,
-				current_tick
+		# 貫通力と装甲値を取得
+		var penetration: int = weapon.get_pen_ce(distance)
+		var is_ke := (weapon.mechanism == WeaponData.Mechanism.KINETIC)
+		if is_ke:
+			penetration = weapon.get_pen_ke(distance)
+		var armor: int = combat_system.get_armor_at_aspect(target, aspect, is_ke)
+
+		# 貫通確率を計算
+		var p_pen := combat_system.calculate_penetration_probability(penetration, armor)
+		var roll := randf()
+		var penetrated := roll < p_pen
+
+		if penetrated:
+			var was_destroyed := target.is_destroyed
+			var result := combat_system.calculate_direct_fire_vs_armor_with_aspect(
+				shooter, target, weapon, distance, 0.1, t_los, terrain, false, aspect
 			)
-			combat_system.apply_damage(target, result.d_supp, 0.0, current_tick, weapon.threat_class)
-			print("[Missile] %s hit %s (dmg=%.2f, supp=%.2f)" % [
-				missile_id, target_id, result.d_dmg, result.d_supp
+			if result.is_valid:
+				combat_system.apply_vehicle_damage(target, weapon.threat_class, result.exposure, current_tick)
+				combat_system.apply_damage(target, result.d_supp, 0.0, current_tick, weapon.threat_class)
+
+			var result_str: String
+			if target.is_destroyed and not was_destroyed:
+				result_str = "KILL"
+			else:
+				result_str = "HIT"
+			print("[Missile] %s -> %s @ %s: %s (pen %dmm vs %dmm, p=%.0f%%, roll=%.2f)" % [
+				missile_id, target_id, aspect_name, result_str, penetration, armor, p_pen * 100, roll
+			])
+		else:
+			print("[Missile] %s -> %s @ %s: NO PEN (pen %dmm vs %dmm, p=%.0f%%, roll=%.2f)" % [
+				missile_id, target_id, aspect_name, penetration, armor, p_pen * 100, roll
 			])
 	else:
+		# ソフトターゲット
 		var result := combat_system.calculate_direct_fire_effect(
 			shooter, target, weapon, distance, 0.1, t_los, terrain, false
 		)
 		if result.is_valid:
+			var was_destroyed := target.is_destroyed
 			combat_system.apply_damage(target, result.d_supp, result.d_dmg, current_tick, weapon.threat_class)
-			print("[Missile] %s hit %s (dmg=%.2f, supp=%.2f)" % [
-				missile_id, target_id, result.d_dmg, result.d_supp
+			var result_str := "KILL" if (target.is_destroyed and not was_destroyed) else "HIT"
+			print("[Missile] %s -> %s: %s (dmg=%.2f, supp=%.2f)" % [
+				missile_id, target_id, result_str, result.d_dmg, result.d_supp
 			])
 
 	# 射手の待機命令をチェック（射手拘束は既に解除済み）
@@ -1033,19 +1060,29 @@ func _update_combat(tick: int, dt: float) -> void:
 								selected_weapon.fire_model
 							)
 
-						# ミサイル軌跡表示（ダメージは_on_missile_impactで処理）
+						# 飛行時間を計算
+						var attack_profile := missile_profile.default_attack_profile
+						var profile_name := "DIRECT" if attack_profile == MissileData.AttackProfile.DIRECT else "TOP_ATTACK"
+						var flight_time: float
+						if attack_profile == MissileData.AttackProfile.TOP_ATTACK:
+							flight_time = missile_system.calculate_top_attack_flight_time(missile_profile, distance)
+						else:
+							flight_time = missile_profile.calculate_flight_time(distance)
+
+						# ミサイル軌跡表示（飛行時間を同期）
 						if projectile_manager:
-							projectile_manager.fire_projectile(
+							projectile_manager.fire_missile_tracer_with_flight_time(
 								shooter.position,
 								target.position,
-								selected_weapon,
 								shooter.faction,
-								true  # ヒット扱い（視覚のみ）
+								flight_time,
+								selected_weapon.projectile_size
 							)
 
-						print("[ATGM] %s fired %s at %s (missile_id=%s, constrained=%s)" % [
-							shooter.id, selected_weapon.id, target.id, missile_id,
-							str(missile_system.is_shooter_constrained(shooter.id))
+						var impact_tick := tick + int(flight_time * 10.0)
+						print("[ATGM] %s fired %s at tick %d -> impact tick %d (%s, dist=%.0fm, ETA=%.1fs)" % [
+							shooter.id, selected_weapon.id, tick, impact_tick, profile_name,
+							distance, flight_time
 						])
 				else:
 					# リロード中は照準維持
