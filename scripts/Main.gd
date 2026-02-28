@@ -278,46 +278,47 @@ func _spawn_test_units() -> void:
 		print("[VehicleCatalog] Loaded %d vehicles" % catalog.get_all_vehicle_ids().size())
 
 	# ==========================================================================
-	# BLUE陣営 - 日米の全ATGM（対戦車ミサイル）ユニット
+	# BLUE陣営 - 日米戦車・IFV
 	# ==========================================================================
-	# 全ユニット HOLD_FIRE
 
-	# --- 米軍 ATGMプラットフォーム ---
+	# --- 自衛隊 戦車 ---
+
+	# 10式戦車 (最新鋭MBT、自動装填装置搭載)
+	var blue_type10 := ElementFactory.create_element_with_vehicle("JPN_Type10", GameEnums.Faction.BLUE, Vector2(100, 300))
+	blue_type10.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_type10)
+
+	# 90式戦車 (主力MBT、自動装填装置搭載)
+	var blue_type90 := ElementFactory.create_element_with_vehicle("JPN_Type90", GameEnums.Faction.BLUE, Vector2(100, 400))
+	blue_type90.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_type90)
+
+	# --- 米軍 戦車 ---
+
+	# M1A2 SEPv3 (最新型Abrams)
+	var blue_m1a2 := ElementFactory.create_element_with_vehicle("USA_M1A2_SEPv3", GameEnums.Faction.BLUE, Vector2(100, 500))
+	blue_m1a2.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_m1a2)
+
+	# M1A2 SEPv2
+	var blue_m1a2_v2 := ElementFactory.create_element_with_vehicle("USA_M1A2_SEPv2", GameEnums.Faction.BLUE, Vector2(100, 600))
+	blue_m1a2_v2.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_m1a2_v2)
+
+	# --- IFV・偵察車両 ---
 
 	# M2A4 Bradley (TOW-2B搭載)
-	var blue_m2a4 := ElementFactory.create_element_with_vehicle("USA_M2A4_Bradley", GameEnums.Faction.BLUE, Vector2(100, 400))
+	var blue_m2a4 := ElementFactory.create_element_with_vehicle("USA_M2A4_Bradley", GameEnums.Faction.BLUE, Vector2(100, 750))
 	blue_m2a4.sop_mode = GameEnums.SOPMode.HOLD_FIRE
 	world_model.add_element(blue_m2a4)
 
-	# M2A3 Bradley (TOW-2B搭載)
-	var blue_m2a3 := ElementFactory.create_element_with_vehicle("USA_M2A3_Bradley", GameEnums.Faction.BLUE, Vector2(100, 500))
-	blue_m2a3.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_m2a3)
-
-	# M3A3 CFV (TOW-2B搭載、偵察型)
-	var blue_m3a3 := ElementFactory.create_element_with_vehicle("USA_M3A3_CFV", GameEnums.Faction.BLUE, Vector2(100, 600))
-	blue_m3a3.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_m3a3)
-
-	# 米軍 歩兵ATチーム (Javelin携行)
-	var blue_inf_javelin := ElementFactory.create_element("INF_AT", GameEnums.Faction.BLUE, Vector2(100, 700))
-	blue_inf_javelin.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_inf_javelin)
-
-	# --- 自衛隊 ATGMプラットフォーム ---
-
 	# 89式IFV (79式重MAT搭載)
-	var blue_type89 := ElementFactory.create_element_with_vehicle("JPN_Type89", GameEnums.Faction.BLUE, Vector2(100, 900))
+	var blue_type89 := ElementFactory.create_element_with_vehicle("JPN_Type89", GameEnums.Faction.BLUE, Vector2(100, 850))
 	blue_type89.sop_mode = GameEnums.SOPMode.HOLD_FIRE
 	world_model.add_element(blue_type89)
 
-	# 自衛隊 歩兵ATチーム (01式LMAT携行)
-	var blue_inf_lmat := ElementFactory.create_element("INF_AT", GameEnums.Faction.BLUE, Vector2(100, 1000))
-	blue_inf_lmat.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_inf_lmat)
-
 	# MMPM搭載高機動車 (中距離多目的誘導弾)
-	var blue_mmpm := ElementFactory.create_element_with_vehicle("JPN_HMV_MMPM", GameEnums.Faction.BLUE, Vector2(100, 1100))
+	var blue_mmpm := ElementFactory.create_element_with_vehicle("JPN_HMV_MMPM", GameEnums.Faction.BLUE, Vector2(100, 950))
 	blue_mmpm.sop_mode = GameEnums.SOPMode.HOLD_FIRE
 	world_model.add_element(blue_mmpm)
 
@@ -804,9 +805,9 @@ func _on_tick_advanced(tick: int) -> void:
 	# 弾薬装填更新
 	_update_ammo_reload()
 
-	# 弾薬補給更新
-	if resupply_system:
-		resupply_system.update(world_model.elements, tick)
+	# 弾薬補給更新（サプライユニット未実装のため無効化）
+	#if resupply_system:
+	#	resupply_system.update(world_model.elements, tick)
 
 	# 戦闘更新
 	_update_combat(tick, GameConstants.SIM_DT)
@@ -1040,13 +1041,23 @@ func _update_combat(tick: int, dt: float) -> void:
 		if selected_weapon.weapon_role == WeaponData.WeaponRole.ATGM:
 			var missile_profile := MissileData.get_profile_for_weapon(selected_weapon.id)
 			if missile_profile:
-				# DISCRETE武器の発射レート制御
+				# ATGM発射可能判定
+				# - SACLOS誘導: 射手拘束解除後、即発弾があれば即射撃可能
+				# - 予備弾装填中は射撃不可（missile_system.launch_missileでチェック）
 				var can_fire_atgm := true
-				if shooter.last_fire_tick >= 0 and selected_weapon.rof_rpm > 0:
-					var ticks_per_shot := int(600.0 / selected_weapon.rof_rpm)
-					var elapsed := tick - shooter.last_fire_tick
-					if elapsed < ticks_per_shot:
-						can_fire_atgm = false
+
+				# 射手拘束チェック（SACLOS誘導中は発射不可）
+				if missile_system.is_shooter_constrained(shooter.id):
+					can_fire_atgm = false
+
+				# Fire-and-Forget以外（SACLOS等）は射手拘束が主な制限
+				# Fire-and-Forgetの場合のみrof_rpmによる発射間隔を適用
+				if can_fire_atgm and missile_profile.is_fire_and_forget():
+					if shooter.last_fire_tick >= 0 and selected_weapon.rof_rpm > 0:
+						var ticks_per_shot := int(600.0 / selected_weapon.rof_rpm)
+						var elapsed := tick - shooter.last_fire_tick
+						if elapsed < ticks_per_shot:
+							can_fire_atgm = false
 
 				if can_fire_atgm:
 					# ミサイル発射
@@ -1057,7 +1068,8 @@ func _update_combat(tick: int, dt: float) -> void:
 						target.position,
 						missile_profile,
 						missile_profile.default_attack_profile,
-						tick
+						tick,
+						shooter  # 弾薬管理用
 					)
 					if missile_id != "":
 						shooter.last_fire_tick = tick

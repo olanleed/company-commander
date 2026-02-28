@@ -134,7 +134,7 @@
         "ammo_types": ["35mm APDS", "35mm SAPHEI"]
       },
       "atgm": {
-        "weapon_id": "CW_ATGM_79MAT",
+        "weapon_id": "W_JPN_ATGM_79MAT",
         "type": "Type79_Heavy_MAT",
         "guidance": "SACLOS",
         "range_m": 4000,
@@ -835,6 +835,46 @@
         "max_speed_kmh": 90
       },
       "notes": "81式短SAMの後継、アクティブレーダー誘導"
+    },
+    {
+      "id": "JPN_HMV_MMPM",
+      "display_name": "中距離多目的誘導弾",
+      "display_name_en": "MMPM (Medium-range Multi-Purpose Missile)",
+      "base_archetype": "ATGM_VEH",
+      "mobility_class": "WHEELED",
+      "era": "2010s",
+      "unit_count": 2,
+      "modifiers": {
+        "armor_ke_front": 0.50,
+        "armor_ke_side": 0.40,
+        "armor_ke_rear": 0.40,
+        "armor_ce_front": 0.50,
+        "armor_ce_side": 0.40,
+        "armor_ce_rear": 0.40,
+        "spot_range": 1.15,
+        "spot_range_moving": 1.00,
+        "road_speed": 1.20,
+        "cross_speed": 0.85
+      },
+      "atgm": {
+        "weapon_id": "W_JPN_ATGM_MMPM",
+        "launcher_type": "sextuple",
+        "ready_count": 6,
+        "reserve_count": 0,
+        "reload_capable": false
+      },
+      "secondary_weapons": [],
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 4.5,
+        "crew": 3,
+        "engine_hp": 170,
+        "max_speed_kmh": 115
+      },
+      "notes": "高機動車ベース4連装発射機、IIR+SALH複合誘導、トップアタック能力、射程5km+"
     }
   ]
 }

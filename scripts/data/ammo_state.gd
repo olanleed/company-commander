@@ -166,6 +166,10 @@ class WeaponAmmoState:
 		if not slot or slot.count_stowed <= 0:
 			return
 
+		# 即発弾がすでに満杯なら装填しない
+		if slot.count_ready >= slot.max_ready:
+			return
+
 		is_reloading = true
 		reload_progress_ticks = 0
 		reload_duration_ticks = RELOAD_TICKS_AUTOLOADER if has_autoloader else RELOAD_TICKS_MANUAL
@@ -177,6 +181,18 @@ class WeaponAmmoState:
 		if not is_reloading:
 			return false
 
+		var slot := get_current_slot()
+		if not slot:
+			is_reloading = false
+			reload_progress_ticks = 0
+			return false
+
+		# 即発弾がすでに満杯なら装填を停止
+		if slot.count_ready >= slot.max_ready:
+			is_reloading = false
+			reload_progress_ticks = 0
+			return false
+
 		reload_progress_ticks += 1
 
 		if reload_progress_ticks >= reload_duration_ticks:
@@ -184,11 +200,15 @@ class WeaponAmmoState:
 			is_reloading = false
 			reload_progress_ticks = 0
 
-			var slot := get_current_slot()
-			if slot and slot.count_stowed > 0:
+			if slot.count_stowed > 0 and slot.count_ready < slot.max_ready:
 				var transfer := mini(1, slot.count_stowed)
 				slot.count_stowed -= transfer
 				slot.count_ready += transfer
+
+				# まだmax_readyに達していなければ継続して装填
+				if slot.count_ready < slot.max_ready and slot.count_stowed > 0:
+					start_reload()
+
 				return true
 
 		return false
