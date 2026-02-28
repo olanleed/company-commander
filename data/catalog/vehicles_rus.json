@@ -44,7 +44,7 @@
         "ammo_types": ["3BM60 Svinets-2 APFSDS", "3BK31 HEAT-FS", "3OF26 HE-Frag"]
       },
       "atgm": {
-        "weapon_id": "CW_ATGM_REFLEKS",
+        "weapon_id": "W_RUS_ATGM_REFLEKS",
         "type": "9M119M Refleks",
         "range_m": 5000,
         "count": 4
@@ -99,7 +99,7 @@
         "ammo_types": ["3BM42 Mango APFSDS", "3BK29 HEAT-FS", "3OF26 HE-Frag"]
       },
       "atgm": {
-        "weapon_id": "CW_ATGM_REFLEKS",
+        "weapon_id": "W_RUS_ATGM_REFLEKS",
         "type": "9M119M Refleks",
         "range_m": 5000,
         "count": 4
@@ -154,7 +154,7 @@
         "ammo_types": ["3BM60 Svinets-2 APFSDS", "3BK31 HEAT-FS", "3OF26 HE-Frag"]
       },
       "atgm": {
-        "weapon_id": "CW_ATGM_REFLEKS",
+        "weapon_id": "W_RUS_ATGM_REFLEKS",
         "type": "9M119M Refleks",
         "range_m": 5000,
         "count": 4
@@ -208,7 +208,7 @@
         "ammo_types": ["3BM60 Svinets-2 APFSDS", "3BK31 HEAT-FS", "3OF26 HE-Frag"]
       },
       "atgm": {
-        "weapon_id": "CW_ATGM_REFLEKS",
+        "weapon_id": "W_RUS_ATGM_REFLEKS",
         "type": "9M119M Refleks",
         "range_m": 5000,
         "count": 4
@@ -262,7 +262,7 @@
         "ammo_types": ["3BM42 Mango APFSDS", "3BK29 HEAT-FS", "3OF26 HE-Frag"]
       },
       "atgm": {
-        "weapon_id": "CW_ATGM_REFLEKS",
+        "weapon_id": "W_RUS_ATGM_REFLEKS",
         "type": "9M119M Refleks",
         "range_m": 5000,
         "count": 4
@@ -316,7 +316,7 @@
         "accuracy_modifier": 0.90
       },
       "atgm": {
-        "weapon_id": "CW_ATGM_BASTION",
+        "weapon_id": "W_RUS_ATGM_BASTION",
         "type": "9M117 Bastion",
         "range_m": 4000,
         "count": 8
@@ -368,7 +368,7 @@
         "accuracy_modifier": 0.95
       },
       "atgm": {
-        "weapon_id": "CW_ATGM_BASTION",
+        "weapon_id": "W_RUS_ATGM_BASTION",
         "type": "9M117M1 Arkan",
         "range_m": 5500,
         "count": 8
@@ -419,7 +419,7 @@
         "accuracy_modifier": 0.90
       },
       "atgm": {
-        "weapon_id": "CW_ATGM_KONKURS",
+        "weapon_id": "W_RUS_ATGM_KONKURS",
         "type": "9M113M Konkurs-M",
         "range_m": 4000,
         "count": 4
@@ -1076,6 +1076,120 @@
         "aps_equipped": false
       },
       "notes": "T-90ベース回収車、20tクレーン、35t主ウインチ（140tプーリー使用時）"
+    },
+    {
+      "id": "RUS_Ural4320_Supply",
+      "display_name": "Ural-4320補給車",
+      "display_name_en": "Ural-4320 Supply Truck",
+      "base_archetype": "LOG_TRUCK",
+      "mobility_class": "WHEELED",
+      "era": "1980s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 8.0,
+        "crew": 2,
+        "engine": "YaMZ-238M2 diesel 240hp",
+        "max_speed_kmh": 85
+      },
+      "modifiers": {
+        "armor_ke_front": 0.60,
+        "armor_ke_side": 0.50,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.60,
+        "armor_ce_side": 0.50,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.80,
+        "spot_range_moving": 0.70,
+        "road_speed": 1.10,
+        "cross_speed": 0.75
+      },
+      "supply": {
+        "capacity": 50,
+        "supply_range_m": 150.0,
+        "ammo_resupply_rate": 0.8,
+        "fuel_resupply_rate": 1.0
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "6×6軽トラック、5トン積載、標準補給車両、全天候対応"
+    },
+    {
+      "id": "RUS_KamAZ5350_Supply",
+      "display_name": "KamAZ-5350補給車",
+      "display_name_en": "KamAZ-5350 Mustang Supply Truck",
+      "base_archetype": "LOG_TRUCK",
+      "mobility_class": "WHEELED",
+      "era": "2000s",
+      "unit_count": 3,
+      "specs": {
+        "weight_tons": 10.5,
+        "crew": 2,
+        "engine": "KamAZ-740.30-260 diesel 260hp",
+        "max_speed_kmh": 100
+      },
+      "modifiers": {
+        "armor_ke_front": 0.60,
+        "armor_ke_side": 0.50,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.60,
+        "armor_ce_side": 0.50,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.75,
+        "spot_range_moving": 0.65,
+        "road_speed": 1.15,
+        "cross_speed": 0.70
+      },
+      "supply": {
+        "capacity": 80,
+        "supply_range_m": 150.0,
+        "ammo_resupply_rate": 1.0,
+        "fuel_resupply_rate": 1.0
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "6×6中型トラック、6トン積載、Mustangファミリー、改良型補給車両"
+    },
+    {
+      "id": "RUS_KamAZ63501_Supply",
+      "display_name": "KamAZ-63501補給車",
+      "display_name_en": "KamAZ-63501 Heavy Supply Truck",
+      "base_archetype": "LOG_TRUCK",
+      "mobility_class": "WHEELED",
+      "era": "2010s",
+      "unit_count": 2,
+      "specs": {
+        "weight_tons": 16,
+        "crew": 2,
+        "engine": "KamAZ-740.632-400 diesel 400hp",
+        "max_speed_kmh": 90
+      },
+      "modifiers": {
+        "armor_ke_front": 0.55,
+        "armor_ke_side": 0.45,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.55,
+        "armor_ce_side": 0.45,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.70,
+        "spot_range_moving": 0.60,
+        "road_speed": 1.05,
+        "cross_speed": 0.60
+      },
+      "supply": {
+        "capacity": 150,
+        "supply_range_m": 200.0,
+        "ammo_resupply_rate": 1.2,
+        "fuel_resupply_rate": 1.3
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "8×8大型トラック、12トン積載、重補給車両、Taifun防護キット対応"
     }
   ]
 }

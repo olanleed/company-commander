@@ -216,7 +216,7 @@
         "ammo_types": ["105mm APFSDS", "HEAT-FS", "HE-Frag", "GP105 ATGM"]
       },
       "atgm": {
-        "weapon_id": "CW_ATGM_GP105",
+        "weapon_id": "W_CHN_ATGM_GP105",
         "type": "GP105",
         "range_m": 5200,
         "count": 6
@@ -266,7 +266,7 @@
         "ammo_types": ["HE-FRAG", "ATGM"]
       },
       "atgm": {
-        "weapon_id": "CW_ATGM_HJ8E",
+        "weapon_id": "W_CHN_ATGM_HJ8E",
         "type": "HJ-8E",
         "range_m": 4000,
         "count": 2
@@ -357,7 +357,7 @@
         "ammo_types": ["DTC10-30 APFSDS", "DTC041A-30 AP", "DTB02-30 HE"]
       },
       "atgm": {
-        "weapon_id": "CW_ATGM_HJ73",
+        "weapon_id": "W_CHN_ATGM_HJ73",
         "type": "HJ-73C",
         "range_m": 3000,
         "count": 2
@@ -442,7 +442,7 @@
         "ammo_types": ["105mm APFSDS", "HEAT-FS", "HE-Frag", "GP105 ATGM"]
       },
       "atgm": {
-        "weapon_id": "CW_ATGM_GP105",
+        "weapon_id": "W_CHN_ATGM_GP105",
         "type": "GP105",
         "range_m": 5200,
         "count": 6
@@ -729,7 +729,7 @@
         "ammo_types": ["AP", "HE"]
       },
       "atgm": {
-        "weapon_id": "CW_ATGM_HJ73",
+        "weapon_id": "W_CHN_ATGM_HJ73",
         "type": "HJ-73C",
         "range_m": 3000,
         "count": 4,
@@ -820,6 +820,120 @@
         "aps_equipped": false
       },
       "notes": "標準APC、13名搭載、水陸両用"
+    },
+    {
+      "id": "CHN_SX2150_Supply",
+      "display_name": "陝汽SX2150補給車",
+      "display_name_en": "SX2150 Supply Truck",
+      "base_archetype": "LOG_TRUCK",
+      "mobility_class": "WHEELED",
+      "era": "1990s",
+      "unit_count": 4,
+      "specs": {
+        "weight_tons": 9.5,
+        "crew": 2,
+        "engine": "Steyr WD615 diesel 266hp",
+        "max_speed_kmh": 85
+      },
+      "modifiers": {
+        "armor_ke_front": 0.60,
+        "armor_ke_side": 0.50,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.60,
+        "armor_ce_side": 0.50,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.80,
+        "spot_range_moving": 0.70,
+        "road_speed": 1.15,
+        "cross_speed": 0.70
+      },
+      "supply": {
+        "capacity": 60,
+        "supply_range_m": 150.0,
+        "ammo_resupply_rate": 0.8,
+        "fuel_resupply_rate": 1.0
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "6×6軽トラック、5トン積載、標準補給車両"
+    },
+    {
+      "id": "CHN_SX2300_Supply",
+      "display_name": "陝汽SX2300補給車",
+      "display_name_en": "SX2300 Supply Truck",
+      "base_archetype": "LOG_TRUCK",
+      "mobility_class": "WHEELED",
+      "era": "2000s",
+      "unit_count": 3,
+      "specs": {
+        "weight_tons": 14,
+        "crew": 2,
+        "engine": "Weichai WP10 diesel 336hp",
+        "max_speed_kmh": 90
+      },
+      "modifiers": {
+        "armor_ke_front": 0.60,
+        "armor_ke_side": 0.50,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.60,
+        "armor_ce_side": 0.50,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.75,
+        "spot_range_moving": 0.65,
+        "road_speed": 1.10,
+        "cross_speed": 0.65
+      },
+      "supply": {
+        "capacity": 100,
+        "supply_range_m": 150.0,
+        "ammo_resupply_rate": 1.0,
+        "fuel_resupply_rate": 1.0
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "6×6中型トラック、8トン積載、改良型補給車両"
+    },
+    {
+      "id": "CHN_JJC3260_Supply",
+      "display_name": "解放JJC3260補給車",
+      "display_name_en": "FAW JJC3260 Supply Truck",
+      "base_archetype": "LOG_TRUCK",
+      "mobility_class": "WHEELED",
+      "era": "2010s",
+      "unit_count": 2,
+      "specs": {
+        "weight_tons": 22,
+        "crew": 2,
+        "engine": "CA6DM2-42E5 diesel 420hp",
+        "max_speed_kmh": 85
+      },
+      "modifiers": {
+        "armor_ke_front": 0.55,
+        "armor_ke_side": 0.45,
+        "armor_ke_rear": 1.00,
+        "armor_ce_front": 0.55,
+        "armor_ce_side": 0.45,
+        "armor_ce_rear": 1.00,
+        "spot_range": 0.70,
+        "spot_range_moving": 0.60,
+        "road_speed": 1.00,
+        "cross_speed": 0.55
+      },
+      "supply": {
+        "capacity": 180,
+        "supply_range_m": 200.0,
+        "ammo_resupply_rate": 1.3,
+        "fuel_resupply_rate": 1.5
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "notes": "8×8大型トラック、15トン積載、重補給車両、PLS相当"
     }
   ]
 }
