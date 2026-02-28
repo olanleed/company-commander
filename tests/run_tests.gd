@@ -862,8 +862,8 @@ func test_weapon_data_extended() -> void:
 
 	# Test: Top attack ATGM
 	_current_test = "atgm_topattack_exists"
-	assert_true("CW_ATGM_TOPATTACK" in all_weapons)
-	var javelin: RefCounted = all_weapons["CW_ATGM_TOPATTACK"]
+	assert_true("W_GEN_ATGM_TOPATTACK" in all_weapons)
+	var javelin: RefCounted = all_weapons["W_GEN_ATGM_TOPATTACK"]
 	assert_eq(javelin.mechanism, WeaponDataClass.Mechanism.SHAPED_CHARGE)
 	# High lethality vs heavy armor
 	var leth_heavy: int = javelin.lethality[WeaponDataClass.RangeBand.NEAR][WeaponDataClass.TargetClass.HEAVY]
@@ -872,8 +872,8 @@ func test_weapon_data_extended() -> void:
 
 	# Test: Beam riding ATGM
 	_current_test = "atgm_beamride_exists"
-	assert_true("CW_ATGM_BEAMRIDE" in all_weapons)
-	var kornet: RefCounted = all_weapons["CW_ATGM_BEAMRIDE"]
+	assert_true("W_GEN_ATGM_BEAMRIDE" in all_weapons)
+	var kornet: RefCounted = all_weapons["W_GEN_ATGM_BEAMRIDE"]
 	# Long range
 	assert_gt(kornet.max_range_m, 5000.0)
 	# High CE penetration
@@ -1153,8 +1153,8 @@ func test_jgsdf_weapons() -> void:
 
 	# Test: 79式重MAT (Type 89 IFV mounted)
 	_current_test = "jgsdf_79mat_exists"
-	assert_true("CW_ATGM_79MAT" in all_weapons)
-	var mat_79: RefCounted = all_weapons["CW_ATGM_79MAT"]
+	assert_true("W_JPN_ATGM_79MAT" in all_weapons)
+	var mat_79: RefCounted = all_weapons["W_JPN_ATGM_79MAT"]
 	assert_eq(mat_79.mechanism, WeaponDataClass.Mechanism.SHAPED_CHARGE)
 	assert_eq(mat_79.max_range_m, 4000.0)  # 4km射程
 	# タンデムHEAT: 550mm = 110 RHA scale
@@ -1163,8 +1163,8 @@ func test_jgsdf_weapons() -> void:
 
 	# Test: 中距離多目的誘導弾 (MMPM)
 	_current_test = "jgsdf_mmpm_exists"
-	assert_true("CW_ATGM_MMPM" in all_weapons)
-	var mmpm: RefCounted = all_weapons["CW_ATGM_MMPM"]
+	assert_true("W_JPN_ATGM_MMPM" in all_weapons)
+	var mmpm: RefCounted = all_weapons["W_JPN_ATGM_MMPM"]
 	assert_eq(mmpm.max_range_m, 5000.0)  # 5km射程
 	# トップアタック、タンデムHEAT: 750mm = 150 RHA scale
 	assert_eq(mmpm.pen_ce[WeaponDataClass.RangeBand.MID], 150)
@@ -1175,8 +1175,8 @@ func test_jgsdf_weapons() -> void:
 
 	# Test: 01式軽対戦車誘導弾 (Type 01 LMAT)
 	_current_test = "jgsdf_01lmat_exists"
-	assert_true("CW_ATGM_01LMAT" in all_weapons)
-	var lmat_01: RefCounted = all_weapons["CW_ATGM_01LMAT"]
+	assert_true("W_JPN_ATGM_01LMAT" in all_weapons)
+	var lmat_01: RefCounted = all_weapons["W_JPN_ATGM_01LMAT"]
 	assert_eq(lmat_01.max_range_m, 2000.0)  # 2km射程
 	# タンデムHEAT: 650mm = 130 RHA scale
 	assert_eq(lmat_01.pen_ce[WeaponDataClass.RangeBand.MID], 130)
@@ -1186,7 +1186,7 @@ func test_jgsdf_weapons() -> void:
 	_current_test = "jgsdf_weapons_count"
 	var jgsdf_count: int = 0
 	for weapon_id in all_weapons:
-		if weapon_id.ends_with("_JGSDF") or weapon_id in ["CW_ATGM_79MAT", "CW_ATGM_MMPM", "CW_ATGM_01LMAT"]:
+		if weapon_id.ends_with("_JGSDF") or weapon_id in ["W_JPN_ATGM_79MAT", "W_JPN_ATGM_MMPM", "W_JPN_ATGM_01LMAT"]:
 			jgsdf_count += 1
 	assert_eq(jgsdf_count, 7)  # 4 JGSDF + 3 ATGMs
 	_pass()
@@ -1268,7 +1268,7 @@ func test_vehicle_catalog_integration() -> void:
 	_current_test = "type89_has_atgm"
 	var has_atgm := false
 	for weapon in type89.weapons:
-		if weapon.id == "CW_ATGM_79MAT":
+		if weapon.id == "W_JPN_ATGM_79MAT":
 			has_atgm = true
 			break
 	assert_true(has_atgm)
@@ -1345,8 +1345,8 @@ func test_us_army_weapons() -> void:
 
 	# Test: TOW-2B ATGM
 	_current_test = "usa_tow2b_atgm_exists"
-	assert_true("CW_ATGM_TOW2B" in all_weapons)
-	var tow2b: RefCounted = all_weapons["CW_ATGM_TOW2B"]
+	assert_true("W_USA_ATGM_TOW2B" in all_weapons)
+	var tow2b: RefCounted = all_weapons["W_USA_ATGM_TOW2B"]
 	assert_eq(tow2b.mechanism, WeaponDataClass.Mechanism.SHAPED_CHARGE)
 	assert_eq(tow2b.max_range_m, 4500.0)  # TOW-2B Aero range
 	# TOW-2B EFP top attack: 300mm = 60 RHA scale
@@ -1355,8 +1355,8 @@ func test_us_army_weapons() -> void:
 
 	# Test: FGM-148 Javelin
 	_current_test = "usa_javelin_exists"
-	assert_true("CW_ATGM_JAVELIN" in all_weapons)
-	var javelin: RefCounted = all_weapons["CW_ATGM_JAVELIN"]
+	assert_true("W_USA_ATGM_JAVELIN" in all_weapons)
+	var javelin: RefCounted = all_weapons["W_USA_ATGM_JAVELIN"]
 	assert_eq(javelin.max_range_m, 2500.0)  # Javelin standard range
 	# Javelin tandem HEAT: 800mm = 160 RHA scale
 	assert_eq(javelin.pen_ce[WeaponDataClass.RangeBand.MID], 160)
@@ -1400,8 +1400,8 @@ func test_us_army_weapons() -> void:
 		"CW_TANK_HEAT_USA",
 		"CW_AUTOCANNON_25_USA",
 		"CW_AUTOCANNON_30_USA",
-		"CW_ATGM_TOW2B",
-		"CW_ATGM_JAVELIN",
+		"W_USA_ATGM_TOW2B",
+		"W_USA_ATGM_JAVELIN",
 		"CW_AGL_MK19",
 		"CW_M240_COAX",
 		"CW_M2HB",
@@ -1415,8 +1415,8 @@ func test_us_army_weapons() -> void:
 
 	# Test: Javelin higher penetration than TOW-2B
 	_current_test = "javelin_higher_pen_than_tow2b"
-	var tow2b_pen: int = all_weapons["CW_ATGM_TOW2B"].pen_ce[WeaponDataClass.RangeBand.MID]
-	var javelin_pen: int = all_weapons["CW_ATGM_JAVELIN"].pen_ce[WeaponDataClass.RangeBand.MID]
+	var tow2b_pen: int = all_weapons["W_USA_ATGM_TOW2B"].pen_ce[WeaponDataClass.RangeBand.MID]
+	var javelin_pen: int = all_weapons["W_USA_ATGM_JAVELIN"].pen_ce[WeaponDataClass.RangeBand.MID]
 	assert_gt(javelin_pen, tow2b_pen)
 	_pass()
 
@@ -1489,7 +1489,7 @@ func test_us_vehicle_catalog_integration() -> void:
 	_current_test = "m2a4_bradley_has_tow2b"
 	var has_tow2b := false
 	for weapon in m2a4.weapons:
-		if weapon.id == "CW_ATGM_TOW2B":
+		if weapon.id == "W_USA_ATGM_TOW2B":
 			has_tow2b = true
 			break
 	assert_true(has_tow2b)
@@ -1617,39 +1617,39 @@ func test_russian_army_weapons() -> void:
 
 	# Test: Kornet ATGM exists
 	_current_test = "rus_kornet_atgm_exists"
-	assert_true("CW_ATGM_KORNET" in all_weapons)
+	assert_true("W_RUS_ATGM_KORNET" in all_weapons)
 	_pass()
 
 	# Test: Kornet penetration (1200mm = 240 RHA scale)
 	_current_test = "rus_kornet_penetration"
-	var kornet: RefCounted = all_weapons["CW_ATGM_KORNET"]
+	var kornet: RefCounted = all_weapons["W_RUS_ATGM_KORNET"]
 	assert_eq(kornet.pen_ce[WeaponDataClass.RangeBand.MID], 240)
 	_pass()
 
 	# Test: Refleks exists
 	_current_test = "rus_refleks_exists"
-	assert_true("CW_ATGM_REFLEKS" in all_weapons)
+	assert_true("W_RUS_ATGM_REFLEKS" in all_weapons)
 	_pass()
 
 	# Test: Refleks penetration (900mm = 180 RHA scale)
 	_current_test = "rus_refleks_penetration"
-	var refleks: RefCounted = all_weapons["CW_ATGM_REFLEKS"]
+	var refleks: RefCounted = all_weapons["W_RUS_ATGM_REFLEKS"]
 	assert_eq(refleks.pen_ce[WeaponDataClass.RangeBand.MID], 180)
 	_pass()
 
 	# Test: Konkurs exists
 	_current_test = "rus_konkurs_exists"
-	assert_true("CW_ATGM_KONKURS" in all_weapons)
+	assert_true("W_RUS_ATGM_KONKURS" in all_weapons)
 	_pass()
 
 	# Test: Bastion exists
 	_current_test = "rus_bastion_exists"
-	assert_true("CW_ATGM_BASTION" in all_weapons)
+	assert_true("W_RUS_ATGM_BASTION" in all_weapons)
 	_pass()
 
 	# Test: Kornet > Refleks > Konkurs penetration order
 	_current_test = "rus_atgm_pen_order"
-	var konkurs: RefCounted = all_weapons["CW_ATGM_KONKURS"]
+	var konkurs: RefCounted = all_weapons["W_RUS_ATGM_KONKURS"]
 	assert_gt(kornet.pen_ce[WeaponDataClass.RangeBand.MID],
 			  refleks.pen_ce[WeaponDataClass.RangeBand.MID])
 	assert_gt(refleks.pen_ce[WeaponDataClass.RangeBand.MID],
@@ -1666,10 +1666,10 @@ func test_russian_army_weapons() -> void:
 		"CW_HMG_KPVT",
 		"CW_PKT_COAX",
 		"CW_KORD_AA",
-		"CW_ATGM_KORNET",
-		"CW_ATGM_REFLEKS",
-		"CW_ATGM_KONKURS",
-		"CW_ATGM_BASTION",
+		"W_RUS_ATGM_KORNET",
+		"W_RUS_ATGM_REFLEKS",
+		"W_RUS_ATGM_KONKURS",
+		"W_RUS_ATGM_BASTION",
 	]
 	var rus_count: int = 0
 	for weapon_id in rus_weapon_ids:
@@ -1717,7 +1717,7 @@ func test_russian_vehicle_catalog_integration() -> void:
 	_current_test = "t90m_has_refleks"
 	var has_refleks := false
 	for weapon in t90m.weapons:
-		if weapon.id == "CW_ATGM_REFLEKS":
+		if weapon.id == "W_RUS_ATGM_REFLEKS":
 			has_refleks = true
 			break
 	assert_true(has_refleks)
@@ -1764,7 +1764,7 @@ func test_russian_vehicle_catalog_integration() -> void:
 	_current_test = "bmp3_has_bastion"
 	var has_bastion := false
 	for weapon in bmp3.weapons:
-		if weapon.id == "CW_ATGM_BASTION":
+		if weapon.id == "W_RUS_ATGM_BASTION":
 			has_bastion = true
 			break
 	assert_true(has_bastion)
@@ -1780,7 +1780,7 @@ func test_russian_vehicle_catalog_integration() -> void:
 	)
 	var has_konkurs := false
 	for weapon in bmp2.weapons:
-		if weapon.id == "CW_ATGM_KONKURS":
+		if weapon.id == "W_RUS_ATGM_KONKURS":
 			has_konkurs = true
 			break
 	assert_true(has_konkurs)
@@ -1892,56 +1892,56 @@ func test_chinese_army_weapons() -> void:
 
 	# Test: HJ-10 exists
 	_current_test = "chn_hj10_exists"
-	assert_true("CW_ATGM_HJ10" in all_weapons)
+	assert_true("W_CHN_ATGM_HJ10" in all_weapons)
 	_pass()
 
 	# Test: HJ-10 penetration (1400mm = 280)
 	_current_test = "chn_hj10_penetration"
-	var hj10: RefCounted = all_weapons["CW_ATGM_HJ10"]
+	var hj10: RefCounted = all_weapons["W_CHN_ATGM_HJ10"]
 	assert_eq(hj10.pen_ce[WeaponDataClass.RangeBand.MID], 280)
 	_pass()
 
 	# Test: HJ-9 exists
 	_current_test = "chn_hj9_exists"
-	assert_true("CW_ATGM_HJ9" in all_weapons)
+	assert_true("W_CHN_ATGM_HJ9" in all_weapons)
 	_pass()
 
 	# Test: HJ-9 penetration (1200mm = 240)
 	_current_test = "chn_hj9_penetration"
-	var hj9: RefCounted = all_weapons["CW_ATGM_HJ9"]
+	var hj9: RefCounted = all_weapons["W_CHN_ATGM_HJ9"]
 	assert_eq(hj9.pen_ce[WeaponDataClass.RangeBand.MID], 240)
 	_pass()
 
 	# Test: HJ-8E exists
 	_current_test = "chn_hj8e_exists"
-	assert_true("CW_ATGM_HJ8E" in all_weapons)
+	assert_true("W_CHN_ATGM_HJ8E" in all_weapons)
 	_pass()
 
 	# Test: HJ-8E penetration (1000mm = 200)
 	_current_test = "chn_hj8e_penetration"
-	var hj8e: RefCounted = all_weapons["CW_ATGM_HJ8E"]
+	var hj8e: RefCounted = all_weapons["W_CHN_ATGM_HJ8E"]
 	assert_eq(hj8e.pen_ce[WeaponDataClass.RangeBand.MID], 200)
 	_pass()
 
 	# Test: HJ-73 exists
 	_current_test = "chn_hj73_exists"
-	assert_true("CW_ATGM_HJ73" in all_weapons)
+	assert_true("W_CHN_ATGM_HJ73" in all_weapons)
 	_pass()
 
 	# Test: HJ-73 penetration (425mm = 85)
 	_current_test = "chn_hj73_penetration"
-	var hj73: RefCounted = all_weapons["CW_ATGM_HJ73"]
+	var hj73: RefCounted = all_weapons["W_CHN_ATGM_HJ73"]
 	assert_eq(hj73.pen_ce[WeaponDataClass.RangeBand.MID], 85)
 	_pass()
 
 	# Test: GP105 exists
 	_current_test = "chn_gp105_exists"
-	assert_true("CW_ATGM_GP105" in all_weapons)
+	assert_true("W_CHN_ATGM_GP105" in all_weapons)
 	_pass()
 
 	# Test: GP105 penetration (700mm = 140)
 	_current_test = "chn_gp105_penetration"
-	var gp105: RefCounted = all_weapons["CW_ATGM_GP105"]
+	var gp105: RefCounted = all_weapons["W_CHN_ATGM_GP105"]
 	assert_eq(gp105.pen_ce[WeaponDataClass.RangeBand.MID], 140)
 	_pass()
 
@@ -1982,7 +1982,7 @@ func test_chinese_army_weapons() -> void:
 
 	# Test: HJ-10 vs Kornet (HJ-10 higher)
 	_current_test = "chn_hj10_vs_kornet"
-	var kornet: RefCounted = all_weapons["CW_ATGM_KORNET"]
+	var kornet: RefCounted = all_weapons["W_RUS_ATGM_KORNET"]
 	assert_gt(hj10.pen_ce[WeaponDataClass.RangeBand.MID], kornet.pen_ce[WeaponDataClass.RangeBand.MID])
 	_pass()
 
@@ -1997,11 +1997,11 @@ func test_chinese_army_weapons() -> void:
 		"CW_AUTOCANNON_30_CHN",
 		"CW_AUTOCANNON_35_CHN",
 		"CW_AUTOCANNON_100_CHN",
-		"CW_ATGM_HJ10",
-		"CW_ATGM_HJ9",
-		"CW_ATGM_HJ8E",
-		"CW_ATGM_HJ73",
-		"CW_ATGM_GP105",
+		"W_CHN_ATGM_HJ10",
+		"W_CHN_ATGM_HJ9",
+		"W_CHN_ATGM_HJ8E",
+		"W_CHN_ATGM_HJ73",
+		"W_CHN_ATGM_GP105",
 		"CW_QJZ89_AA",
 		"CW_TYPE86_COAX",
 	]
@@ -2101,7 +2101,7 @@ func test_chinese_vehicle_catalog_integration() -> void:
 	_current_test = "type15_has_gp105"
 	var has_gp105 := false
 	for weapon in type15.weapons:
-		if weapon.id == "CW_ATGM_GP105":
+		if weapon.id == "W_CHN_ATGM_GP105":
 			has_gp105 = true
 			break
 	assert_true(has_gp105)
@@ -2123,7 +2123,7 @@ func test_chinese_vehicle_catalog_integration() -> void:
 	_current_test = "zbd04a_has_hj8e"
 	var has_hj8e := false
 	for weapon in zbd04a.weapons:
-		if weapon.id == "CW_ATGM_HJ8E":
+		if weapon.id == "W_CHN_ATGM_HJ8E":
 			has_hj8e = true
 			break
 	assert_true(has_hj8e)
@@ -2151,7 +2151,7 @@ func test_chinese_vehicle_catalog_integration() -> void:
 	)
 	var has_hj73 := false
 	for weapon in zbd09.weapons:
-		if weapon.id == "CW_ATGM_HJ73":
+		if weapon.id == "W_CHN_ATGM_HJ73":
 			has_hj73 = true
 			break
 	assert_true(has_hj73)
@@ -2185,7 +2185,7 @@ func test_chinese_vehicle_catalog_integration() -> void:
 	_current_test = "ztl11_has_gp105"
 	var has_gp105_ztl11 := false
 	for weapon in ztl11.weapons:
-		if weapon.id == "CW_ATGM_GP105":
+		if weapon.id == "W_CHN_ATGM_GP105":
 			has_gp105_ztl11 = true
 			break
 	assert_true(has_gp105_ztl11)
@@ -3089,7 +3089,7 @@ func test_weapon_selection_algorithm() -> void:
 	ifv_shooter.primary_weapon = autocannon
 
 	selected = combat_system.select_best_weapon(ifv_shooter, mbt, 2000.0, false)
-	assert_eq(selected.id, "CW_ATGM")  # ATGMが選択される
+	assert_eq(selected.id, "W_GEN_ATGM_STD")  # ATGMが選択される
 	_pass()
 
 	# ========================================
@@ -3149,7 +3149,7 @@ func test_weapon_selection_algorithm() -> void:
 	_current_test = "ifv_vs_ifv_long_range_atgm"
 	selected = combat_system.select_best_weapon(ifv_shooter, enemy_ifv, 2000.0, false)
 	# 遠距離ではATGMが機関砲より有利
-	assert_eq(selected.id, "CW_ATGM")
+	assert_eq(selected.id, "W_GEN_ATGM_STD")
 	_pass()
 
 	# IFV vs 歩兵 - 同軸MG射程外では機関砲

@@ -221,12 +221,19 @@ func clear_progress(element_id: String) -> void:
 
 ## 補給ユニットを登録
 func register_supply_unit(element: ElementData.ElementInstance, supply_config: Dictionary) -> void:
+	# ElementInstanceのsupply_remainingを使用（unit_count込みの初期容量）
+	# supply_remainingが0の場合は、供給設定のcapacityを使用（後方互換性）
+	var initial_remaining: int = element.supply_remaining
+	if initial_remaining <= 0:
+		initial_remaining = supply_config.get("capacity", 100)
+		element.supply_remaining = initial_remaining
+
 	_supply_units[element.id] = {
 		"element": element,
-		"capacity": supply_config.get("capacity", 100),
+		"capacity": initial_remaining,  # 最大容量（unit_count込み）
 		"supply_range_m": supply_config.get("supply_range_m", DEFAULT_SUPPLY_RANGE_M),
 		"ammo_resupply_rate": supply_config.get("ammo_resupply_rate", 1.0),
-		"remaining_capacity": supply_config.get("capacity", 100)
+		"remaining_capacity": initial_remaining  # 残容量（参照用、実際はelement.supply_remainingを使用）
 	}
 
 
@@ -248,8 +255,11 @@ func process_supply_unit_resupply(elements: Array, current_tick: int) -> Array[D
 		if supply_unit.is_destroyed or supply_unit.is_moving:
 			continue
 
+		# ElementInstanceのsupply_remainingを使用（常に最新の状態を参照）
+		supply_data["remaining_capacity"] = supply_unit.supply_remaining
+
 		# 補給容量が残っているかチェック
-		if supply_data["remaining_capacity"] <= 0:
+		if supply_unit.supply_remaining <= 0:
 			continue
 
 		var supply_range: float = supply_data["supply_range_m"]
@@ -292,6 +302,7 @@ func _resupply_from_supply_unit(
 ) -> Dictionary:
 	var resupplied := false
 	var ammo_added := 0
+	var supply_unit: ElementData.ElementInstance = supply_data["element"]
 
 	# 主砲の補給
 	if element.ammo_state.main_gun:
@@ -320,12 +331,17 @@ func _resupply_from_supply_unit(
 		if added > 0:
 			resupplied = true
 
+	# 補給ユニットのElementInstance.supply_remainingを同期
+	if ammo_added > 0:
+		supply_unit.supply_remaining = supply_data["remaining_capacity"]
+
 	if resupplied:
 		return {
 			"type": "RESUPPLY_FROM_UNIT",
 			"target_id": element.id,
-			"supply_unit_id": supply_data["element"].id,
-			"ammo_added": ammo_added
+			"supply_unit_id": supply_unit.id,
+			"ammo_added": ammo_added,
+			"remaining_capacity": supply_data["remaining_capacity"]
 		}
 
 	return {}
@@ -387,7 +403,11 @@ func _resupply_weapon_from_unit(
 ## 補給ユニットの情報を取得
 func get_supply_unit_info(element_id: String) -> Dictionary:
 	if element_id in _supply_units:
-		return _supply_units[element_id].duplicate()
+		var info: Dictionary = _supply_units[element_id].duplicate()
+		# ElementInstanceのsupply_remainingを最新値として使用
+		var supply_unit: ElementData.ElementInstance = _supply_units[element_id]["element"]
+		info["remaining_capacity"] = supply_unit.supply_remaining
+		return info
 	return {}
 
 

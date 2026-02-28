@@ -46,6 +46,13 @@ var _vehicle_label: Label
 var _weapons_label: Label
 var _ammo_label: Label  # 残弾数表示
 
+# 補給ユニット情報
+var _supply_section: VBoxContainer
+var _supply_remaining_bar: ProgressBar
+var _supply_remaining_label: Label
+var _supply_range_label: Label
+var _supply_rate_label: Label
+
 # AI思考情報
 var _ai_section: VBoxContainer
 var _ai_template_label: Label
@@ -290,6 +297,40 @@ func _setup_layout() -> void:
 
 	_vbox.add_child(_equipment_section)
 
+	# 補給ユニット情報セクション
+	_supply_section = VBoxContainer.new()
+	_supply_section.add_theme_constant_override("separation", 4)
+	_supply_section.visible = false  # デフォルトは非表示（補給ユニット選択時のみ表示）
+
+	var supply_header := Label.new()
+	supply_header.text = "SUPPLY STATUS"
+	supply_header.add_theme_font_size_override("font_size", 12)
+	supply_header.add_theme_color_override("font_color", Color(0.4, 0.8, 0.9))
+	supply_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_supply_section.add_child(supply_header)
+
+	# 残量バー
+	var supply_bar_section := _create_supply_bar("REMAINING", Color(0.3, 0.7, 0.9))
+	_supply_remaining_bar = supply_bar_section.get_node("Bar") as ProgressBar
+	_supply_remaining_label = supply_bar_section.get_node("Value") as Label
+	_supply_section.add_child(supply_bar_section)
+
+	# 補給範囲
+	_supply_range_label = Label.new()
+	_supply_range_label.text = "Range: ---"
+	_supply_range_label.add_theme_font_size_override("font_size", 11)
+	_supply_range_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+	_supply_section.add_child(_supply_range_label)
+
+	# 補給レート
+	_supply_rate_label = Label.new()
+	_supply_rate_label.text = "Rate: ---"
+	_supply_rate_label.add_theme_font_size_override("font_size", 11)
+	_supply_rate_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+	_supply_section.add_child(_supply_rate_label)
+
+	_vbox.add_child(_supply_section)
+
 	# セパレータ
 	var sep4 := HSeparator.new()
 	_vbox.add_child(sep4)
@@ -468,6 +509,49 @@ func _create_subsystem_bar(label_text: String, bar_color: Color) -> HBoxContaine
 	return container
 
 
+## 補給ユニット用のバーを作成
+func _create_supply_bar(label_text: String, bar_color: Color) -> HBoxContainer:
+	var container := HBoxContainer.new()
+	container.add_theme_constant_override("separation", 4)
+
+	# ラベル
+	var label := Label.new()
+	label.text = label_text
+	label.custom_minimum_size.x = 70
+	label.add_theme_font_size_override("font_size", 10)
+	label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+	container.add_child(label)
+
+	# プログレスバー
+	var bar := ProgressBar.new()
+	bar.name = "Bar"
+	bar.custom_minimum_size = Vector2(80, 14)
+	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar.value = 100
+	bar.show_percentage = false
+
+	var bg_style := StyleBoxFlat.new()
+	bg_style.bg_color = Color(0.15, 0.15, 0.15)
+	bar.add_theme_stylebox_override("background", bg_style)
+
+	var fill_style := StyleBoxFlat.new()
+	fill_style.bg_color = bar_color
+	bar.add_theme_stylebox_override("fill", fill_style)
+
+	container.add_child(bar)
+
+	# 値ラベル
+	var value_label := Label.new()
+	value_label.name = "Value"
+	value_label.text = "100%"
+	value_label.custom_minimum_size.x = 40
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	value_label.add_theme_font_size_override("font_size", 10)
+	container.add_child(value_label)
+
+	return container
+
+
 func _setup_style() -> void:
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.1, 0.12, 0.15, 0.85)
@@ -515,6 +599,7 @@ func _show_empty() -> void:
 	_comm_state_label.remove_theme_color_override("font_color")
 	_position_label.text = "---"
 	_clear_equipment_info()
+	_clear_supply_info()
 	_clear_ai_info()
 
 
@@ -565,6 +650,9 @@ func _show_single(element: ElementData.ElementInstance) -> void:
 	# 装備情報を更新
 	_update_equipment_info(element)
 
+	# 補給ユニット情報を更新
+	_update_supply_info(element)
+
 	# AI情報を更新
 	_update_ai_info(element)
 
@@ -607,6 +695,9 @@ func _show_multiple() -> void:
 
 	# 装備情報（複数選択時はクリア）
 	_clear_equipment_info()
+
+	# 補給情報（複数選択時はクリア）
+	_clear_supply_info()
 
 	# 複数選択時はAI全体情報のみ表示
 	if _company_ai:
@@ -839,6 +930,19 @@ func _update_equipment_info(element: ElementData.ElementInstance) -> void:
 	_update_ammo_display(element)
 
 
+## ユニットが主砲/機関砲を持っているかチェック
+func _element_has_gun_weapon(element: ElementData.ElementInstance) -> bool:
+	for weapon in element.weapons:
+		# 戦車砲、機関砲、小銃系をチェック
+		if weapon.id.contains("TANK") or weapon.id.contains("AUTOCANNON"):
+			return true
+		if weapon.id.contains("30MM") or weapon.id.contains("35MM") or weapon.id.contains("40MM"):
+			return true
+		if weapon.id.contains("120MM") or weapon.id.contains("105MM") or weapon.id.contains("125MM"):
+			return true
+	return false
+
+
 ## 残弾数を表示
 func _update_ammo_display(element: ElementData.ElementInstance) -> void:
 	if not element.ammo_state:
@@ -849,18 +953,28 @@ func _update_ammo_display(element: ElementData.ElementInstance) -> void:
 	var ammo_lines: Array[String] = []
 	var ammo_state = element.ammo_state
 
-	# 主砲
-	if ammo_state.main_gun:
-		var gun_state = ammo_state.main_gun
-		var total: int = gun_state.get_total_remaining()
-		var max_total: int = gun_state.get_max_total()
-		var status := ""
-		if gun_state.is_reloading:
-			status = " [RELOAD]"
-		ammo_lines.append("  Gun: %d/%d%s" % [total, max_total, status])
+	# ユニットが実際に主砲/機関砲を持っているかチェック
+	var has_gun := _element_has_gun_weapon(element)
 
-	# ATGM
-	if ammo_state.atgm:
+	# 主砲（弾薬容量があり、実際に主砲武器を持っている場合のみ表示）
+	if has_gun and ammo_state.main_gun and ammo_state.main_gun.get_max_total() > 0:
+		var gun_state = ammo_state.main_gun
+		var slot = gun_state.get_current_slot()
+		if slot:
+			var ready_count: int = slot.count_ready
+			var stowed_count: int = slot.count_stowed
+			var max_ready: int = slot.max_ready
+			var max_stowed: int = slot.max_stowed
+			var status := ""
+			if gun_state.is_reloading:
+				var progress: int = gun_state.reload_progress_ticks
+				var duration: int = gun_state.reload_duration_ticks
+				status = " [RELOAD %d%%]" % int(float(progress) / float(duration) * 100.0)
+			# 即発弾+予備弾の形式で表示 (例: Gun: 13+22/14+22)
+			ammo_lines.append("  Gun: %d+%d/%d+%d%s" % [ready_count, stowed_count, max_ready, max_stowed, status])
+
+	# ATGM（弾薬容量がある場合のみ表示）
+	if ammo_state.atgm and ammo_state.atgm.get_max_total() > 0:
 		var atgm_state = ammo_state.atgm
 		var slot = atgm_state.get_current_slot()
 		if slot:
@@ -871,13 +985,14 @@ func _update_ammo_display(element: ElementData.ElementInstance) -> void:
 				status = " [RELOAD]"
 			ammo_lines.append("  ATGM: %d+%d%s" % [ready_count, stowed_count, status])
 
-	# 副武装（機関砲など重要なもののみ）
+	# 副武装（機関砲など重要なもののみ、弾薬容量がある場合のみ表示）
 	for sec in ammo_state.secondary:
 		if sec.weapon_id.contains("AUTOCANNON") or sec.weapon_id.contains("30") or sec.weapon_id.contains("35"):
-			var sec_total: int = sec.get_total_remaining()
 			var sec_max: int = sec.get_max_total()
-			ammo_lines.append("  AC: %d/%d" % [sec_total, sec_max])
-			break  # 最初の機関砲のみ
+			if sec_max > 0:
+				var sec_total: int = sec.get_total_remaining()
+				ammo_lines.append("  AC: %d/%d" % [sec_total, sec_max])
+				break  # 最初の機関砲のみ
 
 	if ammo_lines.size() > 0:
 		_ammo_label.text = "Ammo:\n" + "\n".join(ammo_lines)
@@ -899,6 +1014,66 @@ func _clear_equipment_info() -> void:
 	_vehicle_label.text = "Vehicle: ---"
 	_weapons_label.text = "Weapons: ---"
 	_ammo_label.text = "Ammo: ---"
+
+
+## 補給ユニット情報を更新
+func _update_supply_info(element: ElementData.ElementInstance) -> void:
+	# 補給ユニットかどうかを判定（supply_configが設定されているか）
+	if element.supply_config.size() == 0:
+		_supply_section.visible = false
+		return
+
+	_supply_section.visible = true
+
+	# 残量計算
+	var capacity: int = element.supply_config.get("capacity", 0)
+	var remaining: int = element.supply_remaining
+
+	# unit_countを考慮した最大容量
+	var catalog = ElementFactory.get_vehicle_catalog()
+	var max_capacity: int = capacity
+	if catalog and element.vehicle_id != "":
+		var vehicle_config = catalog.get_vehicle(element.vehicle_id)
+		if vehicle_config:
+			max_capacity = capacity * vehicle_config.unit_count
+
+	# 残量バー更新
+	var ratio: float = float(remaining) / float(max_capacity) if max_capacity > 0 else 0.0
+	_supply_remaining_bar.value = ratio * 100.0
+	_supply_remaining_label.text = "%d/%d" % [remaining, max_capacity]
+
+	# 残量に応じてバーの色を変更
+	_update_supply_bar_color(_supply_remaining_bar, ratio)
+
+	# 補給範囲
+	var supply_range: float = element.supply_config.get("supply_range_m", 100.0)
+	_supply_range_label.text = "Range: %.0fm" % supply_range
+
+	# 補給レート
+	var ammo_rate: float = element.supply_config.get("ammo_resupply_rate", 1.0)
+	_supply_rate_label.text = "Rate: x%.1f" % ammo_rate
+
+
+## 補給バーの色を残量比に応じて変更
+func _update_supply_bar_color(bar: ProgressBar, ratio: float) -> void:
+	var fill_style := bar.get_theme_stylebox("fill") as StyleBoxFlat
+	if not fill_style:
+		return
+
+	if ratio >= 0.5:
+		# 青緑（十分）
+		fill_style.bg_color = Color(0.3, 0.7, 0.9)
+	elif ratio >= 0.25:
+		# 黄（警告）
+		fill_style.bg_color = Color(0.9, 0.8, 0.2)
+	else:
+		# 赤（危険）
+		fill_style.bg_color = Color(0.9, 0.3, 0.2)
+
+
+## 補給ユニット情報をクリア
+func _clear_supply_info() -> void:
+	_supply_section.visible = false
 
 
 ## データリンク状態を表示（単一ユニット）

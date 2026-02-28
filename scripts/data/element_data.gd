@@ -192,6 +192,7 @@ class ElementInstance:
 
 	## 補給ユニット設定（LOG_TRUCK用）
 	var supply_config: Dictionary = {}  ## {capacity, supply_range_m, ammo_resupply_rate, fuel_resupply_rate}
+	var supply_remaining: int = 0       ## 残り補給容量（補給実行で減少）
 
 	## 搭乗・輸送関連
 	var embarked_infantry_id: String = ""  ## 搭乗中の歩兵ユニットID（IFV/APC用）

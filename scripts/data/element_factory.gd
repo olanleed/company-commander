@@ -232,12 +232,11 @@ static func _init_ammo_state(element: ElementData.ElementInstance, vehicle_confi
 	if vehicle_config.atgm.size() > 0:
 		catalog_data["atgm"] = vehicle_config.atgm
 
-	# 防護情報（誘爆脆弱性計算用）
-	if vehicle_config.protection.size() > 0:
-		catalog_data["protection"] = vehicle_config.protection
-
-	# 弾薬データがある場合のみAmmoStateを作成
-	if catalog_data.size() > 0:
+	# 弾薬がある場合のみAmmoStateを作成（主砲またはATGMがある場合）
+	if catalog_data.has("main_gun") or catalog_data.has("atgm"):
+		# 防護情報（誘爆脆弱性計算用）
+		if vehicle_config.protection.size() > 0:
+			catalog_data["protection"] = vehicle_config.protection
 		element.ammo_state = AmmoStateClass.create_from_catalog(catalog_data)
 
 
@@ -246,6 +245,10 @@ static func _init_supply_config(element: ElementData.ElementInstance, vehicle_co
 	# 補給設定がある場合のみ適用
 	if vehicle_config.supply.size() > 0:
 		element.supply_config = vehicle_config.supply.duplicate()
+		# 残り補給容量を初期化（unit_countで乗算）
+		var base_capacity: int = element.supply_config.get("capacity", 0)
+		var unit_count: int = vehicle_config.unit_count
+		element.supply_remaining = base_capacity * unit_count
 
 
 ## WeaponTypeをコピー（独立したインスタンスを作成）
