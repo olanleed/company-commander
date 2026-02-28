@@ -62,6 +62,9 @@ class VehicleConfig:
 	var artillery_deploy_time_sec: float = 30.0   ## 展開にかかる時間（秒）
 	var artillery_pack_time_sec: float = 45.0     ## 撤収にかかる時間（秒）
 
+	## 補給設定（LOG_TRUCKのみ有効）
+	var supply: Dictionary = {}
+
 	var notes: String = ""
 
 
@@ -201,6 +204,10 @@ func _parse_vehicle_config(data: Dictionary, nation: String) -> VehicleConfig:
 	else:
 		config.artillery_pack_time_sec = _get_default_pack_time(config.base_archetype, config.mobility_class)
 
+	# 補給設定（LOG_TRUCKアーキタイプ用）
+	if data.has("supply"):
+		config.supply = data.supply.duplicate()
+
 	return config
 
 
@@ -286,6 +293,22 @@ func get_all_vehicles() -> Array:
 ## カタログがロード済みか
 func is_loaded() -> bool:
 	return _all_vehicles.size() > 0
+
+
+## 車両の補給設定を取得（LOG_TRUCK用）
+func get_supply_config(vehicle_id: String) -> Dictionary:
+	var config := get_vehicle(vehicle_id)
+	if config and config.supply.size() > 0:
+		return config.supply.duplicate()
+	return {}
+
+
+## 補給ユニットかどうかを判定
+func is_supply_unit(vehicle_id: String) -> bool:
+	var config := get_vehicle(vehicle_id)
+	if config:
+		return config.base_archetype == "LOG_TRUCK" or config.supply.size() > 0
+	return false
 
 # =============================================================================
 # ElementType へのmodifier適用

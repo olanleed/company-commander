@@ -165,6 +165,9 @@ class ElementInstance:
 	## 仕様: docs/ammunition_system_v0.1.md
 	var ammo_state = null  ## AmmoState型（循環参照回避のため型指定なし）
 
+	## 補給ユニット設定（LOG_TRUCK用）
+	var supply_config: Dictionary = {}  ## {capacity, supply_range_m, ammo_resupply_rate, fuel_resupply_rate}
+
 	## 搭乗・輸送関連
 	var embarked_infantry_id: String = ""  ## 搭乗中の歩兵ユニットID（IFV/APC用）
 	var transport_vehicle_id: String = ""  ## 乗車中の車両ID（歩兵用）

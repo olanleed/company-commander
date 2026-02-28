@@ -173,6 +173,9 @@ static func create_element_with_vehicle(
 	# 弾薬状態を初期化（車両カタログから）
 	_init_ammo_state(element, vehicle_config)
 
+	# 補給設定を初期化（LOG_TRUCK用）
+	_init_supply_config(element, vehicle_config)
+
 	return element
 
 
@@ -235,6 +238,13 @@ static func _init_ammo_state(element: ElementData.ElementInstance, vehicle_confi
 	# 弾薬データがある場合のみAmmoStateを作成
 	if catalog_data.size() > 0:
 		element.ammo_state = AmmoStateClass.create_from_catalog(catalog_data)
+
+
+## 補給設定を初期化（LOG_TRUCK用）
+static func _init_supply_config(element: ElementData.ElementInstance, vehicle_config) -> void:
+	# 補給設定がある場合のみ適用
+	if vehicle_config.supply.size() > 0:
+		element.supply_config = vehicle_config.supply.duplicate()
 
 
 ## WeaponTypeをコピー（独立したインスタンスを作成）

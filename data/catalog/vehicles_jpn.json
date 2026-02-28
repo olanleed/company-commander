@@ -874,7 +874,124 @@
         "engine_hp": 170,
         "max_speed_kmh": 115
       },
-      "notes": "高機動車ベース4連装発射機、IIR+SALH複合誘導、トップアタック能力、射程5km+"
+      "notes": "高機動車ベース6連装発射機、IIR+SALH複合誘導、トップアタック能力、射程5km+"
+    },
+    {
+      "id": "JPN_Type73_MediumTruck",
+      "display_name": "73式中型トラック",
+      "display_name_en": "Type 73 Medium Truck",
+      "base_archetype": "LOG_TRUCK",
+      "mobility_class": "WHEELED",
+      "era": "1970s",
+      "unit_count": 2,
+      "modifiers": {
+        "armor_ke_front": 0.00,
+        "armor_ke_side": 0.00,
+        "armor_ke_rear": 0.00,
+        "armor_ce_front": 0.00,
+        "armor_ce_side": 0.00,
+        "armor_ce_rear": 0.00,
+        "spot_range": 0.80,
+        "spot_range_moving": 0.70,
+        "road_speed": 1.10,
+        "cross_speed": 0.70
+      },
+      "supply": {
+        "capacity": 60,
+        "supply_range_m": 150.0,
+        "ammo_resupply_rate": 0.8,
+        "fuel_resupply_rate": 1.0
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 3.5,
+        "crew": 2,
+        "payload_kg": 2500,
+        "engine_hp": 125,
+        "max_speed_kmh": 95
+      },
+      "notes": "いすゞ製2.5tトラック、普通科・後方支援向け、順次3 1/2tに更新中"
+    },
+    {
+      "id": "JPN_Type73_LargeTruck",
+      "display_name": "73式大型トラック",
+      "display_name_en": "Type 73 Large Truck",
+      "base_archetype": "LOG_TRUCK",
+      "mobility_class": "WHEELED",
+      "era": "1970s",
+      "unit_count": 2,
+      "modifiers": {
+        "armor_ke_front": 0.00,
+        "armor_ke_side": 0.00,
+        "armor_ke_rear": 0.00,
+        "armor_ce_front": 0.00,
+        "armor_ce_side": 0.00,
+        "armor_ce_rear": 0.00,
+        "spot_range": 0.75,
+        "spot_range_moving": 0.65,
+        "road_speed": 1.00,
+        "cross_speed": 0.65
+      },
+      "supply": {
+        "capacity": 100,
+        "supply_range_m": 150.0,
+        "ammo_resupply_rate": 1.0,
+        "fuel_resupply_rate": 1.0
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 6.0,
+        "crew": 2,
+        "payload_kg": 6000,
+        "engine_hp": 220,
+        "max_speed_kmh": 90
+      },
+      "notes": "いすゞ製6tトラック、弾薬・物資輸送の主力、6輪駆動"
+    },
+    {
+      "id": "JPN_Type74_ExtraLargeTruck",
+      "display_name": "74式特大型トラック",
+      "display_name_en": "Type 74 Extra Large Truck",
+      "base_archetype": "LOG_TRUCK",
+      "mobility_class": "WHEELED",
+      "era": "1970s",
+      "unit_count": 1,
+      "modifiers": {
+        "armor_ke_front": 0.00,
+        "armor_ke_side": 0.00,
+        "armor_ke_rear": 0.00,
+        "armor_ce_front": 0.00,
+        "armor_ce_side": 0.00,
+        "armor_ce_rear": 0.00,
+        "spot_range": 0.70,
+        "spot_range_moving": 0.60,
+        "road_speed": 0.90,
+        "cross_speed": 0.55
+      },
+      "supply": {
+        "capacity": 150,
+        "supply_range_m": 150.0,
+        "ammo_resupply_rate": 1.2,
+        "fuel_resupply_rate": 1.5
+      },
+      "protection": {
+        "era_equipped": false,
+        "aps_equipped": false
+      },
+      "specs": {
+        "weight_tons": 12.0,
+        "crew": 2,
+        "payload_kg": 11000,
+        "engine_hp": 360,
+        "max_speed_kmh": 85
+      },
+      "notes": "三菱ふそう製11tトラック、重装備・大量物資輸送、セミトレーラー牽引可能"
     }
   ]
 }

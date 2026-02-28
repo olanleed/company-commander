@@ -322,6 +322,26 @@ func _spawn_test_units() -> void:
 	blue_mmpm.sop_mode = GameEnums.SOPMode.HOLD_FIRE
 	world_model.add_element(blue_mmpm)
 
+	# --- 補給トラック ---
+
+	# 73式中型トラック (2.5t、補給容量60)
+	var blue_truck_medium := ElementFactory.create_element_with_vehicle("JPN_Type73_MediumTruck", GameEnums.Faction.BLUE, Vector2(50, 500))
+	world_model.add_element(blue_truck_medium)
+	if blue_truck_medium.supply_config.size() > 0:
+		resupply_system.register_supply_unit(blue_truck_medium, blue_truck_medium.supply_config)
+
+	# 73式大型トラック (6t、補給容量100)
+	var blue_truck_large := ElementFactory.create_element_with_vehicle("JPN_Type73_LargeTruck", GameEnums.Faction.BLUE, Vector2(50, 600))
+	world_model.add_element(blue_truck_large)
+	if blue_truck_large.supply_config.size() > 0:
+		resupply_system.register_supply_unit(blue_truck_large, blue_truck_large.supply_config)
+
+	# 74式特大型トラック (11t、補給容量150)
+	var blue_truck_xl := ElementFactory.create_element_with_vehicle("JPN_Type74_ExtraLargeTruck", GameEnums.Faction.BLUE, Vector2(50, 700))
+	world_model.add_element(blue_truck_xl)
+	if blue_truck_xl.supply_config.size() > 0:
+		resupply_system.register_supply_unit(blue_truck_xl, blue_truck_xl.supply_config)
+
 	# ==========================================================================
 	# RED陣営 - 戦車×3
 	# ==========================================================================
@@ -361,6 +381,10 @@ func _spawn_test_units() -> void:
 	print("    89式IFV (79式重MAT)")
 	print("    歩兵ATチーム (01式LMAT)")
 	print("    MMPM搭載高機動車 (中距離多目的誘導弾)")
+	print("  [補給トラック]")
+	print("    73式中型トラック (容量60)")
+	print("    73式大型トラック (容量100)")
+	print("    74式特大型トラック (容量150)")
 	print("")
 	print("=== RED陣営 (戦車×3) ===")
 	print("    T-90M × 3")
@@ -805,9 +829,12 @@ func _on_tick_advanced(tick: int) -> void:
 	# 弾薬装填更新
 	_update_ammo_reload()
 
-	# 弾薬補給更新（サプライユニット未実装のため無効化）
-	#if resupply_system:
-	#	resupply_system.update(world_model.elements, tick)
+	# 弾薬補給更新
+	if resupply_system:
+		# 時間経過による自動補給（80%まで）
+		resupply_system.update(world_model.elements, tick)
+		# 補給ユニットからの直接補給（100%まで）
+		resupply_system.process_supply_unit_resupply(world_model.elements, tick)
 
 	# 戦闘更新
 	_update_combat(tick, GameConstants.SIM_DT)

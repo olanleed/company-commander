@@ -223,6 +223,9 @@ func _draw() -> void:
 	# 選択時のハイライト（円なので回転の影響を受けない）
 	if _is_selected:
 		draw_arc(Vector2.ZERO, 40, 0, TAU, 32, Color.YELLOW, 3.0)
+		# 補給ユニットの場合、補給範囲を表示
+		if element.supply_config.size() > 0:
+			_draw_supply_range()
 
 	# 移動パス表示 (選択時、味方のみ)
 	if _is_selected and _is_friendly and element.current_path.size() > 0:
@@ -448,6 +451,35 @@ func _draw_facing_indicator() -> void:
 	draw_line(tip, base_left, outline_color, 1.5)
 	draw_line(base_left, base_right, outline_color, 1.5)
 	draw_line(base_right, tip, outline_color, 1.5)
+
+	# 変換をリセット
+	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+
+
+## 補給範囲の描画（補給ユニット選択時）
+func _draw_supply_range() -> void:
+	if element.supply_config.size() == 0:
+		return
+
+	var supply_range: float = element.supply_config.get("supply_range_m", 100.0)
+
+	# 回転を打ち消して描画（範囲円は常に正円）
+	draw_set_transform(Vector2.ZERO, -rotation, Vector2.ONE)
+
+	# 補給範囲円（緑色、半透明）
+	var range_color := Color(0.3, 0.8, 0.3, 0.15)
+	var border_color := Color(0.3, 0.8, 0.3, 0.5)
+
+	# 塗りつぶし円
+	draw_circle(Vector2.ZERO, supply_range, range_color)
+
+	# 破線風の境界線
+	var segments := 32
+	var dash_ratio := 0.7  # 線の割合
+	for i in range(segments):
+		var start_angle: float = (float(i) / segments) * TAU
+		var end_angle: float = start_angle + (TAU / segments) * dash_ratio
+		draw_arc(Vector2.ZERO, supply_range, start_angle, end_angle, 8, border_color, 2.0)
 
 	# 変換をリセット
 	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
