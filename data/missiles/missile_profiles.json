@@ -1,8 +1,8 @@
 [
 	{
-		"id": "MSL_JAVELIN",
+		"id": "M_USA_JAVELIN",
 		"display_name": "FGM-148 Javelin",
-		"weapon_id": "CW_ATGM_JAVELIN",
+		"weapon_id": "W_USA_ATGM_JAVELIN",
 		"guidance": {
 			"type": "IIR_HOMING",
 			"lock_mode": "LOBL",
@@ -41,9 +41,9 @@
 		}
 	},
 	{
-		"id": "MSL_TOW2B",
+		"id": "M_USA_TOW2B",
 		"display_name": "BGM-71 TOW-2B",
-		"weapon_id": "CW_ATGM_TOW2B",
+		"weapon_id": "W_USA_ATGM_TOW2B",
 		"guidance": {
 			"type": "SACLOS_WIRE",
 			"lock_mode": "CONTINUOUS_TRACK",
@@ -82,9 +82,9 @@
 		}
 	},
 	{
-		"id": "MSL_KORNET",
+		"id": "M_RUS_KORNET",
 		"display_name": "9M133 Kornet",
-		"weapon_id": "CW_ATGM_KORNET",
+		"weapon_id": "W_RUS_ATGM_KORNET",
 		"guidance": {
 			"type": "SACLOS_LASER_BEAM",
 			"lock_mode": "CONTINUOUS_TRACK",
@@ -123,9 +123,9 @@
 		}
 	},
 	{
-		"id": "MSL_KONKURS",
+		"id": "M_RUS_KONKURS",
 		"display_name": "9M113 Konkurs",
-		"weapon_id": "CW_ATGM_KONKURS",
+		"weapon_id": "W_RUS_ATGM_KONKURS",
 		"guidance": {
 			"type": "SACLOS_WIRE",
 			"lock_mode": "CONTINUOUS_TRACK",
@@ -164,9 +164,9 @@
 		}
 	},
 	{
-		"id": "MSL_REFLEKS",
+		"id": "M_RUS_REFLEKS",
 		"display_name": "9M119 Refleks",
-		"weapon_id": "CW_ATGM_REFLEKS",
+		"weapon_id": "W_RUS_ATGM_REFLEKS",
 		"guidance": {
 			"type": "SACLOS_LASER_BEAM",
 			"lock_mode": "CONTINUOUS_TRACK",
@@ -205,9 +205,9 @@
 		}
 	},
 	{
-		"id": "MSL_HJ10",
+		"id": "M_CHN_HJ10",
 		"display_name": "HJ-10 Red Arrow",
-		"weapon_id": "CW_ATGM_HJ10",
+		"weapon_id": "W_CHN_ATGM_HJ10",
 		"guidance": {
 			"type": "IIR_HOMING",
 			"lock_mode": "LOBL",
@@ -246,9 +246,9 @@
 		}
 	},
 	{
-		"id": "MSL_HJ9",
+		"id": "M_CHN_HJ9",
 		"display_name": "HJ-9 Red Arrow",
-		"weapon_id": "CW_ATGM_HJ9",
+		"weapon_id": "W_CHN_ATGM_HJ9",
 		"guidance": {
 			"type": "SACLOS_LASER_BEAM",
 			"lock_mode": "CONTINUOUS_TRACK",
@@ -287,9 +287,9 @@
 		}
 	},
 	{
-		"id": "MSL_01LMAT",
+		"id": "M_JPN_01LMAT",
 		"display_name": "01 Shiki LMAT",
-		"weapon_id": "CW_ATGM_01LMAT",
+		"weapon_id": "W_JPN_ATGM_01LMAT",
 		"guidance": {
 			"type": "IIR_HOMING",
 			"lock_mode": "LOBL",
@@ -328,9 +328,9 @@
 		}
 	},
 	{
-		"id": "MSL_79MAT",
+		"id": "M_JPN_79MAT",
 		"display_name": "79 Shiki MAT",
-		"weapon_id": "CW_ATGM_79MAT",
+		"weapon_id": "W_JPN_ATGM_79MAT",
 		"guidance": {
 			"type": "SACLOS_WIRE",
 			"lock_mode": "CONTINUOUS_TRACK",
@@ -369,9 +369,9 @@
 		}
 	},
 	{
-		"id": "MSL_MMPM",
+		"id": "M_JPN_MMPM",
 		"display_name": "MMPM (Chu-MAT)",
-		"weapon_id": "CW_ATGM_MMPM",
+		"weapon_id": "W_JPN_ATGM_MMPM",
 		"guidance": {
 			"type": "IIR_HOMING",
 			"lock_mode": "LOBL",

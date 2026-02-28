@@ -80,30 +80,30 @@ func test_usa_30mm_higher_than_25mm() -> void:
 
 func test_usa_javelin_exists() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	assert_has(weapons, "CW_ATGM_JAVELIN", "FGM-148 Javelin should exist")
+	assert_has(weapons, "W_USA_ATGM_JAVELIN", "FGM-148 Javelin should exist")
 
 
 func test_usa_javelin_penetration() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var weapon = weapons["CW_ATGM_JAVELIN"]
+	var weapon = weapons["W_USA_ATGM_JAVELIN"]
 	# Javelin: 750mm RHA direct hit (top attack 600mm effective) → pen_ce = 150
 	assert_gt(weapon.pen_ce[WeaponDataClass.RangeBand.MID], 100, "Javelin should have significant pen_ce")
 
 
 func test_usa_javelin_is_shaped_charge() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var weapon = weapons["CW_ATGM_JAVELIN"]
+	var weapon = weapons["W_USA_ATGM_JAVELIN"]
 	assert_eq(weapon.mechanism, WeaponDataClass.Mechanism.SHAPED_CHARGE, "Javelin should be SHAPED_CHARGE")
 
 
 func test_usa_tow2b_exists() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	assert_has(weapons, "CW_ATGM_TOW2B", "BGM-71F TOW-2B should exist")
+	assert_has(weapons, "W_USA_ATGM_TOW2B", "BGM-71F TOW-2B should exist")
 
 
 func test_usa_tow2b_is_shaped_charge() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var weapon = weapons["CW_ATGM_TOW2B"]
+	var weapon = weapons["W_USA_ATGM_TOW2B"]
 	assert_eq(weapon.mechanism, WeaponDataClass.Mechanism.SHAPED_CHARGE, "TOW-2B should be SHAPED_CHARGE")
 
 
@@ -188,7 +188,7 @@ func test_m2a4_bradley_has_tow() -> void:
 	catalog.load_all()
 	var vehicle = catalog.get_vehicle("USA_M2A4_Bradley")
 	assert_not_null(vehicle.atgm, "M2A4 Bradley should have ATGM")
-	assert_eq(vehicle.atgm.weapon_id, "CW_ATGM_TOW2B", "M2A4 Bradley should have TOW-2B")
+	assert_eq(vehicle.atgm.weapon_id, "W_USA_ATGM_TOW2B", "M2A4 Bradley should have TOW-2B")
 
 
 func test_stryker_dragoon_exists() -> void:
@@ -202,8 +202,8 @@ func test_stryker_dragoon_main_weapon() -> void:
 	var catalog = VehicleCatalogClass.new()
 	catalog.load_all()
 	var vehicle = catalog.get_vehicle("USA_Stryker_Dragoon")
-	# カタログでは30x173mm（XM813相当）を使用
-	assert_eq(vehicle.main_gun.weapon_id, "CW_AUTOCANNON_30X173_USA", "Stryker Dragoon should use 30x173mm")
+	# カタログでは30x173mm（XM813/MK44 Bushmaster II相当）を使用
+	assert_eq(vehicle.main_gun.weapon_id, "CW_AUTOCANNON_30_USA", "Stryker Dragoon should use 30mm autocannon")
 
 
 func test_m109a7_exists() -> void:
@@ -229,7 +229,7 @@ func test_usa_weapons_count() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
 	var usa_weapons = 0
 	for key in weapons.keys():
-		if key.ends_with("_USA") or key in ["CW_M240_COAX", "CW_M2HB", "CW_ATGM_JAVELIN", "CW_ATGM_TOW2B"]:
+		if key.ends_with("_USA") or key in ["CW_M240_COAX", "CW_M2HB", "W_USA_ATGM_JAVELIN", "W_USA_ATGM_TOW2B"]:
 			usa_weapons += 1
 	# At least 7 US-specific weapons
 	assert_true(usa_weapons >= 7, "Should have at least 7 US-specific weapons")
@@ -248,8 +248,8 @@ func test_m829a4_highest_western_ke() -> void:
 
 func test_javelin_higher_penetration_than_generic_atgm() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var javelin = weapons["CW_ATGM_JAVELIN"]
-	var generic_atgm = weapons["CW_ATGM_TOPATTACK"]
+	var javelin = weapons["W_USA_ATGM_JAVELIN"]
+	var generic_atgm = weapons["W_GEN_ATGM_TOPATTACK"]
 	# Javelin should have good pen_ce
 	var javelin_pen: int = javelin.pen_ce[WeaponDataClass.RangeBand.MID]
 	var generic_pen: int = generic_atgm.pen_ce[WeaponDataClass.RangeBand.MID]

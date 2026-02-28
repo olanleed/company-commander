@@ -39,9 +39,7 @@
 			}
 		},
 		"mechanism": "KINETIC",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 105,
 			"MID": 115,
@@ -66,7 +64,7 @@
 			"NEAR": 50
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "MAIN_GUN_KE"
 	},
 	{
 		"ammo_endurance_min": 12.0,
@@ -108,9 +106,7 @@
 			}
 		},
 		"mechanism": "KINETIC",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 60,
 			"MID": 70,
@@ -135,7 +131,7 @@
 			"NEAR": 45
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "MAIN_GUN_KE"
 	},
 	{
 		"ammo_endurance_min": 10.0,
@@ -177,9 +173,7 @@
 			}
 		},
 		"mechanism": "KINETIC",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 14,
 			"MID": 19,
@@ -204,7 +198,7 @@
 			"NEAR": 90
 		},
 		"threat_class": "AUTOCANNON",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "AUTOCANNON"
 	},
 	{
 		"ammo_endurance_min": 10.0,
@@ -246,9 +240,7 @@
 			}
 		},
 		"mechanism": "KINETIC",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 8,
 			"MID": 11,
@@ -273,7 +265,7 @@
 			"NEAR": 85
 		},
 		"threat_class": "AUTOCANNON",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "AUTOCANNON"
 	},
 	{
 		"ammo_endurance_min": 3.0,
@@ -288,7 +280,7 @@
 		"display_name": "Type 79 Heavy MAT",
 		"fire_model": "DISCRETE",
 		"heavy_he_class": "NONE",
-		"id": "CW_ATGM_79MAT",
+		"id": "W_JPN_ATGM_79MAT",
 		"indirect_params": {
 			"displace_time_sec": 30.0,
 			"requires_observer": false,
@@ -320,9 +312,7 @@
 			"MID": 110,
 			"NEAR": 110
 		},
-		"pen_ke": {
-
-		},
+		"pen_ke": {},
 		"preferred_target": "ARMOR",
 		"projectile": {
 			"size": 6.0,
@@ -342,7 +332,7 @@
 			"NEAR": 55
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "ATGM"
 	},
 	{
 		"ammo_endurance_min": 2.0,
@@ -357,7 +347,7 @@
 		"display_name": "MMPM",
 		"fire_model": "DISCRETE",
 		"heavy_he_class": "NONE",
-		"id": "CW_ATGM_MMPM",
+		"id": "W_JPN_ATGM_MMPM",
 		"indirect_params": {
 			"displace_time_sec": 30.0,
 			"requires_observer": false,
@@ -389,9 +379,7 @@
 			"MID": 150,
 			"NEAR": 150
 		},
-		"pen_ke": {
-
-		},
+		"pen_ke": {},
 		"preferred_target": "ARMOR",
 		"projectile": {
 			"size": 5.0,
@@ -411,7 +399,7 @@
 			"NEAR": 50
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "ATGM"
 	},
 	{
 		"ammo_endurance_min": 1.5,
@@ -426,7 +414,7 @@
 		"display_name": "Type 01 LMAT",
 		"fire_model": "DISCRETE",
 		"heavy_he_class": "NONE",
-		"id": "CW_ATGM_01LMAT",
+		"id": "W_JPN_ATGM_01LMAT",
 		"indirect_params": {
 			"displace_time_sec": 30.0,
 			"requires_observer": false,
@@ -458,9 +446,7 @@
 			"MID": 130,
 			"NEAR": 130
 		},
-		"pen_ke": {
-
-		},
+		"pen_ke": {},
 		"preferred_target": "ARMOR",
 		"projectile": {
 			"size": 4.5,
@@ -480,6 +466,6 @@
 			"NEAR": 50
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "ATGM"
 	}
 ]

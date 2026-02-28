@@ -39,9 +39,7 @@
 			}
 		},
 		"mechanism": "KINETIC",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 140,
 			"MID": 150,
@@ -66,7 +64,7 @@
 			"NEAR": 50
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "MAIN_GUN_KE"
 	},
 	{
 		"ammo_endurance_min": 8.0,
@@ -113,9 +111,7 @@
 			"MID": 70,
 			"NEAR": 70
 		},
-		"pen_ke": {
-
-		},
+		"pen_ke": {},
 		"preferred_target": "ANY",
 		"projectile": {
 			"size": 4.0,
@@ -135,7 +131,7 @@
 			"NEAR": 55
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "MAIN_GUN_CE"
 	},
 	{
 		"ammo_endurance_min": 8.0,
@@ -177,9 +173,7 @@
 			}
 		},
 		"mechanism": "KINETIC",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 14,
 			"MID": 18,
@@ -204,7 +198,7 @@
 			"NEAR": 65
 		},
 		"threat_class": "AUTOCANNON",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "AUTOCANNON"
 	},
 	{
 		"ammo_endurance_min": 8.0,
@@ -246,9 +240,7 @@
 			}
 		},
 		"mechanism": "KINETIC",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 14,
 			"MID": 18,
@@ -273,7 +265,7 @@
 			"NEAR": 70
 		},
 		"threat_class": "AUTOCANNON",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "AUTOCANNON"
 	},
 	{
 		"ammo_endurance_min": 2.0,
@@ -288,7 +280,7 @@
 		"display_name": "TOW-2B",
 		"fire_model": "DISCRETE",
 		"heavy_he_class": "NONE",
-		"id": "CW_ATGM_TOW2B",
+		"id": "W_USA_ATGM_TOW2B",
 		"indirect_params": {
 			"displace_time_sec": 30.0,
 			"requires_observer": false,
@@ -320,9 +312,7 @@
 			"MID": 60,
 			"NEAR": 60
 		},
-		"pen_ke": {
-
-		},
+		"pen_ke": {},
 		"preferred_target": "ARMOR",
 		"projectile": {
 			"size": 5.0,
@@ -342,7 +332,7 @@
 			"NEAR": 45
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "ATGM"
 	},
 	{
 		"ammo_endurance_min": 1.5,
@@ -357,7 +347,7 @@
 		"display_name": "FGM-148 Javelin",
 		"fire_model": "DISCRETE",
 		"heavy_he_class": "NONE",
-		"id": "CW_ATGM_JAVELIN",
+		"id": "W_USA_ATGM_JAVELIN",
 		"indirect_params": {
 			"displace_time_sec": 30.0,
 			"requires_observer": false,
@@ -389,9 +379,7 @@
 			"MID": 160,
 			"NEAR": 160
 		},
-		"pen_ke": {
-
-		},
+		"pen_ke": {},
 		"preferred_target": "ARMOR",
 		"projectile": {
 			"size": 4.5,
@@ -411,7 +399,7 @@
 			"NEAR": 50
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "ATGM"
 	},
 	{
 		"ammo_endurance_min": 6.0,
@@ -458,9 +446,7 @@
 			"MID": 15,
 			"NEAR": 15
 		},
-		"pen_ke": {
-
-		},
+		"pen_ke": {},
 		"preferred_target": "SOFT",
 		"projectile": {
 			"size": 1.5,
@@ -480,7 +466,7 @@
 			"NEAR": 85
 		},
 		"threat_class": "HE_FRAG",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "AGL"
 	},
 	{
 		"ammo_endurance_min": 15.0,
@@ -522,12 +508,8 @@
 			}
 		},
 		"mechanism": "SMALL_ARMS",
-		"pen_ce": {
-
-		},
-		"pen_ke": {
-
-		},
+		"pen_ce": {},
+		"pen_ke": {},
 		"preferred_target": "SOFT",
 		"projectile": {
 			"size": 0.3,
@@ -547,7 +529,7 @@
 			"NEAR": 70
 		},
 		"threat_class": "SMALL_ARMS",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "COAX_MG"
 	},
 	{
 		"ammo_endurance_min": 10.0,
@@ -589,9 +571,7 @@
 			}
 		},
 		"mechanism": "SMALL_ARMS",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 3,
 			"MID": 4,
@@ -616,6 +596,6 @@
 			"NEAR": 80
 		},
 		"threat_class": "SMALL_ARMS",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "HMG"
 	}
 ]

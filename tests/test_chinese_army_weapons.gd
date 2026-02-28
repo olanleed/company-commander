@@ -126,71 +126,71 @@ func test_chn_100mm_has_pen_ce() -> void:
 
 func test_chn_hj10_exists() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	assert_has(weapons, "CW_ATGM_HJ10", "HJ-10 (Red Arrow-10) should exist")
+	assert_has(weapons, "W_CHN_ATGM_HJ10", "HJ-10 (Red Arrow-10) should exist")
 
 
 func test_chn_hj10_penetration() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var weapon = weapons["CW_ATGM_HJ10"]
+	var weapon = weapons["W_CHN_ATGM_HJ10"]
 	# HJ-10: 1400mm RHA post-ERA -> pen_ce = 280
 	assert_eq(weapon.pen_ce[WeaponDataClass.RangeBand.MID], 280, "HJ-10 should have pen_ce 280 (1400mm)")
 
 
 func test_chn_hj9_exists() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	assert_has(weapons, "CW_ATGM_HJ9", "HJ-9 (Red Arrow-9) should exist")
+	assert_has(weapons, "W_CHN_ATGM_HJ9", "HJ-9 (Red Arrow-9) should exist")
 
 
 func test_chn_hj9_penetration() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var weapon = weapons["CW_ATGM_HJ9"]
+	var weapon = weapons["W_CHN_ATGM_HJ9"]
 	# HJ-9: 1200mm RHA -> pen_ce = 240
 	assert_eq(weapon.pen_ce[WeaponDataClass.RangeBand.MID], 240, "HJ-9 should have pen_ce 240 (1200mm)")
 
 
 func test_chn_hj8e_exists() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	assert_has(weapons, "CW_ATGM_HJ8E", "HJ-8E (Red Arrow-8E) should exist")
+	assert_has(weapons, "W_CHN_ATGM_HJ8E", "HJ-8E (Red Arrow-8E) should exist")
 
 
 func test_chn_hj8e_penetration() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var weapon = weapons["CW_ATGM_HJ8E"]
+	var weapon = weapons["W_CHN_ATGM_HJ8E"]
 	# HJ-8E: 1000mm RHA post-ERA -> pen_ce = 200
 	assert_eq(weapon.pen_ce[WeaponDataClass.RangeBand.MID], 200, "HJ-8E should have pen_ce 200 (1000mm)")
 
 
 func test_chn_hj73_exists() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	assert_has(weapons, "CW_ATGM_HJ73", "HJ-73 (Red Arrow-73) should exist")
+	assert_has(weapons, "W_CHN_ATGM_HJ73", "HJ-73 (Red Arrow-73) should exist")
 
 
 func test_chn_hj73_penetration() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var weapon = weapons["CW_ATGM_HJ73"]
+	var weapon = weapons["W_CHN_ATGM_HJ73"]
 	# HJ-73: 425mm RHA -> pen_ce = 85
 	assert_eq(weapon.pen_ce[WeaponDataClass.RangeBand.MID], 85, "HJ-73 should have pen_ce 85 (425mm)")
 
 
 func test_chn_gp105_exists() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	assert_has(weapons, "CW_ATGM_GP105", "GP105 gun-launched ATGM should exist")
+	assert_has(weapons, "W_CHN_ATGM_GP105", "GP105 gun-launched ATGM should exist")
 
 
 func test_chn_gp105_penetration() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var weapon = weapons["CW_ATGM_GP105"]
+	var weapon = weapons["W_CHN_ATGM_GP105"]
 	# GP105: 700mm RHA -> pen_ce = 140
 	assert_eq(weapon.pen_ce[WeaponDataClass.RangeBand.MID], 140, "GP105 should have pen_ce 140 (700mm)")
 
 
 func test_chn_atgm_hierarchy() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var hj10 = weapons["CW_ATGM_HJ10"]
-	var hj9 = weapons["CW_ATGM_HJ9"]
-	var hj8e = weapons["CW_ATGM_HJ8E"]
-	var gp105 = weapons["CW_ATGM_GP105"]
-	var hj73 = weapons["CW_ATGM_HJ73"]
+	var hj10 = weapons["W_CHN_ATGM_HJ10"]
+	var hj9 = weapons["W_CHN_ATGM_HJ9"]
+	var hj8e = weapons["W_CHN_ATGM_HJ8E"]
+	var gp105 = weapons["W_CHN_ATGM_GP105"]
+	var hj73 = weapons["W_CHN_ATGM_HJ73"]
 	# HJ-10 (1400mm) > HJ-9 (1200mm) > HJ-8E (1000mm) > GP105 (700mm) > HJ-73 (425mm)
 	assert_gt(hj10.pen_ce[WeaponDataClass.RangeBand.MID], hj9.pen_ce[WeaponDataClass.RangeBand.MID],
 		"HJ-10 should have higher pen than HJ-9")
@@ -225,7 +225,7 @@ func test_chn_weapons_count() -> void:
 	var chn_weapons: int = 0
 	for key in weapons.keys():
 		if key.ends_with("_CHN") or key.ends_with("_CHN_STD") or key.ends_with("_CHN_OLD") or \
-		   key in ["CW_ATGM_HJ10", "CW_ATGM_HJ9", "CW_ATGM_HJ8E", "CW_ATGM_HJ73", "CW_ATGM_GP105",
+		   key in ["W_CHN_ATGM_HJ10", "W_CHN_ATGM_HJ9", "W_CHN_ATGM_HJ8E", "W_CHN_ATGM_HJ73", "W_CHN_ATGM_GP105",
 				   "CW_QJZ89_AA", "CW_TYPE86_COAX", "CW_HOWITZER_122_CHN"]:
 			chn_weapons += 1
 	# 16 Chinese-specific weapons (including CW_HOWITZER_122_CHN)
@@ -257,7 +257,7 @@ func test_type99a_secondary_weapons() -> void:
 	var vehicle = catalog.get_vehicle("CHN_Type99A")
 	assert_not_null(vehicle.secondary_weapons, "Type 99A should have secondary_weapons")
 	assert_true(vehicle.secondary_weapons.has("CW_TYPE86_COAX"), "Type 99A should have Type 86 coax")
-	assert_true(vehicle.secondary_weapons.has("CW_QJC88_AA"), "Type 99A should have QJC-88 AA")
+	assert_true(vehicle.secondary_weapons.has("CW_QJZ89_AA"), "Type 99A should have QJZ-89 AA")
 
 
 func test_type99_uses_dtw125ii() -> void:
@@ -294,7 +294,7 @@ func test_type15_has_gp105_atgm() -> void:
 	catalog.load_all()
 	var vehicle = catalog.get_vehicle("CHN_Type15")
 	assert_not_null(vehicle.atgm, "Type 15 should have ATGM")
-	assert_eq(vehicle.atgm.weapon_id, "CW_ATGM_GP105", "Type 15 should have GP105 ATGM")
+	assert_eq(vehicle.atgm.weapon_id, "W_CHN_ATGM_GP105", "Type 15 should have GP105 ATGM")
 
 
 func test_zbd04a_has_weapons() -> void:
@@ -310,7 +310,7 @@ func test_zbd04a_has_hj8e() -> void:
 	catalog.load_all()
 	var vehicle = catalog.get_vehicle("CHN_ZBD04A")
 	assert_not_null(vehicle.atgm, "ZBD-04A should have ATGM")
-	assert_eq(vehicle.atgm.weapon_id, "CW_ATGM_HJ8E", "ZBD-04A should have HJ-8E ATGM")
+	assert_eq(vehicle.atgm.weapon_id, "W_CHN_ATGM_HJ8E", "ZBD-04A should have HJ-8E ATGM")
 
 
 func test_zbd04_has_100mm() -> void:
@@ -325,7 +325,7 @@ func test_zbd09_has_hj73() -> void:
 	catalog.load_all()
 	var vehicle = catalog.get_vehicle("CHN_ZBD09")
 	assert_not_null(vehicle.atgm, "ZBD-09 should have ATGM")
-	assert_eq(vehicle.atgm.weapon_id, "CW_ATGM_HJ73", "ZBD-09 should have HJ-73 ATGM")
+	assert_eq(vehicle.atgm.weapon_id, "W_CHN_ATGM_HJ73", "ZBD-09 should have HJ-73 ATGM")
 
 
 func test_pgz09_has_35mm() -> void:
@@ -347,7 +347,7 @@ func test_ztl11_has_gp105() -> void:
 	catalog.load_all()
 	var vehicle = catalog.get_vehicle("CHN_ZTL11")
 	assert_not_null(vehicle.atgm, "ZTL-11 should have ATGM")
-	assert_eq(vehicle.atgm.weapon_id, "CW_ATGM_GP105", "ZTL-11 should have GP105 ATGM")
+	assert_eq(vehicle.atgm.weapon_id, "W_CHN_ATGM_GP105", "ZTL-11 should have GP105 ATGM")
 
 
 func test_type63a_has_105mm_old() -> void:
@@ -381,7 +381,7 @@ func test_dtc10_vs_3bm60() -> void:
 
 func test_hj10_vs_javelin() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var hj10 = weapons["CW_ATGM_HJ10"]
+	var hj10 = weapons["W_CHN_ATGM_HJ10"]
 	var javelin = weapons["CW_ATGM_JAVELIN"]
 	# HJ-10 (1400mm) > Javelin (900mm direct)
 	assert_gt(hj10.pen_ce[WeaponDataClass.RangeBand.MID], javelin.pen_ce[WeaponDataClass.RangeBand.MID],
@@ -390,7 +390,7 @@ func test_hj10_vs_javelin() -> void:
 
 func test_hj10_vs_kornet() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var hj10 = weapons["CW_ATGM_HJ10"]
+	var hj10 = weapons["W_CHN_ATGM_HJ10"]
 	var kornet = weapons["CW_ATGM_KORNET"]
 	# HJ-10 (1400mm) > Kornet (1200mm)
 	assert_gt(hj10.pen_ce[WeaponDataClass.RangeBand.MID], kornet.pen_ce[WeaponDataClass.RangeBand.MID],
@@ -399,7 +399,7 @@ func test_hj10_vs_kornet() -> void:
 
 func test_hj9_comparable_to_kornet() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var hj9 = weapons["CW_ATGM_HJ9"]
+	var hj9 = weapons["W_CHN_ATGM_HJ9"]
 	var kornet = weapons["CW_ATGM_KORNET"]
 	# HJ-9 (1200mm) == Kornet (1200mm)
 	assert_eq(hj9.pen_ce[WeaponDataClass.RangeBand.MID], kornet.pen_ce[WeaponDataClass.RangeBand.MID],

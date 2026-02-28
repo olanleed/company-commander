@@ -77,19 +77,19 @@ func test_jgsdf_35mm_higher_than_25mm() -> void:
 
 func test_jgsdf_01lmat_exists() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	assert_has(weapons, "CW_ATGM_01LMAT", "Type 01 LMAT should exist")
+	assert_has(weapons, "W_JPN_ATGM_01LMAT", "Type 01 LMAT should exist")
 
 
 func test_jgsdf_01lmat_penetration() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var weapon = weapons["CW_ATGM_01LMAT"]
+	var weapon = weapons["W_JPN_ATGM_01LMAT"]
 	# 01式LMAT: Top attack capable, ~700mm RHA → pen_ce = 140
 	assert_gt(weapon.pen_ce[WeaponDataClass.RangeBand.MID], 100, "01LMAT should have pen_ce > 100")
 
 
 func test_jgsdf_01lmat_is_shaped_charge() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var weapon = weapons["CW_ATGM_01LMAT"]
+	var weapon = weapons["W_JPN_ATGM_01LMAT"]
 	assert_eq(weapon.mechanism, WeaponDataClass.Mechanism.SHAPED_CHARGE, "01LMAT should be SHAPED_CHARGE")
 
 
@@ -234,7 +234,7 @@ func test_jgsdf_weapons_count() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
 	var jgsdf_weapons = 0
 	for key in weapons.keys():
-		if key.ends_with("_JGSDF") or key in ["CW_ATGM_01LMAT", "CW_ATGM_79MAT", "CW_ATGM_MMPM"]:
+		if key.ends_with("_JGSDF") or key in ["W_JPN_ATGM_01LMAT", "W_JPN_ATGM_79MAT", "W_JPN_ATGM_MMPM"]:
 			jgsdf_weapons += 1
 	# At least 6 JGSDF-specific weapons
 	assert_true(jgsdf_weapons >= 6, "Should have at least 6 JGSDF-specific weapons")
@@ -255,7 +255,7 @@ func test_jm33_vs_m829a4() -> void:
 
 func test_01lmat_vs_javelin() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var lmat = weapons["CW_ATGM_01LMAT"]
+	var lmat = weapons["W_JPN_ATGM_01LMAT"]
 	var javelin = weapons["CW_ATGM_JAVELIN"]
 	# Both are top-attack capable, Javelin slightly higher
 	var lmat_pen: int = lmat.pen_ce[WeaponDataClass.RangeBand.MID]

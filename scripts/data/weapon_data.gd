@@ -414,12 +414,12 @@ static func create_cw_autocannon_30() -> WeaponType: return _get_weapon("CW_AUTO
 static func create_cw_autocannon_35() -> WeaponType: return _get_weapon("CW_AUTOCANNON_35")
 
 # ATGM
-static func create_cw_atgm() -> WeaponType: return _get_weapon("CW_ATGM")
-static func create_cw_atgm_topattack() -> WeaponType: return _get_weapon("CW_ATGM_TOPATTACK")
-static func create_cw_atgm_beamride() -> WeaponType: return _get_weapon("CW_ATGM_BEAMRIDE")
-static func create_cw_atgm_javelin() -> WeaponType: return _get_weapon("CW_ATGM_JAVELIN")
-static func create_cw_atgm_tow2b() -> WeaponType: return _get_weapon("CW_ATGM_TOW2B")
-static func create_cw_atgm_kornet() -> WeaponType: return _get_weapon("CW_ATGM_KORNET")
+static func create_cw_atgm() -> WeaponType: return _get_weapon("W_GEN_ATGM_STD")
+static func create_cw_atgm_topattack() -> WeaponType: return _get_weapon("W_GEN_ATGM_TOPATTACK")
+static func create_cw_atgm_beamride() -> WeaponType: return _get_weapon("W_GEN_ATGM_BEAMRIDE")
+static func create_cw_atgm_javelin() -> WeaponType: return _get_weapon("W_USA_ATGM_JAVELIN")
+static func create_cw_atgm_tow2b() -> WeaponType: return _get_weapon("W_USA_ATGM_TOW2B")
+static func create_cw_atgm_kornet() -> WeaponType: return _get_weapon("W_RUS_ATGM_KORNET")
 
 # 戦車砲
 static func create_cw_tank_ke() -> WeaponType: return _get_weapon("CW_TANK_KE")

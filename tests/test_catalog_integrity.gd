@@ -142,11 +142,12 @@ func test_all_weapon_ids_follow_naming_convention() -> void:
 
 	var invalid_ids: Array = []
 	for weapon_id in weapons.keys():
-		if not weapon_id.begins_with("CW_"):
+		# 新命名規則: W_{国籍}_{カテゴリ}_{名称} または 旧命名規則: CW_*
+		if not weapon_id.begins_with("CW_") and not weapon_id.begins_with("W_"):
 			invalid_ids.append(weapon_id)
 
 	assert_eq(invalid_ids.size(), 0,
-		"All weapon IDs should start with 'CW_'. Invalid: %s" % str(invalid_ids))
+		"All weapon IDs should start with 'CW_' or 'W_'. Invalid: %s" % str(invalid_ids))
 
 
 # =============================================================================

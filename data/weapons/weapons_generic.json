@@ -39,12 +39,8 @@
 			}
 		},
 		"mechanism": "SMALL_ARMS",
-		"pen_ce": {
-
-		},
-		"pen_ke": {
-
-		},
+		"pen_ce": {},
+		"pen_ke": {},
 		"preferred_target": "SOFT",
 		"projectile": {
 			"size": 3.0,
@@ -106,12 +102,8 @@
 			}
 		},
 		"mechanism": "SMALL_ARMS",
-		"pen_ce": {
-
-		},
-		"pen_ke": {
-
-		},
+		"pen_ce": {},
+		"pen_ke": {},
 		"preferred_target": "SOFT",
 		"projectile": {
 			"size": 3.0,
@@ -173,9 +165,7 @@
 			}
 		},
 		"mechanism": "SMALL_ARMS",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 2,
 			"MID": 3,
@@ -200,7 +190,7 @@
 			"NEAR": 90
 		},
 		"threat_class": "AUTOCANNON",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "HMG"
 	},
 	{
 		"ammo_endurance_min": 5.0,
@@ -247,9 +237,7 @@
 			"MID": 95,
 			"NEAR": 100
 		},
-		"pen_ke": {
-
-		},
+		"pen_ke": {},
 		"preferred_target": "ARMOR",
 		"projectile": {
 			"size": 5.0,
@@ -269,7 +257,7 @@
 			"NEAR": 65
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "RPG"
 	},
 	{
 		"ammo_endurance_min": 5.0,
@@ -316,9 +304,7 @@
 			"MID": 78,
 			"NEAR": 80
 		},
-		"pen_ke": {
-
-		},
+		"pen_ke": {},
 		"preferred_target": "ARMOR",
 		"projectile": {
 			"size": 5.0,
@@ -338,7 +324,7 @@
 			"NEAR": 65
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "RPG"
 	},
 	{
 		"ammo_endurance_min": 30.0,
@@ -380,12 +366,8 @@
 			}
 		},
 		"mechanism": "SMALL_ARMS",
-		"pen_ce": {
-
-		},
-		"pen_ke": {
-
-		},
+		"pen_ce": {},
+		"pen_ke": {},
 		"preferred_target": "SOFT",
 		"projectile": {
 			"size": 3.0,
@@ -405,7 +387,7 @@
 			"NEAR": 80
 		},
 		"threat_class": "SMALL_ARMS",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "COAX_MG"
 	},
 	{
 		"ammo_endurance_min": 15.0,
@@ -447,9 +429,7 @@
 			}
 		},
 		"mechanism": "KINETIC",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 12,
 			"MID": 18,
@@ -474,7 +454,7 @@
 			"NEAR": 85
 		},
 		"threat_class": "AUTOCANNON",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "AUTOCANNON"
 	},
 	{
 		"ammo_endurance_min": 15.0,
@@ -516,9 +496,7 @@
 			}
 		},
 		"mechanism": "KINETIC",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 16,
 			"MID": 24,
@@ -543,7 +521,7 @@
 			"NEAR": 90
 		},
 		"threat_class": "AUTOCANNON",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "AUTOCANNON"
 	},
 	{
 		"ammo_endurance_min": 5.0,
@@ -585,9 +563,7 @@
 			}
 		},
 		"mechanism": "KINETIC",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 20,
 			"MID": 30,
@@ -612,7 +588,7 @@
 			"NEAR": 95
 		},
 		"threat_class": "AUTOCANNON",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "AUTOCANNON"
 	},
 	{
 		"ammo_endurance_min": 3.0,
@@ -627,7 +603,7 @@
 		"display_name": "ATGM",
 		"fire_model": "DISCRETE",
 		"heavy_he_class": "NONE",
-		"id": "CW_ATGM",
+		"id": "W_GEN_ATGM_STD",
 		"indirect_params": {
 			"displace_time_sec": 30.0,
 			"requires_observer": false,
@@ -659,9 +635,7 @@
 			"MID": 180,
 			"NEAR": 180
 		},
-		"pen_ke": {
-
-		},
+		"pen_ke": {},
 		"preferred_target": "ARMOR",
 		"projectile": {
 			"size": 6.0,
@@ -681,7 +655,7 @@
 			"NEAR": 55
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "ATGM"
 	},
 	{
 		"ammo_endurance_min": 2.0,
@@ -696,7 +670,7 @@
 		"display_name": "ATGM Top Attack",
 		"fire_model": "DISCRETE",
 		"heavy_he_class": "NONE",
-		"id": "CW_ATGM_TOPATTACK",
+		"id": "W_GEN_ATGM_TOPATTACK",
 		"indirect_params": {
 			"displace_time_sec": 30.0,
 			"requires_observer": false,
@@ -728,9 +702,7 @@
 			"MID": 150,
 			"NEAR": 150
 		},
-		"pen_ke": {
-
-		},
+		"pen_ke": {},
 		"preferred_target": "ARMOR",
 		"projectile": {
 			"size": 5.0,
@@ -750,7 +722,7 @@
 			"NEAR": 50
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "ATGM"
 	},
 	{
 		"ammo_endurance_min": 3.0,
@@ -765,7 +737,7 @@
 		"display_name": "ATGM Beam Riding",
 		"fire_model": "DISCRETE",
 		"heavy_he_class": "NONE",
-		"id": "CW_ATGM_BEAMRIDE",
+		"id": "W_GEN_ATGM_BEAMRIDE",
 		"indirect_params": {
 			"displace_time_sec": 30.0,
 			"requires_observer": false,
@@ -797,9 +769,7 @@
 			"MID": 200,
 			"NEAR": 200
 		},
-		"pen_ke": {
-
-		},
+		"pen_ke": {},
 		"preferred_target": "ARMOR",
 		"projectile": {
 			"size": 6.0,
@@ -819,7 +789,7 @@
 			"NEAR": 55
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "ATGM"
 	},
 	{
 		"ammo_endurance_min": 10.0,
@@ -861,9 +831,7 @@
 			}
 		},
 		"mechanism": "KINETIC",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 120,
 			"MID": 130,
@@ -930,9 +898,7 @@
 			}
 		},
 		"mechanism": "KINETIC",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 110,
 			"MID": 120,
@@ -957,7 +923,7 @@
 			"NEAR": 50
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "MAIN_GUN_KE"
 	},
 	{
 		"ammo_endurance_min": 12.0,
@@ -999,9 +965,7 @@
 			}
 		},
 		"mechanism": "KINETIC",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 80,
 			"MID": 90,
@@ -1026,7 +990,7 @@
 			"NEAR": 45
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "MAIN_GUN_KE"
 	},
 	{
 		"ammo_endurance_min": 15.0,
@@ -1073,9 +1037,7 @@
 			"MID": 90,
 			"NEAR": 90
 		},
-		"pen_ke": {
-
-		},
+		"pen_ke": {},
 		"preferred_target": "ANY",
 		"projectile": {
 			"size": 4.0,
@@ -1137,12 +1099,8 @@
 			}
 		},
 		"mechanism": "BLAST_FRAG",
-		"pen_ce": {
-
-		},
-		"pen_ke": {
-
-		},
+		"pen_ce": {},
+		"pen_ke": {},
 		"preferred_target": "SOFT",
 		"projectile": {
 			"size": 3.0,
@@ -1162,7 +1120,7 @@
 			"NEAR": 95
 		},
 		"threat_class": "HE_FRAG",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "MORTAR"
 	},
 	{
 		"ammo_endurance_min": 15.0,
@@ -1204,12 +1162,8 @@
 			}
 		},
 		"mechanism": "BLAST_FRAG",
-		"pen_ce": {
-
-		},
-		"pen_ke": {
-
-		},
+		"pen_ce": {},
+		"pen_ke": {},
 		"preferred_target": "SOFT",
 		"projectile": {
 			"size": 5.0,
@@ -1271,12 +1225,8 @@
 			}
 		},
 		"mechanism": "BLAST_FRAG",
-		"pen_ce": {
-
-		},
-		"pen_ke": {
-
-		},
+		"pen_ce": {},
+		"pen_ke": {},
 		"preferred_target": "SOFT",
 		"projectile": {
 			"size": 3.0,
@@ -1296,7 +1246,7 @@
 			"NEAR": 20
 		},
 		"threat_class": "HE_FRAG",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "MORTAR"
 	},
 	{
 		"ammo_endurance_min": 10.0,
@@ -1338,12 +1288,8 @@
 			}
 		},
 		"mechanism": "BLAST_FRAG",
-		"pen_ce": {
-
-		},
-		"pen_ke": {
-
-		},
+		"pen_ce": {},
+		"pen_ke": {},
 		"preferred_target": "SOFT",
 		"projectile": {
 			"size": 6.0,
@@ -1405,12 +1351,8 @@
 			}
 		},
 		"mechanism": "BLAST_FRAG",
-		"pen_ce": {
-
-		},
-		"pen_ke": {
-
-		},
+		"pen_ce": {},
+		"pen_ke": {},
 		"preferred_target": "SOFT",
 		"projectile": {
 			"size": 8.0,
@@ -1472,12 +1414,8 @@
 			}
 		},
 		"mechanism": "BLAST_FRAG",
-		"pen_ce": {
-
-		},
-		"pen_ke": {
-
-		},
+		"pen_ce": {},
+		"pen_ke": {},
 		"preferred_target": "SOFT",
 		"projectile": {
 			"size": 8.0,
@@ -1539,9 +1477,7 @@
 			}
 		},
 		"mechanism": "KINETIC",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 85,
 			"MID": 100,
@@ -1566,7 +1502,7 @@
 			"NEAR": 100
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "MAIN_GUN_KE"
 	},
 	{
 		"ammo_endurance_min": 30.0,
@@ -1608,9 +1544,7 @@
 			}
 		},
 		"mechanism": "KINETIC",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 115,
 			"MID": 140,
@@ -1635,7 +1569,7 @@
 			"NEAR": 85
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "MAIN_GUN_KE"
 	},
 	{
 		"ammo_endurance_min": 30.0,
@@ -1677,9 +1611,7 @@
 			}
 		},
 		"mechanism": "KINETIC",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 90,
 			"MID": 110,
@@ -1704,7 +1636,7 @@
 			"NEAR": 85
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "MAIN_GUN_KE"
 	},
 	{
 		"ammo_endurance_min": 30.0,
@@ -1746,9 +1678,7 @@
 			}
 		},
 		"mechanism": "KINETIC",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 65,
 			"MID": 80,
@@ -1773,6 +1703,6 @@
 			"NEAR": 75
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "MAIN_GUN_KE"
 	}
 ]

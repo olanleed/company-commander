@@ -39,9 +39,7 @@
 			}
 		},
 		"mechanism": "KINETIC",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 125,
 			"MID": 140,
@@ -66,7 +64,7 @@
 			"NEAR": 100
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "MAIN_GUN_KE"
 	},
 	{
 		"ammo_endurance_min": 8.0,
@@ -108,9 +106,7 @@
 			}
 		},
 		"mechanism": "KINETIC",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 8,
 			"MID": 12,
@@ -135,7 +131,7 @@
 			"NEAR": 85
 		},
 		"threat_class": "AUTOCANNON",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "AUTOCANNON"
 	},
 	{
 		"ammo_endurance_min": 12.0,
@@ -182,9 +178,7 @@
 			"MID": 100,
 			"NEAR": 100
 		},
-		"pen_ke": {
-
-		},
+		"pen_ke": {},
 		"preferred_target": "SOFT",
 		"projectile": {
 			"size": 2.0,
@@ -204,7 +198,7 @@
 			"NEAR": 90
 		},
 		"threat_class": "HE_FRAG",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "AUTOCANNON"
 	},
 	{
 		"ammo_endurance_min": 8.0,
@@ -246,9 +240,7 @@
 			}
 		},
 		"mechanism": "SMALL_ARMS",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 4,
 			"MID": 6,
@@ -273,7 +265,7 @@
 			"NEAR": 85
 		},
 		"threat_class": "SMALL_ARMS",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "HMG"
 	},
 	{
 		"ammo_endurance_min": 12.0,
@@ -315,12 +307,8 @@
 			}
 		},
 		"mechanism": "SMALL_ARMS",
-		"pen_ce": {
-
-		},
-		"pen_ke": {
-
-		},
+		"pen_ce": {},
+		"pen_ke": {},
 		"preferred_target": "SOFT",
 		"projectile": {
 			"size": 0.3,
@@ -340,7 +328,7 @@
 			"NEAR": 70
 		},
 		"threat_class": "SMALL_ARMS",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "COAX_MG"
 	},
 	{
 		"ammo_endurance_min": 8.0,
@@ -382,9 +370,7 @@
 			}
 		},
 		"mechanism": "SMALL_ARMS",
-		"pen_ce": {
-
-		},
+		"pen_ce": {},
 		"pen_ke": {
 			"FAR": 3,
 			"MID": 4,
@@ -424,7 +410,7 @@
 		"display_name": "9M133 Kornet",
 		"fire_model": "DISCRETE",
 		"heavy_he_class": "NONE",
-		"id": "CW_ATGM_KORNET",
+		"id": "W_RUS_ATGM_KORNET",
 		"indirect_params": {
 			"displace_time_sec": 30.0,
 			"requires_observer": false,
@@ -456,9 +442,7 @@
 			"MID": 240,
 			"NEAR": 240
 		},
-		"pen_ke": {
-
-		},
+		"pen_ke": {},
 		"preferred_target": "ARMOR",
 		"projectile": {
 			"size": 1.5,
@@ -478,7 +462,7 @@
 			"NEAR": 90
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "ATGM"
 	},
 	{
 		"ammo_endurance_min": 6.0,
@@ -493,7 +477,7 @@
 		"display_name": "9M119M Refleks",
 		"fire_model": "DISCRETE",
 		"heavy_he_class": "NONE",
-		"id": "CW_ATGM_REFLEKS",
+		"id": "W_RUS_ATGM_REFLEKS",
 		"indirect_params": {
 			"displace_time_sec": 30.0,
 			"requires_observer": false,
@@ -525,9 +509,7 @@
 			"MID": 180,
 			"NEAR": 180
 		},
-		"pen_ke": {
-
-		},
+		"pen_ke": {},
 		"preferred_target": "ARMOR",
 		"projectile": {
 			"size": 1.5,
@@ -547,7 +529,7 @@
 			"NEAR": 85
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "ATGM"
 	},
 	{
 		"ammo_endurance_min": 5.0,
@@ -562,7 +544,7 @@
 		"display_name": "9M113M Konkurs-M",
 		"fire_model": "DISCRETE",
 		"heavy_he_class": "NONE",
-		"id": "CW_ATGM_KONKURS",
+		"id": "W_RUS_ATGM_KONKURS",
 		"indirect_params": {
 			"displace_time_sec": 30.0,
 			"requires_observer": false,
@@ -594,9 +576,7 @@
 			"MID": 160,
 			"NEAR": 160
 		},
-		"pen_ke": {
-
-		},
+		"pen_ke": {},
 		"preferred_target": "ARMOR",
 		"projectile": {
 			"size": 1.2,
@@ -616,7 +596,7 @@
 			"NEAR": 80
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "ATGM"
 	},
 	{
 		"ammo_endurance_min": 5.0,
@@ -631,7 +611,7 @@
 		"display_name": "9M117 Bastion",
 		"fire_model": "DISCRETE",
 		"heavy_he_class": "NONE",
-		"id": "CW_ATGM_BASTION",
+		"id": "W_RUS_ATGM_BASTION",
 		"indirect_params": {
 			"displace_time_sec": 30.0,
 			"requires_observer": false,
@@ -663,9 +643,7 @@
 			"MID": 110,
 			"NEAR": 110
 		},
-		"pen_ke": {
-
-		},
+		"pen_ke": {},
 		"preferred_target": "ARMOR",
 		"projectile": {
 			"size": 1.2,
@@ -685,6 +663,6 @@
 			"NEAR": 75
 		},
 		"threat_class": "AT",
-		"weapon_role": "SMALL_ARMS"
+		"weapon_role": "ATGM"
 	}
 ]
