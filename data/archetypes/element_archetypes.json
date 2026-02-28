@@ -177,6 +177,32 @@
 	},
 	{
 		"armor_ce": {
+			"FRONT": 3,
+			"REAR": 2,
+			"SIDE": 2,
+			"TOP": 1
+		},
+		"armor_class": 1,
+		"armor_ke": {
+			"FRONT": 3,
+			"REAR": 2,
+			"SIDE": 2,
+			"TOP": 1
+		},
+		"base_strength": 2,
+		"category": "WEAP",
+		"cross_speed": 10.0,
+		"display_name": "ATGM Vehicle",
+		"id": "ATGM_VEH",
+		"max_strength": 2,
+		"mobility_class": "WHEELED",
+		"road_speed": 20.0,
+		"spot_range_base": 1500.0,
+		"spot_range_moving": 1000.0,
+		"symbol_type": "FS_ATGM"
+	},
+	{
+		"armor_ce": {
 			"FRONT": 5,
 			"REAR": 2,
 			"SIDE": 3,
@@ -495,16 +521,20 @@
 	},
 	{
 		"armor_class": 0,
-		"base_strength": 2,
+		"base_strength": 4,
 		"category": "LOG",
-		"cross_speed": 6.0,
+		"cross_speed": 10.0,
 		"display_name": "Supply Truck",
 		"id": "LOG_TRUCK",
-		"max_strength": 2,
+		"is_supply_unit": true,
+		"max_strength": 4,
 		"mobility_class": "WHEELED",
-		"road_speed": 15.0,
+		"road_speed": 25.0,
 		"spot_range_base": 150.0,
 		"spot_range_moving": 100.0,
+		"supply_capacity": 100,
+		"supply_range_m": 150.0,
+		"supply_rate_multiplier": 1.0,
 		"symbol_type": "SUP_LOGISTICS"
 	},
 	{

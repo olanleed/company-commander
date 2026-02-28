@@ -86,6 +86,31 @@ class ElementType:
 	var armor_ke: Dictionary = {}  # KINETICに対する装甲
 	var armor_ce: Dictionary = {}  # SHAPED_CHARGEに対する装甲
 
+
+	## 独立したコピーを作成（VehicleCatalog modifier適用用）
+	func duplicate() -> ElementType:
+		var copy := ElementType.new()
+		copy.id = id
+		copy.display_name = display_name
+		copy.category = category
+		copy.symbol_type = symbol_type
+		copy.mobility_class = mobility_class
+		copy.road_speed = road_speed
+		copy.cross_speed = cross_speed
+		copy.base_strength = base_strength
+		copy.max_strength = max_strength
+		copy.spot_range_base = spot_range_base
+		copy.spot_range_moving = spot_range_moving
+		copy.armor_class = armor_class
+		copy.is_comm_hub = is_comm_hub
+		copy.comm_range = comm_range
+		copy.can_transport_infantry = can_transport_infantry
+		copy.transport_capacity = transport_capacity
+		copy.armor_ke = armor_ke.duplicate()
+		copy.armor_ce = armor_ce.duplicate()
+		return copy
+
+
 # =============================================================================
 # ElementInstance (可変状態)
 # =============================================================================

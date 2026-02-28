@@ -143,11 +143,12 @@ static func create_element_with_vehicle(
 		push_warning("[ElementFactory] Vehicle not found: %s, using base archetype" % vehicle_id)
 		return create_element("TANK_PLT", faction, position, facing)
 
-	# ベースアーキタイプを取得
+	# ベースアーキタイプを取得（コピーを作成してmodifierを適用）
 	var archetype_id: String = vehicle_config.base_archetype
-	var element_type := ElementData.ElementArchetypes.get_archetype(archetype_id)
+	var base_archetype: ElementData.ElementType = ElementData.ElementArchetypes.get_archetype(archetype_id)
+	var element_type: ElementData.ElementType = base_archetype.duplicate()
 
-	# VehicleConfigのmodifierを適用
+	# VehicleConfigのmodifierを適用（コピーに適用するので元のアーキタイプは変更されない）
 	_vehicle_catalog.apply_to_element_type(element_type, vehicle_config)
 
 	# インスタンス生成

@@ -883,7 +883,7 @@
       "base_archetype": "LOG_TRUCK",
       "mobility_class": "WHEELED",
       "era": "1970s",
-      "unit_count": 2,
+      "unit_count": 4,
       "modifiers": {
         "armor_ke_front": 0.00,
         "armor_ke_side": 0.00,
@@ -922,7 +922,7 @@
       "base_archetype": "LOG_TRUCK",
       "mobility_class": "WHEELED",
       "era": "1970s",
-      "unit_count": 2,
+      "unit_count": 4,
       "modifiers": {
         "armor_ke_front": 0.00,
         "armor_ke_side": 0.00,
@@ -961,7 +961,7 @@
       "base_archetype": "LOG_TRUCK",
       "mobility_class": "WHEELED",
       "era": "1970s",
-      "unit_count": 1,
+      "unit_count": 2,
       "modifiers": {
         "armor_ke_front": 0.00,
         "armor_ke_side": 0.00,
