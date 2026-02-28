@@ -6,6 +6,7 @@ const InputControllerClass = preload("res://scripts/ui/input_controller.gd")
 const OrderPreviewClass = preload("res://scripts/ui/order_preview.gd")
 const DataLinkSystemClass = preload("res://scripts/systems/data_link_system.gd")
 const TransportSystemClass = preload("res://scripts/systems/transport_system.gd")
+const ResupplySystemClass = preload("res://scripts/systems/resupply_system.gd")
 
 ## Company Commander - メインシーン
 ## 2D現代戦リアルタイムストラテジー
@@ -49,6 +50,7 @@ var tactical_overlay: TacticalOverlay
 var data_link_system  # DataLinkSystemClass
 var transport_system  # TransportSystemClass
 var missile_system: MissileSystem  # ミサイル誘導システム
+var resupply_system  # ResupplySystemClass - 弾薬補給システム
 
 ## 中隊AI（陣営別）
 var company_ais: Dictionary = {}  # faction -> CompanyControllerAI
@@ -172,6 +174,9 @@ func _setup_systems() -> void:
 	# MissileSystem
 	missile_system = MissileSystem.new()
 	missile_system.missile_impact.connect(_on_missile_impact)
+
+	# ResupplySystem
+	resupply_system = ResupplySystemClass.new()
 
 
 func _load_test_map_async() -> void:
@@ -796,6 +801,13 @@ func _on_tick_advanced(tick: int) -> void:
 	if missile_system:
 		missile_system.update(tick)
 
+	# 弾薬装填更新
+	_update_ammo_reload()
+
+	# 弾薬補給更新
+	if resupply_system:
+		resupply_system.update(world_model.elements, tick)
+
 	# 戦闘更新
 	_update_combat(tick, GameConstants.SIM_DT)
 
@@ -886,6 +898,13 @@ func _update_unloading() -> void:
 		if distance < 5.0:  # 5m以内なら到着とみなす
 			element.unloading_target_pos = Vector2.ZERO
 			print("[Unload] %s reached unload position (%.1fm)" % [element.id, distance])
+
+
+## 弾薬装填状態を更新
+func _update_ammo_reload() -> void:
+	for element in world_model.elements:
+		if element.ammo_state:
+			element.ammo_state.update_all_reloads()
 
 
 func _update_combat(tick: int, dt: float) -> void:

@@ -9,6 +9,7 @@ extends RefCounted
 ## VehicleCatalogと連携して各国兵器の特性を反映する。
 
 const VehicleCatalogClass = preload("res://scripts/data/vehicle_catalog.gd")
+const AmmoStateClass = preload("res://scripts/data/ammo_state.gd")
 
 # =============================================================================
 # 定数
@@ -23,7 +24,7 @@ const ARCHETYPE_WEAPONS: Dictionary = {
 	"INF_AT": ["CW_RIFLE_STD", "CW_RPG_HEAT"],
 	"INF_MG": ["CW_MG_STD"],
 	"TANK_PLT": ["CW_TANK_KE", "CW_TANK_HEATMP", "CW_COAX_MG"],  # 主砲AP/HE + 同軸MG
-	"IFV_PLT": ["CW_AUTOCANNON_30", "CW_ATGM", "CW_COAX_MG"],  # 機関砲 + ATGM + 同軸MG
+	"IFV_PLT": ["CW_AUTOCANNON_30", "W_GEN_ATGM_STD", "CW_COAX_MG"],  # 機関砲 + ATGM + 同軸MG
 	"APC_PLT": ["CW_HMG"],  # 12.7mm重機関銃
 	"LIGHT_VEH": ["CW_RIFLE_STD"],  # 軽火器のみ
 	"COMMAND_VEH": ["CW_HMG"],  # 12.7mm重機関銃
@@ -34,7 +35,7 @@ const ARCHETYPE_WEAPONS: Dictionary = {
 	"SP_ARTILLERY": ["CW_HOWITZER_155"],  # 155mm榴弾砲
 	"SPAAG": ["CW_AUTOCANNON_35"],  # 35mm連装機関砲
 	"SAM_VEH": [],  # 対空ミサイル（未実装）
-	"ATGM_VEH": ["CW_ATGM_MMPM"],  # 対戦車ミサイル車両
+	"ATGM_VEH": ["W_JPN_ATGM_MMPM"],  # 対戦車ミサイル車両
 	"LOG_TRUCK": [],  # 武装なし
 	"CMD_HQ": ["CW_RIFLE_STD"],  # 軽火器のみ
 }
@@ -169,6 +170,9 @@ static func create_element_with_vehicle(
 		element.artillery_deploy_time_sec = vehicle_config.artillery_deploy_time_sec
 		element.artillery_pack_time_sec = vehicle_config.artillery_pack_time_sec
 
+	# 弾薬状態を初期化（車両カタログから）
+	_init_ammo_state(element, vehicle_config)
+
 	return element
 
 
@@ -209,6 +213,28 @@ static func _equip_weapons_with_vehicle(
 	# 主武装を設定
 	if element.weapons.size() > 0:
 		element.primary_weapon = element.weapons[0]
+
+
+## 弾薬状態を初期化（車両カタログから）
+static func _init_ammo_state(element: ElementData.ElementInstance, vehicle_config) -> void:
+	# カタログデータを収集
+	var catalog_data := {}
+
+	# 主砲
+	if vehicle_config.main_gun.size() > 0:
+		catalog_data["main_gun"] = vehicle_config.main_gun
+
+	# ATGM
+	if vehicle_config.atgm.size() > 0:
+		catalog_data["atgm"] = vehicle_config.atgm
+
+	# 防護情報（誘爆脆弱性計算用）
+	if vehicle_config.protection.size() > 0:
+		catalog_data["protection"] = vehicle_config.protection
+
+	# 弾薬データがある場合のみAmmoStateを作成
+	if catalog_data.size() > 0:
+		element.ammo_state = AmmoStateClass.create_from_catalog(catalog_data)
 
 
 ## WeaponTypeをコピー（独立したインスタンスを作成）

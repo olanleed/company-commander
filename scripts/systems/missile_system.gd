@@ -22,6 +22,7 @@ extends RefCounted
 # =============================================================================
 
 const MissileData := preload("res://scripts/data/missile_data.gd")
+const AmmoStateClass := preload("res://scripts/data/ammo_state.gd")
 
 # Tick/秒の定数
 const TICKS_PER_SEC: float = 10.0
@@ -124,6 +125,7 @@ func reset() -> void:
 
 ## ミサイルを発射
 ## 戻り値: 発射されたミサイルのID（発射失敗時は空文字）
+## shooter: 射手のElementInstance（弾薬管理用、オプショナル）
 func launch_missile(
 	shooter_id: String,
 	shooter_pos: Vector2,
@@ -131,7 +133,8 @@ func launch_missile(
 	target_pos: Vector2,
 	profile: MissileData.MissileProfile,
 	attack_profile: MissileData.AttackProfile,
-	current_tick: int
+	current_tick: int,
+	shooter: ElementData.ElementInstance = null
 ) -> String:
 	# 攻撃プロファイルが使用可能かチェック
 	if not profile.can_use_profile(attack_profile):
@@ -146,6 +149,16 @@ func launch_missile(
 	# 射手拘束チェック（既に拘束中なら発射不可）
 	if shooter_id in shooter_constraints:
 		return ""
+
+	# 弾薬チェック（弾薬システムが有効な場合）
+	if shooter and shooter.ammo_state and shooter.ammo_state.atgm:
+		var atgm_state = shooter.ammo_state.atgm
+		# 装填中
+		if atgm_state.is_reloading:
+			return ""
+		# 発射可能か
+		if not atgm_state.can_fire():
+			return ""
 
 	# ミサイル生成
 	var missile := MissileData.InFlightMissile.new(profile)
@@ -180,6 +193,14 @@ func launch_missile(
 			shooter_id, missile.id, current_tick, profile.guidance_type
 		)
 		shooter_constraints[shooter_id] = constraint
+
+	# 弾薬消費（弾薬システムが有効な場合）
+	if shooter and shooter.ammo_state and shooter.ammo_state.atgm:
+		var atgm_state = shooter.ammo_state.atgm
+		var slot = atgm_state.get_current_slot()
+		if slot:
+			slot.count_ready -= 1
+			# ATGMは手動装填なので自動装填は行わない
 
 	missile_launched.emit(missile.id, shooter_id, target_id)
 

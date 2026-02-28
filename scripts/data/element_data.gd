@@ -161,6 +161,10 @@ class ElementInstance:
 	## 兵器カタログ
 	var vehicle_id: String = ""          ## カタログ車両ID（例: "JPN_Type10"）
 
+	## 弾薬状態
+	## 仕様: docs/ammunition_system_v0.1.md
+	var ammo_state = null  ## AmmoState型（循環参照回避のため型指定なし）
+
 	## 搭乗・輸送関連
 	var embarked_infantry_id: String = ""  ## 搭乗中の歩兵ユニットID（IFV/APC用）
 	var transport_vehicle_id: String = ""  ## 乗車中の車両ID（歩兵用）

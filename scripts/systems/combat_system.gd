@@ -22,6 +22,9 @@ extends RefCounted
 # ProtectionDataをpreload（ERA/APS計算用）
 const _ProtectionData: GDScript = preload("res://scripts/data/protection_data.gd")
 
+# AmmoStateをpreload（弾薬管理用）
+const _AmmoState: GDScript = preload("res://scripts/data/ammo_state.gd")
+
 # =============================================================================
 # 戦闘効果結果
 # =============================================================================
@@ -1309,7 +1312,7 @@ func get_penetration_probability(
 		WeaponData.Mechanism.SHAPED_CHARGE:
 			penetration = weapon.get_pen_ce(distance_m)
 			# タンデム弾頭判定（武器IDで判断）
-			if weapon.id == "CW_ATGM_BEAMRIDE" or weapon.id == "CW_ATGM":
+			if weapon.id == "W_GEN_ATGM_BEAMRIDE" or weapon.id == "W_GEN_ATGM_STD":
 				# タンデム弾頭はERAを無視
 				armor = effective_armor.armor_ce_vs_tandem
 			else:
@@ -2155,6 +2158,9 @@ func process_tank_engagement(
 	result.fired = true
 	shooter.last_fire_tick = current_tick
 
+	# 弾薬消費
+	consume_ammo(shooter, shooter.current_weapon)
+
 	# 距離帯
 	var range_band := get_range_band(distance_m)
 
@@ -2285,6 +2291,13 @@ func _can_fire_tank_gun(shooter: ElementData.ElementInstance, current_tick: int)
 		if firepower_state == GameEnums.VehicleFirepowerState.WEAPON_DISABLED:
 			return false
 
+	# 弾薬チェック（弾薬システムが有効な場合）
+	var ammo_check := can_fire_with_ammo(shooter, shooter.current_weapon)
+	if not ammo_check.can_fire:
+		if current_tick % 50 == 0:
+			print("[TankCombat] %s: %s" % [shooter.id, ammo_check.reason])
+		return false
+
 	# 初回射撃は即座に許可（last_fire_tick = -1）
 	if shooter.last_fire_tick < 0:
 		return true
@@ -2305,8 +2318,14 @@ func _can_fire_tank_gun(shooter: ElementData.ElementInstance, current_tick: int)
 func _apply_tank_kill(
 	target: ElementData.ElementInstance,
 	current_tick: int,
-	is_catastrophic: bool
+	is_catastrophic: bool,
+	hit_zone: String = "FRONT"
 ) -> void:
+	# 誘爆判定
+	if _ProtectionData.roll_detonation(target, hit_zone, is_catastrophic):
+		_ProtectionData.apply_detonation(target, current_tick)
+		return
+
 	# 1両撃破
 	target.current_strength = maxi(0, target.current_strength - 1)
 
@@ -2394,3 +2413,93 @@ func should_use_tank_combat(
 		return false
 
 	return true
+
+
+# =============================================================================
+# 弾薬システム
+# =============================================================================
+
+## 弾薬チェック結果
+class AmmoCheckResult:
+	var can_fire: bool = true
+	var reason: String = ""
+
+
+## 射撃可能かチェック（弾薬考慮）
+## 弾薬システムが有効な場合、即発弾の有無と装填状態をチェック
+func can_fire_with_ammo(shooter: ElementData.ElementInstance, weapon: WeaponData.WeaponType) -> AmmoCheckResult:
+	var result := AmmoCheckResult.new()
+
+	# 弾薬状態がない場合は制限なし（レガシー互換）
+	if not shooter.ammo_state:
+		return result
+
+	# 武器がない場合は射撃不可
+	if not weapon:
+		result.can_fire = false
+		result.reason = "NO_WEAPON"
+		return result
+
+	# 武器に対応する弾薬状態を取得
+	var weapon_state = shooter.ammo_state.get_weapon_state(weapon.id)
+	if not weapon_state:
+		# 弾薬追跡対象外の武器は制限なし
+		return result
+
+	# 装填中かチェック
+	if weapon_state.is_reloading:
+		result.can_fire = false
+		result.reason = "RELOADING (%d/%d ticks)" % [
+			weapon_state.reload_progress_ticks,
+			weapon_state.reload_duration_ticks
+		]
+		return result
+
+	# 発射可能か（即発弾があるか）
+	if not weapon_state.can_fire():
+		var current_slot = weapon_state.get_current_slot()
+		if current_slot and current_slot.count_stowed > 0:
+			result.can_fire = false
+			result.reason = "NEED_RELOAD_FROM_STOWED"
+		else:
+			result.can_fire = false
+			result.reason = "OUT_OF_AMMO"
+		return result
+
+	return result
+
+
+## 弾薬を消費（射撃成功時に呼び出し）
+func consume_ammo(shooter: ElementData.ElementInstance, weapon: WeaponData.WeaponType, count: int = 1) -> bool:
+	# 弾薬状態がない場合は何もしない（レガシー互換）
+	if not shooter.ammo_state:
+		return true
+
+	if not weapon:
+		return false
+
+	var weapon_state = shooter.ammo_state.get_weapon_state(weapon.id)
+	if not weapon_state:
+		return true  # 弾薬追跡対象外
+
+	var slot = weapon_state.get_current_slot()
+	if not slot:
+		return false
+
+	# 即発弾を消費
+	var consumed := mini(count, slot.count_ready)
+	slot.count_ready -= consumed
+
+	# 自動装填装置がある場合、予備弾から自動装填開始
+	if weapon_state.has_autoloader and slot.count_ready < slot.max_ready and slot.count_stowed > 0:
+		weapon_state.start_reload()
+
+	return consumed == count
+
+
+## 弾薬状態を更新（毎tick呼び出し）
+func update_ammo_state(element: ElementData.ElementInstance) -> void:
+	if not element.ammo_state:
+		return
+
+	element.ammo_state.update_all_reloads()

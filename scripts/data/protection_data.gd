@@ -352,3 +352,98 @@ static func create_light_armor() -> ProtectionProfile:
 ## ソフトスキン車両
 static func create_soft_skin() -> ProtectionProfile:
 	return get_profile("SOFT_SKIN")
+
+
+# =============================================================================
+# 弾薬庫誘爆システム
+# =============================================================================
+
+## 誘爆確率定数
+const DETONATION_BASE_CATASTROPHIC: float = 0.60   ## Catastrophic hit時の基本誘爆率
+const DETONATION_BASE_PENETRATION: float = 0.15    ## 通常貫通時の基本誘爆率
+
+## ゾーン別誘爆倍率
+const DETONATION_ZONE_MULT: Dictionary = {
+	"FRONT": 0.8,
+	"SIDE": 1.2,
+	"REAR": 1.5,
+	"TOP": 1.3,
+}
+
+
+## 誘爆確率を計算
+## P = base × ammo_mult × zone_mult × protection_mult
+##
+## base: Catastrophic hitなら0.60、通常貫通なら0.15
+## ammo_mult: 0.3 + 0.7 × (残弾率) -- 弾薬が多いほど危険
+## zone_mult: 装甲ゾーン別の倍率
+## protection_mult: 1.0 - vulnerability -- ブローオフパネル等の効果
+static func calculate_detonation_probability(
+	element: ElementData.ElementInstance,
+	zone: String,
+	is_catastrophic: bool
+) -> float:
+	# 弾薬状態がない場合は誘爆なし
+	if not element.ammo_state:
+		return 0.0
+
+	# 基本確率
+	var base: float = DETONATION_BASE_CATASTROPHIC if is_catastrophic else DETONATION_BASE_PENETRATION
+
+	# 残弾率による倍率 (弾薬が多いほど危険)
+	var ammo_ratio: float = element.ammo_state.get_total_ammo_ratio()
+	var ammo_mult: float = 0.3 + 0.7 * ammo_ratio
+
+	# ゾーン別倍率
+	var zone_mult: float = 1.0
+	if zone in DETONATION_ZONE_MULT:
+		zone_mult = DETONATION_ZONE_MULT[zone]
+
+	# 防護倍率 (ブローオフパネル等)
+	var vulnerability: float = element.ammo_state.ammo_detonation_vulnerability
+	var protection_mult: float = vulnerability  # 脆弱性が低いほど安全
+
+	return base * ammo_mult * zone_mult * protection_mult
+
+
+## 誘爆判定を実行
+## 戻り値: 誘爆発生したらtrue
+static func roll_detonation(
+	element: ElementData.ElementInstance,
+	zone: String,
+	is_catastrophic: bool
+) -> bool:
+	var prob := calculate_detonation_probability(element, zone, is_catastrophic)
+	return randf() < prob
+
+
+## 誘爆を適用（車両即死）
+static func apply_detonation(element: ElementData.ElementInstance, current_tick: int) -> void:
+	# 即死
+	element.current_strength = 0
+	element.catastrophic_kill = true
+	element.is_destroyed = true
+	element.destroy_tick = current_tick
+	element.state = GameEnums.UnitState.DESTROYED
+
+	# 全サブシステム損傷
+	element.mobility_hp = 0
+	element.firepower_hp = 0
+	element.sensors_hp = 0
+
+	# 弾薬全損
+	if element.ammo_state:
+		if element.ammo_state.main_gun:
+			for slot in element.ammo_state.main_gun.ammo_slots:
+				slot.count_ready = 0
+				slot.count_stowed = 0
+		if element.ammo_state.atgm:
+			for slot in element.ammo_state.atgm.ammo_slots:
+				slot.count_ready = 0
+				slot.count_stowed = 0
+		for sec in element.ammo_state.secondary:
+			for slot in sec.ammo_slots:
+				slot.count_ready = 0
+				slot.count_stowed = 0
+
+	print("[Detonation] %s: AMMO COOKOFF! Catastrophic kill." % element.id)
