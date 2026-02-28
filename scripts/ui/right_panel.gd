@@ -44,6 +44,7 @@ var _sensors_label: Label
 var _equipment_section: VBoxContainer
 var _vehicle_label: Label
 var _weapons_label: Label
+var _ammo_label: Label  # 残弾数表示
 
 # AI思考情報
 var _ai_section: VBoxContainer
@@ -278,6 +279,14 @@ func _setup_layout() -> void:
 	_weapons_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
 	_weapons_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_equipment_section.add_child(_weapons_label)
+
+	# 残弾数
+	_ammo_label = Label.new()
+	_ammo_label.text = "Ammo: ---"
+	_ammo_label.add_theme_font_size_override("font_size", 11)
+	_ammo_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+	_ammo_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_equipment_section.add_child(_ammo_label)
 
 	_vbox.add_child(_equipment_section)
 
@@ -826,11 +835,70 @@ func _update_equipment_info(element: ElementData.ElementInstance) -> void:
 	else:
 		_weapons_label.text = "Weapons: (none)"
 
+	# 残弾数表示
+	_update_ammo_display(element)
+
+
+## 残弾数を表示
+func _update_ammo_display(element: ElementData.ElementInstance) -> void:
+	if not element.ammo_state:
+		_ammo_label.text = "Ammo: N/A"
+		_ammo_label.remove_theme_color_override("font_color")
+		return
+
+	var ammo_lines: Array[String] = []
+	var ammo_state = element.ammo_state
+
+	# 主砲
+	if ammo_state.main_gun:
+		var gun_state = ammo_state.main_gun
+		var total: int = gun_state.get_total_remaining()
+		var max_total: int = gun_state.get_max_total()
+		var status := ""
+		if gun_state.is_reloading:
+			status = " [RELOAD]"
+		ammo_lines.append("  Gun: %d/%d%s" % [total, max_total, status])
+
+	# ATGM
+	if ammo_state.atgm:
+		var atgm_state = ammo_state.atgm
+		var slot = atgm_state.get_current_slot()
+		if slot:
+			var ready_count: int = slot.count_ready
+			var stowed_count: int = slot.count_stowed
+			var status := ""
+			if atgm_state.is_reloading:
+				status = " [RELOAD]"
+			ammo_lines.append("  ATGM: %d+%d%s" % [ready_count, stowed_count, status])
+
+	# 副武装（機関砲など重要なもののみ）
+	for sec in ammo_state.secondary:
+		if sec.weapon_id.contains("AUTOCANNON") or sec.weapon_id.contains("30") or sec.weapon_id.contains("35"):
+			var sec_total: int = sec.get_total_remaining()
+			var sec_max: int = sec.get_max_total()
+			ammo_lines.append("  AC: %d/%d" % [sec_total, sec_max])
+			break  # 最初の機関砲のみ
+
+	if ammo_lines.size() > 0:
+		_ammo_label.text = "Ammo:\n" + "\n".join(ammo_lines)
+		# 残弾率に応じて色を変更
+		var total_ratio: float = ammo_state.get_total_ammo_ratio()
+		if total_ratio >= 0.5:
+			_ammo_label.add_theme_color_override("font_color", Color(0.6, 0.9, 0.6))  # 緑
+		elif total_ratio >= 0.25:
+			_ammo_label.add_theme_color_override("font_color", Color(0.9, 0.8, 0.3))  # 黄
+		else:
+			_ammo_label.add_theme_color_override("font_color", Color(0.9, 0.4, 0.3))  # 赤
+	else:
+		_ammo_label.text = "Ammo: (no tracked weapons)"
+		_ammo_label.remove_theme_color_override("font_color")
+
 
 ## 装備情報をクリア
 func _clear_equipment_info() -> void:
 	_vehicle_label.text = "Vehicle: ---"
 	_weapons_label.text = "Weapons: ---"
+	_ammo_label.text = "Ammo: ---"
 
 
 ## データリンク状態を表示（単一ユニット）
