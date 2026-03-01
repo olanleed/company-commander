@@ -85,7 +85,7 @@ func _create_mock_shooter() -> ElementData.ElementInstance:
 
 func _create_javelin_profile() -> MissileData.MissileProfile:
 	var profile := MissileData.MissileProfile.new()
-	profile.id = "MSL_JAVELIN"
+	profile.id = "M_USA_JAVELIN"
 	profile.display_name = "FGM-148 Javelin"
 	profile.guidance_type = MissileData.GuidanceType.IIR_HOMING
 	profile.lock_mode = MissileData.LockMode.LOBL
@@ -209,7 +209,7 @@ func test_top_attack_vs_direct_attack_penetration() -> void:
 
 func test_javelin_default_is_top_attack() -> void:
 	## Javelinのデフォルトはトップアタック
-	var profile := MissileData.get_profile_for_weapon("CW_ATGM_JAVELIN")
+	var profile := MissileData.get_profile_for_weapon("W_USA_ATGM_JAVELIN")
 	if profile:
 		assert_eq(profile.default_attack_profile, MissileData.AttackProfile.TOP_ATTACK,
 			"Javelin default should be TOP_ATTACK")
@@ -219,7 +219,7 @@ func test_javelin_default_is_top_attack() -> void:
 
 func test_01lmat_default_is_top_attack() -> void:
 	## 01LMATのデフォルトはトップアタック
-	var profile := MissileData.get_profile_for_weapon("CW_ATGM_01LMAT")
+	var profile := MissileData.get_profile_for_weapon("W_JPN_ATGM_01LMAT")
 	if profile:
 		assert_eq(profile.default_attack_profile, MissileData.AttackProfile.TOP_ATTACK,
 			"01LMAT default should be TOP_ATTACK")
@@ -229,7 +229,7 @@ func test_01lmat_default_is_top_attack() -> void:
 
 func test_mmpm_default_is_top_attack() -> void:
 	## MMPMのデフォルトはトップアタック
-	var profile := MissileData.get_profile_for_weapon("CW_ATGM_MMPM")
+	var profile := MissileData.get_profile_for_weapon("W_JPN_ATGM_MMPM")
 	if profile:
 		assert_eq(profile.default_attack_profile, MissileData.AttackProfile.TOP_ATTACK,
 			"MMPM default should be TOP_ATTACK")
@@ -239,7 +239,7 @@ func test_mmpm_default_is_top_attack() -> void:
 
 func test_tow_default_is_direct() -> void:
 	## TOWのデフォルトはDIRECT
-	var profile := MissileData.get_profile_for_weapon("CW_ATGM_TOW2B")
+	var profile := MissileData.get_profile_for_weapon("W_USA_ATGM_TOW2B")
 	if profile:
 		assert_eq(profile.default_attack_profile, MissileData.AttackProfile.DIRECT,
 			"TOW-2B default should be DIRECT")

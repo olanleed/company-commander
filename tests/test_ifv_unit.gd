@@ -59,7 +59,7 @@ func _test_ifv_weapons_exist() -> void:
 
 	var all_weapons := WeaponData.get_all_concrete_weapons()
 	_assert_true(all_weapons.has("CW_AUTOCANNON_30"), test_name + ": CW_AUTOCANNON_30")
-	_assert_true(all_weapons.has("CW_ATGM"), test_name + ": CW_ATGM")
+	_assert_true(all_weapons.has("W_GEN_ATGM_STD"), test_name + ": W_GEN_ATGM_STD")
 
 
 func _test_ifv_weapon_properties() -> void:
@@ -79,7 +79,7 @@ func _test_ifv_weapon_properties() -> void:
 
 	# ATGMのテスト
 	var atgm := WeaponData.create_cw_atgm()
-	_assert_eq(atgm.id, "CW_ATGM", test_name + ": atgm id")
+	_assert_eq(atgm.id, "W_GEN_ATGM_STD", test_name + ": atgm id")
 	_assert_eq(atgm.mechanism, WeaponData.Mechanism.SHAPED_CHARGE, test_name + ": atgm mechanism")
 	_assert_eq(atgm.fire_model, WeaponData.FireModel.DISCRETE, test_name + ": atgm fire_model")
 	_assert_approx(atgm.max_range_m, 3750.0, 1.0, test_name + ": atgm max_range")
@@ -112,7 +112,7 @@ func _test_ifv_element_creation() -> void:
 		weapon_ids.append(w.id)
 
 	_assert_true("CW_AUTOCANNON_30" in weapon_ids, test_name + ": has autocannon")
-	_assert_true("CW_ATGM" in weapon_ids, test_name + ": has atgm")
+	_assert_true("W_GEN_ATGM_STD" in weapon_ids, test_name + ": has atgm")
 
 
 func _test_ifv_vehicle_catalog() -> void:

@@ -200,7 +200,7 @@ func _test_projectile_speed_mps() -> void:
 		["CW_TANK_KE", 1700.0, "APFSDS ~1700m/s"],
 		["CW_TANK_HEATMP", 1000.0, "HEAT ~1000m/s"],
 		["CW_AUTOCANNON_30", 1100.0, "30mm APDS ~1100m/s"],
-		["CW_ATGM", 300.0, "ATGM ~300m/s"],
+		["W_GEN_ATGM_STD", 300.0, "ATGM ~300m/s"],
 		["CW_RPG_HEAT", 300.0, "RPG ~300m/s"],
 		["CW_CARL_GUSTAF", 255.0, "Carl Gustaf ~255m/s"],
 	]
@@ -330,7 +330,7 @@ func _test_ifv_weapon_selection() -> void:
 	# 武装を装備
 	var all_weapons := WeaponData.get_all_concrete_weapons()
 	ifv.weapons.append(all_weapons["CW_AUTOCANNON_30"])
-	ifv.weapons.append(all_weapons["CW_ATGM"])
+	ifv.weapons.append(all_weapons["W_GEN_ATGM_STD"])
 	ifv.weapons.append(all_weapons["CW_COAX_MG"])
 	ifv.primary_weapon = ifv.weapons[0]
 
@@ -351,7 +351,7 @@ func _test_ifv_weapon_selection() -> void:
 
 	var ifv_test_cases: Array = [
 		[500, "CW_AUTOCANNON_30"],   # 500mではオートキャノンが効率的
-		[1000, "CW_ATGM"],  # 1000mではATGMの殺傷力が優先される
+		[1000, "W_GEN_ATGM_STD"],  # 1000mではATGMの殺傷力が優先される
 	]
 
 	for test_data in ifv_test_cases:
@@ -381,9 +381,9 @@ func _test_ifv_weapon_selection() -> void:
 	print("--------------------------------------------------")
 
 	var tank_test_cases: Array = [
-		[500, "CW_ATGM"],    # ATGM最優先
-		[1500, "CW_ATGM"],   # 長距離もATGM
-		[3000, "CW_ATGM"],   # 最大射程でもATGM
+		[500, "W_GEN_ATGM_STD"],    # ATGM最優先
+		[1500, "W_GEN_ATGM_STD"],   # 長距離もATGM
+		[3000, "W_GEN_ATGM_STD"],   # 最大射程でもATGM
 	]
 
 	for test_data in tank_test_cases:
@@ -411,9 +411,9 @@ func _test_ifv_weapon_selection() -> void:
 	print("-----------------------------------------------------")
 
 	var infantry_test_cases: Array = [
-		[300, "CW_ATGM"],   # ATGMは歩兵に使わない
-		[600, "CW_ATGM"],
-		[1000, "CW_ATGM"],
+		[300, "W_GEN_ATGM_STD"],   # ATGMは歩兵に使わない
+		[600, "W_GEN_ATGM_STD"],
+		[1000, "W_GEN_ATGM_STD"],
 	]
 
 	for test_data in infantry_test_cases:
@@ -479,7 +479,7 @@ func _test_should_use_tank_combat() -> void:
 
 	# IFV vs IFV with ATGM → true (armor_class = 2)
 	if ifv:
-		test_cases.append([ifv, ifv, all_weapons["CW_ATGM"], true, "IFV vs IFV (ATGM)"])
+		test_cases.append([ifv, ifv, all_weapons["W_GEN_ATGM_STD"], true, "IFV vs IFV (ATGM)"])
 
 	# Tank vs IFV with APFSDS → true (armor_class = 2)
 	if ifv:
@@ -490,7 +490,7 @@ func _test_should_use_tank_combat() -> void:
 
 	# IFV vs Infantry with ATGM → false
 	if ifv:
-		test_cases.append([ifv, infantry, all_weapons["CW_ATGM"], false, "IFV vs Inf (ATGM)"])
+		test_cases.append([ifv, infantry, all_weapons["W_GEN_ATGM_STD"], false, "IFV vs Inf (ATGM)"])
 
 	# Tank vs Tank with Coax MG → false (not AT weapon)
 	test_cases.append([tank, tank, all_weapons["CW_COAX_MG"], false, "Tank vs Tank (MG)"])

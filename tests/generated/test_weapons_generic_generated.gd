@@ -63,17 +63,17 @@ func test_cw_autocannon_35_exists() -> void:
 
 func test_cw_atgm_exists() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	assert_has(weapons, "CW_ATGM", "ATGM should exist")
+	assert_has(weapons, "W_GEN_ATGM_STD", "ATGM should exist")
 
 
 func test_cw_atgm_topattack_exists() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	assert_has(weapons, "CW_ATGM_TOPATTACK", "ATGM Top Attack should exist")
+	assert_has(weapons, "W_GEN_ATGM_TOPATTACK", "ATGM Top Attack should exist")
 
 
 func test_cw_atgm_beamride_exists() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	assert_has(weapons, "CW_ATGM_BEAMRIDE", "ATGM Beam Riding should exist")
+	assert_has(weapons, "W_GEN_ATGM_BEAMRIDE", "ATGM Beam Riding should exist")
 
 
 func test_cw_tank_ke_exists() -> void:
@@ -215,23 +215,23 @@ func test_cw_autocannon_35_mechanism() -> void:
 
 func test_cw_atgm_mechanism() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var weapon = weapons["CW_ATGM"]
-	assert_eq(weapon.mechanism, WeaponDataClass.Mechanism.SHAPED_CHARGE, "CW_ATGM should be SHAPED_CHARGE")
-	assert_eq(weapon.fire_model, WeaponDataClass.FireModel.DISCRETE, "CW_ATGM should be DISCRETE")
+	var weapon = weapons["W_GEN_ATGM_STD"]
+	assert_eq(weapon.mechanism, WeaponDataClass.Mechanism.SHAPED_CHARGE, "W_GEN_ATGM_STD should be SHAPED_CHARGE")
+	assert_eq(weapon.fire_model, WeaponDataClass.FireModel.DISCRETE, "W_GEN_ATGM_STD should be DISCRETE")
 
 
 func test_cw_atgm_topattack_mechanism() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var weapon = weapons["CW_ATGM_TOPATTACK"]
-	assert_eq(weapon.mechanism, WeaponDataClass.Mechanism.SHAPED_CHARGE, "CW_ATGM_TOPATTACK should be SHAPED_CHARGE")
-	assert_eq(weapon.fire_model, WeaponDataClass.FireModel.DISCRETE, "CW_ATGM_TOPATTACK should be DISCRETE")
+	var weapon = weapons["W_GEN_ATGM_TOPATTACK"]
+	assert_eq(weapon.mechanism, WeaponDataClass.Mechanism.SHAPED_CHARGE, "W_GEN_ATGM_TOPATTACK should be SHAPED_CHARGE")
+	assert_eq(weapon.fire_model, WeaponDataClass.FireModel.DISCRETE, "W_GEN_ATGM_TOPATTACK should be DISCRETE")
 
 
 func test_cw_atgm_beamride_mechanism() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var weapon = weapons["CW_ATGM_BEAMRIDE"]
-	assert_eq(weapon.mechanism, WeaponDataClass.Mechanism.SHAPED_CHARGE, "CW_ATGM_BEAMRIDE should be SHAPED_CHARGE")
-	assert_eq(weapon.fire_model, WeaponDataClass.FireModel.DISCRETE, "CW_ATGM_BEAMRIDE should be DISCRETE")
+	var weapon = weapons["W_GEN_ATGM_BEAMRIDE"]
+	assert_eq(weapon.mechanism, WeaponDataClass.Mechanism.SHAPED_CHARGE, "W_GEN_ATGM_BEAMRIDE should be SHAPED_CHARGE")
+	assert_eq(weapon.fire_model, WeaponDataClass.FireModel.DISCRETE, "W_GEN_ATGM_BEAMRIDE should be DISCRETE")
 
 
 func test_cw_tank_ke_mechanism() -> void:
@@ -374,20 +374,20 @@ func test_cw_autocannon_35_pen_ke() -> void:
 
 func test_cw_atgm_pen_ce() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var weapon = weapons["CW_ATGM"]
-	assert_eq(weapon.pen_ce[WeaponDataClass.RangeBand.MID], 180, "CW_ATGM pen_ce MID should be 180")
+	var weapon = weapons["W_GEN_ATGM_STD"]
+	assert_eq(weapon.pen_ce[WeaponDataClass.RangeBand.MID], 180, "W_GEN_ATGM_STD pen_ce MID should be 180")
 
 
 func test_cw_atgm_topattack_pen_ce() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var weapon = weapons["CW_ATGM_TOPATTACK"]
-	assert_eq(weapon.pen_ce[WeaponDataClass.RangeBand.MID], 150, "CW_ATGM_TOPATTACK pen_ce MID should be 150")
+	var weapon = weapons["W_GEN_ATGM_TOPATTACK"]
+	assert_eq(weapon.pen_ce[WeaponDataClass.RangeBand.MID], 150, "W_GEN_ATGM_TOPATTACK pen_ce MID should be 150")
 
 
 func test_cw_atgm_beamride_pen_ce() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var weapon = weapons["CW_ATGM_BEAMRIDE"]
-	assert_eq(weapon.pen_ce[WeaponDataClass.RangeBand.MID], 200, "CW_ATGM_BEAMRIDE pen_ce MID should be 200")
+	var weapon = weapons["W_GEN_ATGM_BEAMRIDE"]
+	assert_eq(weapon.pen_ce[WeaponDataClass.RangeBand.MID], 200, "W_GEN_ATGM_BEAMRIDE pen_ce MID should be 200")
 
 
 func test_cw_tank_ke_pen_ke() -> void:
@@ -507,23 +507,23 @@ func test_cw_autocannon_35_range() -> void:
 
 func test_cw_atgm_range() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var weapon = weapons["CW_ATGM"]
-	assert_eq(weapon.max_range_m, 3750.0, "CW_ATGM max_range should be 3750.0")
-	assert_eq(weapon.min_range_m, 65.0, "CW_ATGM min_range should be 65.0")
+	var weapon = weapons["W_GEN_ATGM_STD"]
+	assert_eq(weapon.max_range_m, 3750.0, "W_GEN_ATGM_STD max_range should be 3750.0")
+	assert_eq(weapon.min_range_m, 65.0, "W_GEN_ATGM_STD min_range should be 65.0")
 
 
 func test_cw_atgm_topattack_range() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var weapon = weapons["CW_ATGM_TOPATTACK"]
-	assert_eq(weapon.max_range_m, 2500.0, "CW_ATGM_TOPATTACK max_range should be 2500.0")
-	assert_eq(weapon.min_range_m, 75.0, "CW_ATGM_TOPATTACK min_range should be 75.0")
+	var weapon = weapons["W_GEN_ATGM_TOPATTACK"]
+	assert_eq(weapon.max_range_m, 2500.0, "W_GEN_ATGM_TOPATTACK max_range should be 2500.0")
+	assert_eq(weapon.min_range_m, 75.0, "W_GEN_ATGM_TOPATTACK min_range should be 75.0")
 
 
 func test_cw_atgm_beamride_range() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var weapon = weapons["CW_ATGM_BEAMRIDE"]
-	assert_eq(weapon.max_range_m, 5500.0, "CW_ATGM_BEAMRIDE max_range should be 5500.0")
-	assert_eq(weapon.min_range_m, 100.0, "CW_ATGM_BEAMRIDE min_range should be 100.0")
+	var weapon = weapons["W_GEN_ATGM_BEAMRIDE"]
+	assert_eq(weapon.max_range_m, 5500.0, "W_GEN_ATGM_BEAMRIDE max_range should be 5500.0")
+	assert_eq(weapon.min_range_m, 100.0, "W_GEN_ATGM_BEAMRIDE min_range should be 100.0")
 
 
 func test_cw_tank_ke_range() -> void:
@@ -647,21 +647,21 @@ func test_generic_autocannon_caliber_comparison() -> void:
 
 func test_cw_atgm_atgm_effectiveness() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var atgm = weapons["CW_ATGM"]
+	var atgm = weapons["W_GEN_ATGM_STD"]
 	# ATGMは有効な対装甲貫徹力を持つ
-	assert_gt(atgm.pen_ce[WeaponDataClass.RangeBand.MID], 50, "CW_ATGM should have significant pen_ce")
+	assert_gt(atgm.pen_ce[WeaponDataClass.RangeBand.MID], 50, "W_GEN_ATGM_STD should have significant pen_ce")
 
 
 func test_cw_atgm_topattack_atgm_effectiveness() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var atgm = weapons["CW_ATGM_TOPATTACK"]
+	var atgm = weapons["W_GEN_ATGM_TOPATTACK"]
 	# ATGMは有効な対装甲貫徹力を持つ
-	assert_gt(atgm.pen_ce[WeaponDataClass.RangeBand.MID], 50, "CW_ATGM_TOPATTACK should have significant pen_ce")
+	assert_gt(atgm.pen_ce[WeaponDataClass.RangeBand.MID], 50, "W_GEN_ATGM_TOPATTACK should have significant pen_ce")
 
 
 func test_cw_atgm_beamride_atgm_effectiveness() -> void:
 	var weapons: Dictionary = WeaponDataClass.get_all_concrete_weapons()
-	var atgm = weapons["CW_ATGM_BEAMRIDE"]
+	var atgm = weapons["W_GEN_ATGM_BEAMRIDE"]
 	# ATGMは有効な対装甲貫徹力を持つ
-	assert_gt(atgm.pen_ce[WeaponDataClass.RangeBand.MID], 50, "CW_ATGM_BEAMRIDE should have significant pen_ce")
+	assert_gt(atgm.pen_ce[WeaponDataClass.RangeBand.MID], 50, "W_GEN_ATGM_BEAMRIDE should have significant pen_ce")
 

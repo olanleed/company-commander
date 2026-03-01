@@ -86,7 +86,7 @@ func test_weapon_ammo_state_cannot_fire_empty() -> void:
 
 
 func test_weapon_ammo_state_reload() -> void:
-	## 装填処理
+	## 装填処理（継続装填）
 	var weapon_state := AmmoState.WeaponAmmoState.new("CW_TANK_KE")
 	weapon_state.has_autoloader = true
 	var slot := AmmoState.AmmoSlot.new("APFSDS")
@@ -106,11 +106,35 @@ func test_weapon_ammo_state_reload() -> void:
 		assert_false(weapon_state.update_reload(), "Reload should not complete yet")
 		assert_true(weapon_state.is_reloading, "Should still be reloading")
 
-	# 装填完了
+	# 装填完了（1発目）
 	assert_true(weapon_state.update_reload(), "Reload should complete")
-	assert_false(weapon_state.is_reloading, "Should no longer be reloading")
 	assert_eq(slot.count_ready, 1, "Ready count should increase by 1")
 	assert_eq(slot.count_stowed, 9, "Stowed count should decrease by 1")
+	# まだmax_readyに達していないので継続装填中
+	assert_true(weapon_state.is_reloading, "Should continue reloading until max_ready")
+
+
+func test_weapon_ammo_state_reload_stops_at_max() -> void:
+	## 装填はmax_readyで停止する
+	var weapon_state := AmmoState.WeaponAmmoState.new("CW_TANK_KE")
+	weapon_state.has_autoloader = true
+	var slot := AmmoState.AmmoSlot.new("APFSDS")
+	slot.count_ready = 1
+	slot.count_stowed = 5
+	slot.max_ready = 2  # max_readyを2に設定
+	weapon_state.ammo_slots.append(slot)
+
+	# 装填開始
+	weapon_state.start_reload()
+
+	# 装填完了まで進める
+	for i in range(AmmoState.RELOAD_TICKS_AUTOLOADER):
+		weapon_state.update_reload()
+
+	# max_readyに達したので装填停止
+	assert_eq(slot.count_ready, 2, "Ready count should be max_ready")
+	assert_eq(slot.count_stowed, 4, "Stowed count should decrease by 1")
+	assert_false(weapon_state.is_reloading, "Should stop reloading at max_ready")
 
 
 func test_weapon_ammo_state_ammo_switch() -> void:
