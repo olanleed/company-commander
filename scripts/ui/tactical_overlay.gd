@@ -360,7 +360,33 @@ func _draw_artillery_deploy_bars() -> void:
 # =============================================================================
 
 func _process(_delta: float) -> void:
-	# シグナル購読により、ポーリングは不要
-	# ただし、setup()前は手動で再描画
+	# シグナル購読により、基本的にはポーリング不要
+	# ただし、以下の場合は定期的に再描画が必要：
+	# - setup()前
+	# - 選択中に展開中/撤収中の砲兵ユニットがある場合（ゲージアニメーション）
 	if not world_model:
 		queue_redraw()
+		return
+
+	# 選択中の砲兵ユニットが展開中/撤収中なら再描画
+	if _has_deploying_artillery():
+		queue_redraw()
+
+
+## 選択中に展開中/撤収中の砲兵ユニットがあるかチェック
+func _has_deploying_artillery() -> bool:
+	var ADS := ElementData.ElementInstance.ArtilleryDeployState
+
+	for element in _selected_elements:
+		if not element or element.state == GameEnums.UnitState.DESTROYED:
+			continue
+
+		var archetype := element.element_type.id if element.element_type else ""
+		if archetype != "SP_ARTILLERY" and archetype != "SP_MORTAR":
+			continue
+
+		# 展開中または撤収中
+		if element.artillery_deploy_state == ADS.DEPLOYING or element.artillery_deploy_state == ADS.PACKING:
+			return true
+
+	return false
