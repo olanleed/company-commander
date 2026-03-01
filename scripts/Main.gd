@@ -103,7 +103,7 @@ func _ready() -> void:
 	units_layer.add_child(projectile_manager)
 
 	# TacticalOverlayをユニットレイヤーに追加（ユニットの上、UIの下に描画）
-	tactical_overlay.setup(world_model, vision_system)
+	tactical_overlay.setup(world_model, vision_system, null, command_queue)
 	units_layer.add_child(tactical_overlay)
 
 	# HUDセットアップ

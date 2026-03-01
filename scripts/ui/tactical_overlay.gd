@@ -11,6 +11,7 @@ extends Node2D
 var world_model: WorldModel
 var vision_system: VisionSystem
 var missile_system  # MissileSystemへの参照（SACLOS誘導ターゲット表示用）
+var command_queue  # CommandQueueへの参照（Undo時の再描画用）
 var _selected_elements: Array[ElementData.ElementInstance] = []
 
 # =============================================================================
@@ -46,16 +47,22 @@ func _ready() -> void:
 	z_index = 100
 
 
-func setup(p_world_model: WorldModel, p_vision_system: VisionSystem = null, p_missile_system = null) -> void:
+func setup(p_world_model: WorldModel, p_vision_system: VisionSystem = null, p_missile_system = null, p_command_queue = null) -> void:
 	world_model = p_world_model
 	vision_system = p_vision_system
 	missile_system = p_missile_system
+	command_queue = p_command_queue
 
 	# シグナル購読（UIリアクティブ化）
 	if world_model:
 		world_model.element_moved.connect(_on_element_moved)
 		world_model.element_added.connect(_on_element_changed)
 		world_model.element_removed.connect(_on_element_changed)
+
+	# CommandQueue購読（Undo時の再描画）
+	if command_queue:
+		command_queue.command_undone.connect(_on_command_undone)
+		command_queue.command_executed.connect(_on_command_executed)
 
 
 ## シグナルハンドラ: Element移動
@@ -65,6 +72,16 @@ func _on_element_moved(_element_id: String, _new_position: Vector2) -> void:
 
 ## シグナルハンドラ: Element追加/削除
 func _on_element_changed(_element: ElementData.ElementInstance) -> void:
+	request_redraw()
+
+
+## シグナルハンドラ: コマンドUndo
+func _on_command_undone(_command) -> void:
+	request_redraw()
+
+
+## シグナルハンドラ: コマンド実行
+func _on_command_executed(_command) -> void:
 	request_redraw()
 
 
