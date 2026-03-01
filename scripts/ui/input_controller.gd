@@ -57,6 +57,7 @@ signal modifier_changed(shift: bool, ctrl: bool, alt: bool)
 signal speed_change_requested(speed: int)
 signal camera_center_requested()  # Spaceで選択ユニットにカメラを向ける
 signal escape_pressed()
+signal undo_requested()  # Ctrl+Z
 
 # =============================================================================
 # 状態
@@ -184,6 +185,11 @@ func _handle_key(event: InputEventKey) -> void:
 		modifier_changed.emit(_is_shift_held, _is_ctrl_held, _is_alt_held)
 
 	if not event.pressed:
+		return
+
+	# Ctrl+Z (Undo)
+	if event.keycode == KEY_Z and event.ctrl_pressed:
+		undo_requested.emit()
 		return
 
 	# Escapeキー

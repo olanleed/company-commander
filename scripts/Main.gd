@@ -7,6 +7,12 @@ const OrderPreviewClass = preload("res://scripts/ui/order_preview.gd")
 const DataLinkSystemClass = preload("res://scripts/systems/data_link_system.gd")
 const TransportSystemClass = preload("res://scripts/systems/transport_system.gd")
 const ResupplySystemClass = preload("res://scripts/systems/resupply_system.gd")
+const CommandQueueClass = preload("res://scripts/commands/command_queue.gd")
+const MoveCommandClass = preload("res://scripts/commands/move_command.gd")
+const AttackCommandClass = preload("res://scripts/commands/attack_command.gd")
+const HaltCommandClass = preload("res://scripts/commands/halt_command.gd")
+const DefendCommandClass = preload("res://scripts/commands/defend_command.gd")
+const FireMissionCommandClass = preload("res://scripts/commands/fire_mission_command.gd")
 
 ## Company Commander - メインシーン
 ## 2D現代戦リアルタイムストラテジー
@@ -51,6 +57,7 @@ var data_link_system  # DataLinkSystemClass
 var transport_system  # TransportSystemClass
 var missile_system: MissileSystem  # ミサイル誘導システム
 var resupply_system  # ResupplySystemClass - 弾薬補給システム
+var command_queue  # CommandQueueClass - コマンドキュー（Undo対応）
 
 ## 中隊AI（陣営別）
 var company_ais: Dictionary = {}  # faction -> CompanyControllerAI
@@ -177,6 +184,9 @@ func _setup_systems() -> void:
 
 	# ResupplySystem
 	resupply_system = ResupplySystemClass.new()
+
+	# CommandQueue - コマンドパターン対応
+	command_queue = CommandQueueClass.new()
 
 
 func _load_test_map_async() -> void:
@@ -1544,6 +1554,7 @@ func _setup_hud() -> void:
 	input_controller.speed_change_requested.connect(_on_speed_change_requested)
 	input_controller.camera_center_requested.connect(_on_camera_center_requested)
 	input_controller.escape_pressed.connect(_on_escape_pressed)
+	input_controller.undo_requested.connect(_on_undo_requested)
 
 	# OrderPreview
 	order_preview = OrderPreviewClass.new()
@@ -1729,6 +1740,13 @@ func _on_escape_pressed() -> void:
 	order_preview.hide_preview()
 
 
+func _on_undo_requested() -> void:
+	if command_queue and command_queue.can_undo():
+		var description: String = command_queue.get_undo_description()
+		if command_queue.undo_last(world_model):
+			print("Undo: %s" % description)
+
+
 # =============================================================================
 # コマンド実行
 # =============================================================================
@@ -1739,28 +1757,61 @@ func _execute_command_for_selected(command_type: GameEnums.OrderType, target_pos
 
 	var use_road: bool = input_controller.is_alt_held()
 
+	# プレイヤー陣営のユニットIDを収集
+	var element_ids: Array[String] = []
+	for element in _selected_elements:
+		if element.faction == player_faction:
+			element_ids.append(element.id)
+
+	if element_ids.is_empty():
+		return
+
+	# CommandQueue経由でコマンドを実行（Undo対応コマンド）
+	match command_type:
+		GameEnums.OrderType.MOVE:
+			var cmd = MoveCommandClass.new(element_ids, target_pos, use_road, movement_system)
+			command_queue.enqueue(cmd)
+			command_queue.process(world_model)
+			# 射撃任務を解除
+			for element in _selected_elements:
+				if element.faction == player_faction:
+					_cancel_fire_mission(element)
+			return
+
+		GameEnums.OrderType.HOLD:
+			var cmd = HaltCommandClass.new(element_ids, movement_system)
+			command_queue.enqueue(cmd)
+			command_queue.process(world_model)
+			return
+
+		GameEnums.OrderType.DEFEND:
+			var cmd = DefendCommandClass.new(element_ids, target_pos, movement_system)
+			command_queue.enqueue(cmd)
+			command_queue.process(world_model)
+			# 射撃任務を解除
+			for element in _selected_elements:
+				if element.faction == player_faction:
+					_cancel_fire_mission(element)
+			return
+
+		GameEnums.OrderType.FIRE_MISSION:
+			var cmd = FireMissionCommandClass.new(element_ids, target_pos, movement_system)
+			command_queue.enqueue(cmd)
+			command_queue.process(world_model)
+			return
+
+	# 以下は従来通りの処理（まだCommand化していないコマンド）
 	for element in _selected_elements:
 		if element.faction != player_faction:
 			continue
 
 		match command_type:
-			GameEnums.OrderType.MOVE:
-				# 移動命令：強制目標をクリア、射撃任務も解除
-				element.forced_target_id = ""
-				element.current_order_type = GameEnums.OrderType.MOVE
-				_cancel_fire_mission(element)
-				movement_system.issue_move_order(element, target_pos, use_road)
-
 			GameEnums.OrderType.ATTACK:
 				# 攻撃命令（位置指定）：その位置へ移動しつつ交戦
 				element.forced_target_id = ""  # 位置指定なので特定目標なし
 				element.current_order_type = GameEnums.OrderType.ATTACK
 				_cancel_fire_mission(element)
 				movement_system.issue_move_order(element, target_pos, use_road)
-
-			GameEnums.OrderType.HOLD:
-				# 停止命令：即座に移動を停止
-				movement_system.issue_stop_order(element)
 
 			GameEnums.OrderType.RETREAT:
 				# 後退命令：正面を維持したまま後退
@@ -1804,17 +1855,6 @@ func _execute_command_for_selected(command_type: GameEnums.OrderType, target_pos
 			GameEnums.OrderType.WEAPONS_HOLD:
 				# 射撃禁止：SOP を HOLD_FIRE に設定
 				_execute_sop_command(element, GameEnums.SOPMode.HOLD_FIRE)
-
-			GameEnums.OrderType.DEFEND:
-				# 防御命令：その位置で防御（廃止だが後方互換）
-				element.forced_target_id = ""
-				element.current_order_type = GameEnums.OrderType.DEFEND
-				_cancel_fire_mission(element)
-				movement_system.issue_move_order(element, target_pos, use_road)
-
-			GameEnums.OrderType.FIRE_MISSION:
-				# 間接射撃（砲兵用）：指定位置にHE射撃
-				_execute_fire_mission_command(element, target_pos)
 
 			_:
 				# その他のコマンドは移動として処理（暫定）
