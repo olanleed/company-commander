@@ -198,9 +198,12 @@ func launch_missile(
 	if shooter and shooter.ammo_state and shooter.ammo_state.atgm:
 		var atgm_state = shooter.ammo_state.atgm
 		var slot = atgm_state.get_current_slot()
-		if slot:
+		if slot and slot.count_ready > 0:
 			slot.count_ready -= 1
-			# ATGMは手動装填なので自動装填は行わない
+			# 即発弾が0になったら予備弾から装填開始（手動装填: 8秒）
+			# 装填はmax_readyに達するまで継続する（update_reload内で処理）
+			if slot.count_ready == 0 and slot.count_stowed > 0:
+				atgm_state.start_reload()
 
 	missile_launched.emit(missile.id, shooter_id, target_id)
 
