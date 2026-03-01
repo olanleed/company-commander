@@ -408,3 +408,110 @@ func test_sp_mortar_has_indirect_fire_weapon() -> void:
 				has_indirect = true
 				break
 		assert_true(has_indirect, "%s should have INDIRECT fire weapon" % config.id)
+
+
+# =============================================================================
+# 砲兵ユニット弾薬システムテスト
+# =============================================================================
+
+func test_sph_has_ammo_state() -> void:
+	## 155mm自走榴弾砲がAmmoStateを持つことを検証
+	var element := ElementFactory.create_element_with_vehicle(
+		"USA_M109A7_Paladin",
+		GameEnums.Faction.BLUE,
+		Vector2(100, 100)
+	)
+
+	assert_not_null(element.ammo_state, "M109A7 should have ammo_state")
+	assert_not_null(element.ammo_state.main_gun, "M109A7 should have main_gun ammo")
+
+
+func test_sph_ammo_capacity_positive() -> void:
+	## 弾薬容量が正の値であることを検証
+	## 注: 具体的な弾薬数はカタログにammo_capacity_total追加後に検証可能
+	var element := ElementFactory.create_element_with_vehicle(
+		"USA_M109A7_Paladin",
+		GameEnums.Faction.BLUE,
+		Vector2(100, 100)
+	)
+
+	assert_not_null(element.ammo_state, "Should have ammo_state")
+	var main_gun: AmmoState.WeaponAmmoState = element.ammo_state.main_gun
+	assert_not_null(main_gun, "Should have main_gun")
+
+	# M109A7は正の弾薬容量を持つべき
+	var total_ammo: int = main_gun.get_max_total()
+	assert_gt(total_ammo, 0, "M109A7 should have positive ammo capacity")
+	print("[Test] M109A7 total ammo: %d" % total_ammo)
+
+
+func test_jpn_type99_sph_ammo_state() -> void:
+	## 99式自走榴弾砲の弾薬システムを検証
+	var element := ElementFactory.create_element_with_vehicle(
+		"JPN_Type99_SPH",
+		GameEnums.Faction.BLUE,
+		Vector2(100, 100)
+	)
+
+	assert_not_null(element.ammo_state, "Type99 SPH should have ammo_state")
+	var main_gun: AmmoState.WeaponAmmoState = element.ammo_state.main_gun
+	assert_not_null(main_gun, "Type99 SPH should have main_gun ammo")
+
+	# 99式のカタログ定義を確認（ammo_capacity_totalが存在するはず）
+	var total: int = main_gun.get_max_total()
+	assert_gt(total, 0, "Type99 SPH should have positive ammo capacity")
+	print("[Test] Type99 SPH total ammo: %d" % total)
+
+
+func test_sp_mortar_has_ammo_state() -> void:
+	## 自走迫撃砲がAmmoStateを持つことを検証
+	var element := ElementFactory.create_element_with_vehicle(
+		"JPN_Type24_Mortar",
+		GameEnums.Faction.BLUE,
+		Vector2(100, 100)
+	)
+
+	assert_not_null(element.ammo_state, "Type24 Mortar should have ammo_state")
+	var main_gun: AmmoState.WeaponAmmoState = element.ammo_state.main_gun
+	assert_not_null(main_gun, "Type24 Mortar should have main_gun ammo")
+
+	var total: int = main_gun.get_max_total()
+	assert_gt(total, 0, "Type24 Mortar should have positive ammo capacity")
+	print("[Test] Type24 Mortar total ammo: %d" % total)
+
+
+func test_all_artillery_units_have_ammo_state() -> void:
+	## すべての砲兵ユニット（SP_ARTILLERYとSP_MORTAR）がAmmoStateを持つことを検証
+	var catalog: VehicleCatalog = ElementFactory.get_vehicle_catalog()
+
+	# 自走砲を検証
+	var sph_vehicles := catalog.get_vehicles_for_archetype("SP_ARTILLERY")
+	for config in sph_vehicles:
+		var element := ElementFactory.create_element_with_vehicle(
+			config.id,
+			GameEnums.Faction.BLUE,
+			Vector2(100, 100)
+		)
+		assert_not_null(element.ammo_state,
+			"%s should have ammo_state" % config.id)
+		assert_not_null(element.ammo_state.main_gun,
+			"%s should have main_gun ammo" % config.id)
+		var total: int = element.ammo_state.main_gun.get_max_total()
+		assert_gt(total, 0,
+			"%s should have positive ammo capacity (got %d)" % [config.id, total])
+
+	# 自走迫撃砲を検証
+	var mortar_vehicles := catalog.get_vehicles_for_archetype("SP_MORTAR")
+	for config in mortar_vehicles:
+		var element := ElementFactory.create_element_with_vehicle(
+			config.id,
+			GameEnums.Faction.BLUE,
+			Vector2(100, 100)
+		)
+		assert_not_null(element.ammo_state,
+			"%s should have ammo_state" % config.id)
+		assert_not_null(element.ammo_state.main_gun,
+			"%s should have main_gun ammo" % config.id)
+		var total: int = element.ammo_state.main_gun.get_max_total()
+		assert_gt(total, 0,
+			"%s should have positive ammo capacity (got %d)" % [config.id, total])

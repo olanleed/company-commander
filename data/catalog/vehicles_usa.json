@@ -707,6 +707,8 @@
         "assisted_rammer": true,
         "rof_modifier": 1.00,
         "accuracy_modifier": 1.05,
+        "ammo_capacity_total": 42,
+        "ammo_capacity_ready": 22,
         "ammo_types": ["M795 HE", "M795 HE + M1156 PGK", "M982 Excalibur"]
       },
       "secondary_weapons": ["CW_M2HB"],
@@ -751,6 +753,8 @@
         "autoloader": false,
         "rof_modifier": 0.90,
         "accuracy_modifier": 1.00,
+        "ammo_capacity_total": 39,
+        "ammo_capacity_ready": 18,
         "ammo_types": ["M795 HE", "M795 HE + M1156 PGK", "M982 Excalibur"]
       },
       "secondary_weapons": ["CW_M2HB"],
@@ -793,7 +797,10 @@
         "type": "mortar",
         "autoloader": false,
         "rof_modifier": 1.00,
-        "accuracy_modifier": 1.00
+        "accuracy_modifier": 1.00,
+        "ammo_capacity_total": 68,
+        "ammo_capacity_ready": 12,
+        "ammo_types": ["M934 HE", "M929 Smoke"]
       },
       "secondary_weapons": [],
       "protection": {
@@ -835,7 +842,10 @@
         "type": "mortar",
         "autoloader": false,
         "rof_modifier": 1.00,
-        "accuracy_modifier": 1.00
+        "accuracy_modifier": 1.00,
+        "ammo_capacity_total": 60,
+        "ammo_capacity_ready": 10,
+        "ammo_types": ["M934 HE", "M929 Smoke"]
       },
       "secondary_weapons": [],
       "protection": {

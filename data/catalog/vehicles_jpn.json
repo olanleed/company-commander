@@ -626,7 +626,10 @@
         "type": "mortar",
         "autoloader": false,
         "rof_modifier": 1.10,
-        "accuracy_modifier": 1.05
+        "accuracy_modifier": 1.05,
+        "ammo_capacity_total": 60,
+        "ammo_capacity_ready": 12,
+        "ammo_types": ["120mm HE", "120mm Smoke"]
       },
       "protection": {
         "era_equipped": false,
@@ -667,7 +670,10 @@
         "type": "howitzer",
         "autoloader": true,
         "rof_modifier": 1.20,
-        "accuracy_modifier": 1.05
+        "accuracy_modifier": 1.05,
+        "ammo_capacity_total": 26,
+        "ammo_capacity_ready": 14,
+        "ammo_types": ["155mm HE", "155mm Smoke", "155mm ICM"]
       },
       "protection": {
         "era_equipped": false,
@@ -708,7 +714,10 @@
         "type": "howitzer",
         "autoloader": false,
         "rof_modifier": 1.00,
-        "accuracy_modifier": 1.00
+        "accuracy_modifier": 1.00,
+        "ammo_capacity_total": 18,
+        "ammo_capacity_ready": 8,
+        "ammo_types": ["155mm HE", "155mm Smoke"]
       },
       "protection": {
         "era_equipped": false,
