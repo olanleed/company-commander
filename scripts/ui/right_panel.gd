@@ -90,8 +90,8 @@ func setup(world_model: WorldModel, selection_manager: SelectionManager = null) 
 	_world_model = world_model
 	_selection_manager = selection_manager
 
-	# SelectionManagerを購読（リアクティブ更新、重複接続を防ぐ）
-	if _selection_manager and not _selection_manager.selection_changed.is_connected(_on_selection_changed):
+	# SelectionManagerを購読（リアクティブ更新）
+	if _selection_manager:
 		_selection_manager.selection_changed.connect(_on_selection_changed)
 
 
