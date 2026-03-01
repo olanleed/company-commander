@@ -52,8 +52,8 @@ func setup(world_model: WorldModel, player_faction: GameEnums.Faction, selection
 	_player_faction = player_faction
 	_selection_manager = selection_manager
 
-	# SelectionManagerを購読（リアクティブ更新）
-	if _selection_manager:
+	# SelectionManagerを購読（リアクティブ更新、重複接続を防ぐ）
+	if _selection_manager and not _selection_manager.selection_changed.is_connected(_on_selection_changed):
 		_selection_manager.selection_changed.connect(_on_selection_changed)
 
 	update_list()

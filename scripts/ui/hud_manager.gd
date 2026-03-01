@@ -60,15 +60,16 @@ func setup(world_model: WorldModel, map_data: MapData, player_faction: GameEnums
 		_selection_manager = SelectionManager.new()
 	_selection_manager.set_world_model(world_model)
 
-	# SelectionManagerのシグナルを購読
-	_selection_manager.selection_changed.connect(_on_selection_changed)
+	# SelectionManagerのシグナルを購読（重複接続を防ぐ）
+	if not _selection_manager.selection_changed.is_connected(_on_selection_changed):
+		_selection_manager.selection_changed.connect(_on_selection_changed)
 
 	if top_panel:
 		top_panel.setup(map_data, player_faction)
 	if left_panel:
-		left_panel.setup(world_model, player_faction, _selection_manager)
+		left_panel.setup(world_model, player_faction)
 	if right_panel:
-		right_panel.setup(world_model, _selection_manager)
+		right_panel.setup(world_model)
 	if minimap:
 		minimap.setup(map_data, world_model, player_faction)
 	if bottom_bar:
