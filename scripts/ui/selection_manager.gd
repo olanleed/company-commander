@@ -125,6 +125,7 @@ func remove_from_selection(element: ElementData.ElementInstance) -> void:
 func clear_selection() -> void:
 	_selected_elements.clear()
 	_primary_selection = null
+	selection_changed.emit(_selected_elements)  # 空の配列で通知
 	selection_cleared.emit()
 
 # =============================================================================
