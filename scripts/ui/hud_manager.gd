@@ -37,7 +37,7 @@ var pie_menu: PieMenu
 
 var _world_model: WorldModel
 var _map_data: MapData
-var _selected_elements: Array[ElementData.ElementInstance] = []
+var _selection_manager: SelectionManager
 var _player_faction: GameEnums.Faction = GameEnums.Faction.BLUE
 
 # =============================================================================
@@ -48,17 +48,27 @@ func _ready() -> void:
 	_setup_layout()
 
 
-func setup(world_model: WorldModel, map_data: MapData, player_faction: GameEnums.Faction) -> void:
+func setup(world_model: WorldModel, map_data: MapData, player_faction: GameEnums.Faction, selection_manager: SelectionManager = null) -> void:
 	_world_model = world_model
 	_map_data = map_data
 	_player_faction = player_faction
 
+	# SelectionManagerを設定（なければ作成）
+	if selection_manager:
+		_selection_manager = selection_manager
+	else:
+		_selection_manager = SelectionManager.new()
+	_selection_manager.set_world_model(world_model)
+
+	# SelectionManagerのシグナルを購読
+	_selection_manager.selection_changed.connect(_on_selection_changed)
+
 	if top_panel:
 		top_panel.setup(map_data, player_faction)
 	if left_panel:
-		left_panel.setup(world_model, player_faction)
+		left_panel.setup(world_model, player_faction, _selection_manager)
 	if right_panel:
-		right_panel.setup(world_model)
+		right_panel.setup(world_model, _selection_manager)
 	if minimap:
 		minimap.setup(map_data, world_model, player_faction)
 	if bottom_bar:
@@ -195,21 +205,33 @@ func update_hud(sim_runner: SimRunner, company_ai = null) -> void:
 	if left_panel:
 		left_panel.update_list()
 
-	if right_panel and _selected_elements.size() > 0:
-		right_panel.update_display(_selected_elements, company_ai)
+	var selected := _selection_manager.get_selected() if _selection_manager else []
+	if right_panel and selected.size() > 0:
+		right_panel.update_display(selected, company_ai)
 
 	if minimap:
 		minimap.queue_redraw()
 
 
 func set_selected_elements(elements: Array[ElementData.ElementInstance]) -> void:
-	_selected_elements = elements
+	# SelectionManagerに委譲（後方互換）
+	if _selection_manager:
+		_selection_manager.select(elements)
 
+
+func get_selection_manager() -> SelectionManager:
+	return _selection_manager
+
+
+## 選択変更時のコールバック
+func _on_selection_changed(elements: Array) -> void:
 	if right_panel:
 		right_panel.set_elements(elements)
-
 	if left_panel:
-		left_panel.highlight_elements(elements)
+		var typed_elements: Array[ElementData.ElementInstance] = []
+		for e in elements:
+			typed_elements.append(e)
+		left_panel.highlight_elements(typed_elements)
 
 # =============================================================================
 # 放射状メニュー

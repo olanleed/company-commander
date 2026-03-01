@@ -25,6 +25,7 @@ var _scroll: ScrollContainer
 # =============================================================================
 
 var _world_model: WorldModel
+var _selection_manager: SelectionManager
 var _player_faction: GameEnums.Faction
 var _highlighted_ids: Array[String] = []
 var _current_filter: String = "all"
@@ -46,9 +47,15 @@ func _ready() -> void:
 	_setup_style()
 
 
-func setup(world_model: WorldModel, player_faction: GameEnums.Faction) -> void:
+func setup(world_model: WorldModel, player_faction: GameEnums.Faction, selection_manager: SelectionManager = null) -> void:
 	_world_model = world_model
 	_player_faction = player_faction
+	_selection_manager = selection_manager
+
+	# SelectionManagerを購読（リアクティブ更新）
+	if _selection_manager:
+		_selection_manager.selection_changed.connect(_on_selection_changed)
+
 	update_list()
 
 
@@ -234,6 +241,14 @@ func _create_mini_bar(value: float, color: Color) -> Control:
 
 
 func highlight_elements(elements: Array[ElementData.ElementInstance]) -> void:
+	_highlighted_ids.clear()
+	for element in elements:
+		_highlighted_ids.append(element.id)
+	update_list()
+
+
+## SelectionManagerからの選択変更通知
+func _on_selection_changed(elements: Array) -> void:
 	_highlighted_ids.clear()
 	for element in elements:
 		_highlighted_ids.append(element.id)

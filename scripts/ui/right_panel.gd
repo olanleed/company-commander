@@ -66,6 +66,7 @@ var _ai_weapon_label: Label
 # =============================================================================
 
 var _world_model: WorldModel
+var _selection_manager: SelectionManager
 var _selected_elements: Array[ElementData.ElementInstance] = []
 var _company_ai = null  # CompanyControllerAI
 
@@ -85,8 +86,13 @@ func _ready() -> void:
 	_setup_style()
 
 
-func setup(world_model: WorldModel) -> void:
+func setup(world_model: WorldModel, selection_manager: SelectionManager = null) -> void:
 	_world_model = world_model
+	_selection_manager = selection_manager
+
+	# SelectionManagerを購読（リアクティブ更新）
+	if _selection_manager:
+		_selection_manager.selection_changed.connect(_on_selection_changed)
 
 
 func _setup_layout() -> void:
@@ -563,8 +569,19 @@ func _setup_style() -> void:
 # 更新
 # =============================================================================
 
-func set_elements(elements: Array[ElementData.ElementInstance]) -> void:
-	_selected_elements = elements
+func set_elements(elements) -> void:
+	# Array[ElementInstance]またはArrayを受け付ける
+	_selected_elements.clear()
+	for e in elements:
+		_selected_elements.append(e)
+	_update_display()
+
+
+## SelectionManagerからの選択変更通知
+func _on_selection_changed(elements: Array) -> void:
+	_selected_elements.clear()
+	for e in elements:
+		_selected_elements.append(e)
 	_update_display()
 
 
