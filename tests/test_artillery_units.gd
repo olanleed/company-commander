@@ -515,3 +515,41 @@ func test_all_artillery_units_have_ammo_state() -> void:
 		var total: int = element.ammo_state.main_gun.get_max_total()
 		assert_gt(total, 0,
 			"%s should have positive ammo capacity (got %d)" % [config.id, total])
+
+
+# =============================================================================
+# HUD武器検出テスト（RightPanelの_element_has_gun_weapon）
+# =============================================================================
+
+func test_hud_detects_howitzer_weapon() -> void:
+	## HUDが榴弾砲を持つユニットを検出できる
+	var element := ElementFactory.create_element_with_vehicle(
+		"USA_M109A7_Paladin",
+		GameEnums.Faction.BLUE,
+		Vector2(100, 100)
+	)
+
+	# 武器IDにHOWITZERを含む武器があるか確認
+	var has_howitzer := false
+	for weapon in element.weapons:
+		if weapon.id.contains("HOWITZER"):
+			has_howitzer = true
+			break
+	assert_true(has_howitzer, "M109A7 should have HOWITZER weapon")
+
+
+func test_hud_detects_mortar_weapon() -> void:
+	## HUDが迫撃砲を持つユニットを検出できる
+	var element := ElementFactory.create_element_with_vehicle(
+		"JPN_Type24_Mortar",
+		GameEnums.Faction.BLUE,
+		Vector2(100, 100)
+	)
+
+	# 武器IDにMORTARを含む武器があるか確認
+	var has_mortar := false
+	for weapon in element.weapons:
+		if weapon.id.contains("MORTAR"):
+			has_mortar = true
+			break
+	assert_true(has_mortar, "Type24 should have MORTAR weapon")

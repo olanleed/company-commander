@@ -957,6 +957,9 @@ func _element_has_gun_weapon(element: ElementData.ElementInstance) -> bool:
 			return true
 		if weapon.id.contains("120MM") or weapon.id.contains("105MM") or weapon.id.contains("125MM"):
 			return true
+		# 砲兵武器（榴弾砲、迫撃砲）
+		if weapon.id.contains("HOWITZER") or weapon.id.contains("MORTAR"):
+			return true
 	return false
 
 
