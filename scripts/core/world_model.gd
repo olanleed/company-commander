@@ -13,6 +13,7 @@ extends RefCounted
 signal element_added(element: ElementData.ElementInstance)
 signal element_removed(element: ElementData.ElementInstance)
 signal element_destroyed(element: ElementData.ElementInstance)
+signal element_moved(element_id: String, new_position: Vector2)  ## UIリアクティブ化用
 
 # =============================================================================
 # データ
@@ -71,6 +72,12 @@ func remove_element(element: ElementData.ElementInstance) -> void:
 ## IDでElementを取得
 func get_element_by_id(id: String) -> ElementData.ElementInstance:
 	return _element_map.get(id)
+
+
+## Element移動を通知（UIリアクティブ化用）
+## MovementSystemから呼び出される
+func notify_element_moved(element_id: String, new_position: Vector2) -> void:
+	element_moved.emit(element_id, new_position)
 
 
 ## 陣営のElementを取得

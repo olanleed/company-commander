@@ -66,9 +66,46 @@ func _ready() -> void:
 	_label.add_theme_constant_override("outline_size", 3)
 	add_child(_label)
 
+	# シグナル購読（UIリアクティブ化）
+	if cp:
+		cp.state_changed.connect(_on_state_changed)
+		cp.progress_changed.connect(_on_progress_changed)
+		# 初期表示を更新
+		update_display()
+
 
 func _process(delta: float) -> void:
+	# アニメーション時間のみ更新（CONTESTED点滅、進行パルス用）
 	_time += delta
+	# アニメーション中のみ再描画をリクエスト
+	if _needs_animation():
+		queue_redraw()
+
+
+## アニメーションが必要か判定
+func _needs_animation() -> bool:
+	if not cp:
+		return false
+	# CONTESTEDまたは進行中はアニメーションが必要
+	return cp.state in [
+		GameEnums.CPState.CONTESTED,
+		GameEnums.CPState.CAPTURING_BLUE, GameEnums.CPState.CAPTURING_RED,
+		GameEnums.CPState.NEUTRALIZING_BLUE, GameEnums.CPState.NEUTRALIZING_RED
+	]
+
+
+## シグナルハンドラ: 状態変更
+func _on_state_changed(_new_state: GameEnums.CPState) -> void:
+	update_display()
+
+
+## シグナルハンドラ: 進行率変更
+func _on_progress_changed(_new_ratio: float) -> void:
+	update_display()
+
+
+## 表示を更新（シグナル経由で呼ばれる）
+func update_display() -> void:
 	_update_label()
 	queue_redraw()
 

@@ -51,6 +51,27 @@ func setup(p_world_model: WorldModel, p_vision_system: VisionSystem = null, p_mi
 	vision_system = p_vision_system
 	missile_system = p_missile_system
 
+	# シグナル購読（UIリアクティブ化）
+	if world_model:
+		world_model.element_moved.connect(_on_element_moved)
+		world_model.element_added.connect(_on_element_changed)
+		world_model.element_removed.connect(_on_element_changed)
+
+
+## シグナルハンドラ: Element移動
+func _on_element_moved(_element_id: String, _new_position: Vector2) -> void:
+	request_redraw()
+
+
+## シグナルハンドラ: Element追加/削除
+func _on_element_changed(_element: ElementData.ElementInstance) -> void:
+	request_redraw()
+
+
+## 再描画をリクエスト（シグナル経由で呼ばれる）
+func request_redraw() -> void:
+	queue_redraw()
+
 
 func set_selected_elements(elements: Array[ElementData.ElementInstance]) -> void:
 	_selected_elements = elements
@@ -339,5 +360,7 @@ func _draw_artillery_deploy_bars() -> void:
 # =============================================================================
 
 func _process(_delta: float) -> void:
-	# 常に再描画（ユニット位置が変わるため）
-	queue_redraw()
+	# シグナル購読により、ポーリングは不要
+	# ただし、setup()前は手動で再描画
+	if not world_model:
+		queue_redraw()

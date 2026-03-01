@@ -35,7 +35,11 @@ var cp_radius_m: float = 40.0
 
 ## 拠点データ
 ## 仕様書: docs/capture_v0.1.md
-class CapturePoint:
+class CapturePoint extends RefCounted:
+	## シグナル（UIリアクティブ化用）
+	signal state_changed(new_state: GameEnums.CPState)
+	signal progress_changed(new_ratio: float)
+
 	## 固定データ（マップ読み込み時）
 	var id: String = ""
 	var position: Vector2 = Vector2.ZERO
@@ -44,33 +48,55 @@ class CapturePoint:
 	var arrival_points: Array[Vector2] = []
 
 	## 動的状態（試合中更新）
-	var control_milli: int = 0  ## -100000〜+100000（+:Blue, -:Red）
-	var state: GameEnums.CPState = GameEnums.CPState.NEUTRAL
+	var _control_milli: int = 0  ## -100000〜+100000（+:Blue, -:Red）
+	var _state: GameEnums.CPState = GameEnums.CPState.NEUTRAL
+
+	## control_milliのプロパティアクセサ（シグナル発行用）
+	var control_milli: int:
+		get: return _control_milli
+		set(value):
+			var old_ratio := get_control_ratio()
+			_control_milli = value
+			var new_ratio := get_control_ratio()
+			if absf(new_ratio - old_ratio) > 0.001:
+				progress_changed.emit(new_ratio)
+
+	## stateのプロパティアクセサ（シグナル発行用）
+	var state: GameEnums.CPState:
+		get: return _state
+		set(value):
+			if _state != value:
+				_state = value
+				state_changed.emit(value)
+
+	## 状態を設定（シグナル発行）
+	func set_state(new_state: GameEnums.CPState) -> void:
+		state = new_state
 
 	## 初期化（initial_ownerに基づいてcontrol_milliを設定）
 	func initialize_control() -> void:
 		match initial_owner:
 			GameEnums.Faction.BLUE:
-				control_milli = GameConstants.CONTROL_MILLI_MAX
-				state = GameEnums.CPState.CONTROLLED_BLUE
+				_control_milli = GameConstants.CONTROL_MILLI_MAX
+				_state = GameEnums.CPState.CONTROLLED_BLUE
 			GameEnums.Faction.RED:
-				control_milli = GameConstants.CONTROL_MILLI_MIN
-				state = GameEnums.CPState.CONTROLLED_RED
+				_control_milli = GameConstants.CONTROL_MILLI_MIN
+				_state = GameEnums.CPState.CONTROLLED_RED
 			_:
-				control_milli = 0
-				state = GameEnums.CPState.NEUTRAL
+				_control_milli = 0
+				_state = GameEnums.CPState.NEUTRAL
 
 	## 現在の支配陣営を取得
 	func get_controlling_faction() -> GameEnums.Faction:
-		if state == GameEnums.CPState.CONTROLLED_BLUE:
+		if _state == GameEnums.CPState.CONTROLLED_BLUE:
 			return GameEnums.Faction.BLUE
-		elif state == GameEnums.CPState.CONTROLLED_RED:
+		elif _state == GameEnums.CPState.CONTROLLED_RED:
 			return GameEnums.Faction.RED
 		return GameEnums.Faction.NONE
 
 	## 制圧進行率（-1.0〜+1.0）を取得
 	func get_control_ratio() -> float:
-		return float(control_milli) / float(GameConstants.CONTROL_MILLI_MAX)
+		return float(_control_milli) / float(GameConstants.CONTROL_MILLI_MAX)
 
 ## 全拠点
 var capture_points: Array[CapturePoint] = []
