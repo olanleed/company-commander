@@ -69,7 +69,7 @@ func select(elements: Array[ElementData.ElementInstance]) -> void:
 	else:
 		_primary_selection = null
 
-	selection_changed.emit(_selected_elements)
+	_emit_selection_changed()
 
 
 ## 単一ユニットを選択
@@ -78,14 +78,14 @@ func select_single(element: ElementData.ElementInstance) -> void:
 	if element and element.is_destroyed:
 		_selected_elements.clear()
 		_primary_selection = null
-		selection_changed.emit(_selected_elements)
+		_emit_selection_changed()
 		return
 
 	_selected_elements.clear()
 	if element:
 		_selected_elements.append(element)
 	_primary_selection = element
-	selection_changed.emit(_selected_elements)
+	_emit_selection_changed()
 	if element:
 		primary_selection_changed.emit(element)
 
@@ -100,7 +100,7 @@ func add_to_selection(element: ElementData.ElementInstance) -> void:
 		return
 
 	_selected_elements.append(element)
-	selection_changed.emit(_selected_elements)
+	_emit_selection_changed()
 
 
 ## 選択から除外
@@ -118,15 +118,26 @@ func remove_from_selection(element: ElementData.ElementInstance) -> void:
 		else:
 			_primary_selection = null
 
-	selection_changed.emit(_selected_elements)
+	_emit_selection_changed()
 
 
 ## 選択をクリア
 func clear_selection() -> void:
 	_selected_elements.clear()
 	_primary_selection = null
-	selection_changed.emit(_selected_elements)  # 空の配列で通知
+	_emit_selection_changed()  # 空の配列で通知
 	selection_cleared.emit()
+
+# =============================================================================
+# 内部ヘルパー
+# =============================================================================
+
+## 配列のコピーを作成してシグナルを発行（参照共有による副作用を防ぐ）
+func _emit_selection_changed() -> void:
+	var elements_copy: Array = []
+	for e in _selected_elements:
+		elements_copy.append(e)
+	selection_changed.emit(elements_copy)
 
 # =============================================================================
 # 取得
@@ -176,4 +187,4 @@ func _on_element_removed(element: ElementData.ElementInstance) -> void:
 		_selected_elements = filtered
 		if _primary_selection and _primary_selection.id == element_id:
 			_primary_selection = filtered[0] if filtered.size() > 0 else null
-		selection_changed.emit(_selected_elements)
+		_emit_selection_changed()
