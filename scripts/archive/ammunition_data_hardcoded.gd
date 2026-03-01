@@ -1,4 +1,6 @@
-class_name AmmunitionData
+## アーカイブ: 旧AmmunitionDataハードコード版
+## 現在は scripts/data/ammunition_data.gd を使用
+## class_name は競合を避けるため削除済み
 extends RefCounted
 
 ## 弾種データモデル

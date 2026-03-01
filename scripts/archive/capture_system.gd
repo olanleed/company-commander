@@ -1,4 +1,6 @@
-class_name CaptureSystem
+## アーカイブ: 旧CaptureSystem
+## 現在は scripts/systems/capture_system.gd を使用
+## class_name は競合を避けるため削除済み
 extends RefCounted
 
 ## 拠点制圧システム

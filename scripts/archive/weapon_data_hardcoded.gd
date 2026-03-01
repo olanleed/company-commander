@@ -1,4 +1,6 @@
-class_name WeaponData
+## アーカイブ: 旧WeaponDataハードコード版
+## 現在は scripts/data/weapon_data.gd を使用
+## class_name は競合を避けるため削除済み
 extends RefCounted
 
 ## 武器データモデル

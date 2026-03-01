@@ -1,4 +1,6 @@
-class_name ProtectionData
+## アーカイブ: 旧ProtectionDataハードコード版
+## 現在は scripts/data/protection_data.gd を使用
+## class_name は競合を避けるため削除済み
 extends RefCounted
 
 ## 防護システムデータモデル

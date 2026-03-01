@@ -1,4 +1,6 @@
-class_name CapturePointView
+## アーカイブ: 旧CapturePointView
+## 現在は scripts/ui/capture_point_view.gd を使用
+## class_name は競合を避けるため削除済み
 extends Node2D
 
 ## 拠点ビュー

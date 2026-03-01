@@ -1,4 +1,6 @@
-class_name ElementData
+## アーカイブ: 旧ElementDataハードコード版
+## 現在は scripts/data/element_data.gd を使用
+## class_name は競合を避けるため削除済み
 extends RefCounted
 
 ## Element（要素）のデータモデル
