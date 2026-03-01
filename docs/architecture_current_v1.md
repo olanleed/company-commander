@@ -208,16 +208,23 @@ static func from_dict(data: Dictionary) -> Command:
 
 ```gdscript
 class CommandQueue:
-    var _history: Array[Command] = []
+    signal command_executed(command)
+    signal command_undone(command)
+    signal queue_changed
+
+    var _executed_history: Array[Command] = []
     var _redo_stack: Array[Command] = []
 
     func execute(cmd: Command, world_model: WorldModel) -> bool
-    func undo(world_model: WorldModel) -> bool
+    func undo_last(world_model: WorldModel) -> bool
+    func undo_for_elements(world_model: WorldModel, element_ids: Array[String]) -> bool
     func redo(world_model: WorldModel) -> bool
     func can_undo() -> bool
     func can_redo() -> bool
     func get_history() -> Array[Command]
 ```
+
+**undo_for_elements**: 選択中のユニットに関連するコマンドのみをUndoする。複数ユニットが選択されている場合でも、そのユニットに関連する最新のコマンドを取り消せる。
 
 ---
 
@@ -268,14 +275,24 @@ func notify_element_moved(element_id: String, new_position: Vector2) -> void:
 
 ```gdscript
 # scripts/ui/tactical_overlay.gd
-func setup(p_world_model: WorldModel, ...) -> void:
+func setup(p_world_model: WorldModel, ..., p_command_queue = null) -> void:
     world_model = p_world_model
+    command_queue = p_command_queue
+
     world_model.element_moved.connect(_on_element_moved)
     world_model.element_added.connect(_on_element_changed)
     world_model.element_removed.connect(_on_element_changed)
 
+    # CommandQueue購読（Undo時の再描画）
+    if command_queue:
+        command_queue.command_undone.connect(_on_command_undone)
+        command_queue.command_executed.connect(_on_command_executed)
+
 func _on_element_moved(_element_id: String, _new_position: Vector2) -> void:
     request_redraw()
+
+func _on_command_undone(_command) -> void:
+    request_redraw()  # 射撃線・CEP・展開ゲージを更新
 
 func request_redraw() -> void:
     queue_redraw()

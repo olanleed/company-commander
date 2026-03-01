@@ -1,6 +1,10 @@
 # Company Commander ドキュメント一覧
 
-Company Commander v0.1 の設計仕様書インデックスです。
+Company Commander v1.0 の設計仕様書インデックスです。
+
+**最終更新**: 2026-03-01
+**コード行数**: 約75,000行（GDScript）
+**テスト数**: 1,469件
 
 ---
 
@@ -8,10 +12,13 @@ Company Commander v0.1 の設計仕様書インデックスです。
 
 | ドキュメント | 内容 |
 |-------------|------|
-| [architecture_overview_v0.1.md](architecture_overview_v0.1.md) | **アーキテクチャ概要（プロジェクト全体像、システム一覧、データモデル）** |
+| [architecture_current_v1.md](architecture_current_v1.md) | **★ 現行アーキテクチャ設計書（リファクタリング後）** |
+| [architecture_overview_v0.1.md](architecture_overview_v0.1.md) | アーキテクチャ概要（プロジェクト全体像、システム一覧） |
+| [refactoring_plan_v1.md](refactoring_plan_v1.md) | リファクタリング計画書（5フェーズ改善計画） |
 | [spec_v0.1.md](spec_v0.1.md) | ゲーム全体仕様（コンセプト、ターゲット、基本ルール） |
 | [ruleset_v0.1.md](ruleset_v0.1.md) | ルールセットパラメータ（定数、係数、閾値） |
 | [game_loop_v0.1.md](game_loop_v0.1.md) | ゲームループ（10Hz Sim Tick、Phase構成） |
+| [naming_convention_v0.1.md](naming_convention_v0.1.md) | 命名規則（コード・データID命名ルール） |
 
 ---
 
@@ -75,6 +82,8 @@ Company Commander v0.1 の設計仕様書インデックスです。
 | ドキュメント | 内容 |
 |-------------|------|
 | [units_v0.1.md](units_v0.1.md) | ユニットデータモデル（ElementArchetype、UnitCard、国別オーバーライド） |
+| [unit_archetypes_v0.1.md](unit_archetypes_v0.1.md) | ユニットアーキタイプ一覧（歩兵・車両・砲兵の分類） |
+| [vehicle_catalog_v0.1.md](vehicle_catalog_v0.1.md) | 兵器カタログシステム（各国の車両・武装定義） |
 | [spawn_v0.1.md](spawn_v0.1.md) | スポーン・増援システム（Initial Deploy、Forward Entry） |
 
 ---
@@ -92,6 +101,7 @@ Company Commander v0.1 の設計仕様書インデックスです。
 | [munition_system_v0.1.md](munition_system_v0.1.md) | 弾薬システム（MunitionClass、弾道計算） |
 | [munition_classes_v0.1.md](munition_classes_v0.1.md) | 弾薬クラス詳細（BALL、AP、HE、HEAT、ATGM等） |
 | [missile_system_v0.2.md](missile_system_v0.2.md) | **ミサイルシステム（誘導方式、飛翔モデル、射手拘束、対抗手段）** |
+| [indirect_fire_v0.2.md](indirect_fire_v0.2.md) | **間接射撃システム（榴弾砲・迫撃砲、CEP、着弾効果）** |
 
 ---
 
@@ -100,6 +110,7 @@ Company Commander v0.1 の設計仕様書インデックスです。
 | ドキュメント | 内容 |
 |-------------|------|
 | [vision_v0.1.md](vision_v0.1.md) | 視界システム（LoS、発見判定、CONF/SUS/LOST、煙幕、遮蔽） |
+| [data_link_v0.1.md](data_link_v0.1.md) | データリンク・C4I（通信ハブ、情報共有範囲、LINKED/ISOLATED） |
 
 ---
 
@@ -129,52 +140,72 @@ Company Commander v0.1 の設計仕様書インデックスです。
 |-------------|------|
 | [ui_design_v0.1.md](ui_design_v0.1.md) | UI設計（レイアウト、パネル構成） |
 | [ui_input_v0.1.md](ui_input_v0.1.md) | 入力システム（マウス、キーボード、選択操作） |
+| [controls.md](controls.md) | 操作方法クイックリファレンス |
+| [pie_menu_commands_v0.2.md](pie_menu_commands_v0.2.md) | パイメニューコマンド設計（ユニット別コマンド体系） |
 
 ---
 
 ## ドキュメント構成
 
-```
+```text
 docs/
-├── README.md                    # このファイル（インデックス）
-├── root/                        # 装備知識ルート
-│   ├── military_equipment_2026_detailed.md  # Root（taxonomy親）
-│   ├── document_tree_refactor_plan_v0.1.md  # 設計方針
-│   ├── document_tree_refactor_execution_v0.1.md  # 実施計画
-│   └── catalog_docs_mapping.md  # カタログ対応表
-├── vehicles_tree/               # 車両知識サブツリー
-│   ├── README.md                # Index Doc
-│   ├── military_vehicles_2026_detailed.md
-│   └── armour_systems_2026_mainstream.md
-├── weapons_tree/                # 兵器知識サブツリー
-│   ├── README.md                # Index Doc
-│   ├── *_2026_mainstream.md     # Taxonomy（分類体系）
-│   └── *_weapons_2026.md        # Detail（国別具体値）
-├── spec_v0.1.md                 # ゲーム全体仕様
-├── ruleset_v0.1.md              # ルールセットパラメータ
-├── game_loop_v0.1.md            # ゲームループ
-├── map_v0.1.md                  # マップ仕様
-├── terrain_v0.1.md              # 地形詳細
-├── navigation_v0.1.md           # ナビゲーション
-├── units_v0.1.md                # ユニットデータモデル
-├── spawn_v0.1.md                # スポーン・増援
-├── combat_v0.1.md               # 戦闘システム
-├── combat_events_v0.1.md        # 戦闘イベント
-├── damage_model_v0.1.md         # ダメージモデル
-├── weapon_system_profile_v0.1.md # 武器システム
-├── concrete_weapons_v0.1.md     # 具体武器データ
-├── weapon_loadout_v0.1.md       # 武装構成
-├── munition_system_v0.1.md      # 弾薬システム
-├── munition_classes_v0.1.md     # 弾薬クラス
-├── vision_v0.1.md               # 視界システム
-├── company_ai_v0.1.md           # 中隊AI
-├── risk_assessment_v0.1.md      # リスク評価
-├── sop_v0.1.md                  # SOP
-├── order_queue_v0.1.md          # 命令キュー
-├── capture_v0.1.md              # 拠点キャプチャ
-├── victory_conditions_v0.1.md   # 勝利条件
-├── ui_design_v0.1.md            # UI設計
-└── ui_input_v0.1.md             # 入力システム
+├── README.md                       # このファイル（インデックス）
+│
+├── # コア設計
+├── architecture_current_v1.md      # ★ 現行アーキテクチャ（必読）
+├── architecture_overview_v0.1.md   # アーキテクチャ概要
+├── refactoring_plan_v1.md          # リファクタリング計画
+├── naming_convention_v0.1.md       # 命名規則
+├── spec_v0.1.md                    # ゲーム全体仕様
+├── ruleset_v0.1.md                 # ルールセットパラメータ
+├── game_loop_v0.1.md               # ゲームループ
+│
+├── # 装備知識ツリー
+├── root/                           # 装備知識ルート
+│   ├── military_equipment_2026_detailed.md
+│   ├── document_tree_*.md          # 設計・管理ドキュメント
+│   └── catalog_docs_mapping.md
+├── vehicles_tree/                  # 車両知識サブツリー
+│   └── *.md
+├── weapons_tree/                   # 兵器知識サブツリー
+│   └── *.md
+│
+├── # マップ・ナビ
+├── map_v0.1.md / terrain_v0.1.md / navigation_v0.1.md
+│
+├── # ユニット
+├── units_v0.1.md                   # ユニットデータモデル
+├── unit_archetypes_v0.1.md         # アーキタイプ一覧
+├── vehicle_catalog_v0.1.md         # 兵器カタログ
+├── spawn_v0.1.md                   # スポーン
+│
+├── # 戦闘
+├── combat_v0.1.md                  # 戦闘システム
+├── combat_events_v0.1.md           # 戦闘イベント
+├── damage_model_v0.1.md            # ダメージモデル
+├── weapon_*.md                     # 武器関連
+├── munition_*.md                   # 弾薬関連
+├── missile_system_v0.2.md          # ミサイルシステム
+├── indirect_fire_v0.2.md           # 間接射撃
+│
+├── # 視界・通信
+├── vision_v0.1.md                  # 視界システム
+├── data_link_v0.1.md               # データリンク
+│
+├── # AI・命令
+├── company_ai_v0.1.md              # 中隊AI
+├── risk_assessment_v0.1.md         # リスク評価
+├── sop_v0.1.md                     # SOP
+├── order_queue_v0.1.md             # 命令キュー
+│
+├── # 勝利条件
+├── capture_v0.1.md / victory_conditions_v0.1.md
+│
+└── # UI
+    ├── ui_design_v0.1.md           # UI設計
+    ├── ui_input_v0.1.md            # 入力システム
+    ├── controls.md                 # 操作方法
+    └── pie_menu_commands_v0.2.md   # パイメニュー
 ```
 
 ---
