@@ -115,10 +115,8 @@ func _update_contact_states(current_tick: int, dt: float) -> void:
 
 ## 位置誤差の成長
 func _grow_position_error(contact: ContactRecord, dt: float) -> void:
-	contact.pos_error_m = minf(
-		GameConstants.ERROR_MAX_M,
-		contact.pos_error_m + GameConstants.ERROR_GROWTH_MPS * dt
-	)
+	# VisionCalcの純粋関数に委譲
+	contact.pos_error_m = VisionCalc.calc_position_error_growth(contact.pos_error_m, dt)
 	# 推定位置も速度で移動
 	contact.pos_est_m += contact.vel_est_mps * dt
 
@@ -201,11 +199,11 @@ func _calculate_effective_range(observer: ElementData.ElementInstance, target: E
 
 	var r_base := observer.element_type.spot_range_base
 
-	# 目標位置の隠蔽係数
+	# 目標位置の隠蔽係数（VisionCalcの純粋関数に委譲）
 	var m_terrain := _get_concealment_modifier(target.position)
 
-	# シンプルな計算: 基本視界 × 地形隠蔽のみ
-	return r_base * m_terrain
+	# シンプルな計算: VisionCalcの純粋関数に委譲
+	return VisionCalc.calc_effective_range(r_base, m_terrain)
 
 
 ## 地形による隠蔽係数
@@ -214,19 +212,8 @@ func _get_concealment_modifier(pos: Vector2) -> float:
 		return 1.0
 
 	var terrain := _map_data.get_terrain_at(pos)
-	match terrain:
-		GameEnums.TerrainType.OPEN:
-			return 1.00
-		GameEnums.TerrainType.ROAD:
-			return 1.00
-		GameEnums.TerrainType.FOREST:
-			return 0.60
-		GameEnums.TerrainType.URBAN:
-			return 0.70
-		GameEnums.TerrainType.WATER:
-			return 1.00
-		_:
-			return 1.00
+	# VisionCalcの純粋関数に委譲
+	return VisionCalc.get_concealment_modifier(terrain)
 
 
 
@@ -247,9 +234,9 @@ func _check_line_of_sight(from: Vector2, to: Vector2) -> Dictionary:
 	# HardBlock判定（v0.1では建物ポリゴンがないため省略）
 	# TODO: 建物・崖ポリゴンとの交差判定
 
-	# SoftOcclusion: 森林の透過率計算
+	# SoftOcclusion: 森林の透過率計算（VisionCalcの純粋関数に委譲）
 	var forest_distance := _calculate_forest_crossing_distance(from, to)
-	var t_forest := exp(-forest_distance / GameConstants.FOREST_LOS_DECAY_M)
+	var t_forest := VisionCalc.calc_forest_transmittance(forest_distance)
 	# DEBUG: 森林計算の詳細
 	if forest_distance > 0:
 		print("[LoS] from=(%.0f,%.0f) to=(%.0f,%.0f): forest_dist=%.0f, t_forest=%.3f" % [
@@ -258,8 +245,8 @@ func _check_line_of_sight(from: Vector2, to: Vector2) -> Dictionary:
 	# SoftOcclusion: 煙の透過率計算（v0.1では煙幕未実装）
 	var t_smoke := 1.0
 
-	# 最終透過率
-	var t_los := t_forest * t_smoke
+	# 最終透過率（VisionCalcの純粋関数に委譲）
+	var t_los := VisionCalc.calc_los_transmittance(forest_distance, t_smoke)
 	result.transmittance = t_los
 
 	if t_los < GameConstants.LOS_BLOCK_THRESHOLD:
@@ -298,35 +285,35 @@ func _calculate_forest_crossing_distance(from: Vector2, to: Vector2) -> float:
 # =============================================================================
 
 ## Contactの更新
-func _update_contact(contacts: Dictionary, target: ElementData.ElementInstance, is_visible: bool, t_los: float, current_tick: int) -> void:
+func _update_contact(contacts: Dictionary, target: ElementData.ElementInstance, is_visible: bool, _t_los: float, current_tick: int) -> void:
 	var element_id := target.id
 
 	# 新規Contact作成
 	if element_id not in contacts:
 		if is_visible:
-			var contact := ContactRecord.new(element_id)
-			contact.visible_streak_scans = 1
-			contact.last_visible_tick = current_tick
-			contact.pos_est_m = target.position
-			contact.vel_est_mps = target.velocity
-			contacts[element_id] = contact
+			var new_contact := ContactRecord.new(element_id)
+			new_contact.visible_streak_scans = 1
+			new_contact.last_visible_tick = current_tick
+			new_contact.pos_est_m = target.position
+			new_contact.vel_est_mps = target.velocity
+			contacts[element_id] = new_contact
 		return
 
-	var contact: ContactRecord = contacts[element_id]
+	var existing_contact: ContactRecord = contacts[element_id]
 
 	if is_visible:
-		contact.visible_streak_scans += 1
-		contact.last_visible_tick = current_tick
-		contact.pos_est_m = target.position
-		contact.vel_est_mps = target.velocity
-		contact.pos_error_m = 0.0
+		existing_contact.visible_streak_scans += 1
+		existing_contact.last_visible_tick = current_tick
+		existing_contact.pos_est_m = target.position
+		existing_contact.vel_est_mps = target.velocity
+		existing_contact.pos_error_m = 0.0
 
 		# CONF確定判定
-		if contact.visible_streak_scans >= GameConstants.CONF_ACQUIRE_STREAK:
-			contact.state = GameEnums.ContactState.CONFIRMED
-			contact.type_hint = target.element_type.id if target.element_type else ""
+		if existing_contact.visible_streak_scans >= GameConstants.CONF_ACQUIRE_STREAK:
+			existing_contact.state = GameEnums.ContactState.CONFIRMED
+			existing_contact.type_hint = target.element_type.id if target.element_type else ""
 	else:
-		contact.visible_streak_scans = 0
+		existing_contact.visible_streak_scans = 0
 
 # =============================================================================
 # 公開API
