@@ -1085,11 +1085,14 @@ func _refresh_dynamic_info() -> void:
 		_update_ammo_display(element)
 		# 補給ユニットの残量を更新
 		_update_supply_info(element)
-		# HP・抑圧も更新
-		_strength_bar.value = element.current_strength
-		_strength_label.text = "%d%%" % element.current_strength
-		_suppression_bar.value = element.suppression * 100.0
-		_suppression_label.text = "%d%%" % int(element.suppression * 100.0)
+		# HP・抑圧も更新（_show_singleと同じ計算式を使用）
+		var max_str := element.element_type.max_strength if element.element_type else 10
+		var str_pct := float(element.current_strength) / float(max_str) * 100.0
+		_strength_bar.value = str_pct
+		_strength_label.text = "%d/%d (%d%%)" % [element.current_strength, max_str, int(str_pct)]
+		var sup_pct := element.suppression * 100.0
+		_suppression_bar.value = sup_pct
+		_suppression_label.text = "%d%%" % int(sup_pct)
 
 
 ## 装備情報をクリア
