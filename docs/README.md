@@ -15,6 +15,7 @@ Company Commander v1.0 の設計仕様書インデックスです。
 | [architecture_current_v1.md](architecture_current_v1.md) | **★ 現行アーキテクチャ設計書（リファクタリング後）** |
 | [architecture_overview_v0.1.md](architecture_overview_v0.1.md) | アーキテクチャ概要（プロジェクト全体像、システム一覧） |
 | [refactoring_plan_v1.md](refactoring_plan_v1.md) | リファクタリング計画書（5フェーズ改善計画） |
+| [refactoring_pure_functions_v0.1.md](refactoring_pure_functions_v0.1.md) | **純粋関数化計画（計算ロジックのstatic化）** |
 | [spec_v0.1.md](spec_v0.1.md) | ゲーム全体仕様（コンセプト、ターゲット、基本ルール） |
 | [ruleset_v0.1.md](ruleset_v0.1.md) | ルールセットパラメータ（定数、係数、閾値） |
 | [game_loop_v0.1.md](game_loop_v0.1.md) | ゲームループ（10Hz Sim Tick、Phase構成） |
