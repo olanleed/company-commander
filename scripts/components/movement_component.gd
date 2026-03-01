@@ -211,3 +211,13 @@ func set_is_moving(value: bool) -> void:
 ## 道路専用フラグを設定
 func set_use_road_only(value: bool) -> void:
 	_use_road_only = value
+
+
+## order_target_idを直接設定（後方互換用）
+func set_order_target_id(value: String) -> void:
+	_order_target_id = value
+
+
+## order_target_positionを直接設定（後方互換用）
+func set_order_target_position(value: Vector2) -> void:
+	_order_target_position = value

@@ -25,6 +25,28 @@ const _ProtectionData: GDScript = preload("res://scripts/data/protection_data.gd
 # AmmoStateをpreload（弾薬管理用）
 const _AmmoState: GDScript = preload("res://scripts/data/ammo_state.gd")
 
+# イベントクラスをpreload
+const _DamageEvent: GDScript = preload("res://scripts/events/damage_event.gd")
+const _SuppressionEvent: GDScript = preload("res://scripts/events/suppression_event.gd")
+const _DestroyedEvent: GDScript = preload("res://scripts/events/destroyed_event.gd")
+
+# =============================================================================
+# イベントバス
+# =============================================================================
+
+var _game_events = null  # GameEvents (オプショナル)
+
+
+## GameEventsを設定
+func set_game_events(events) -> void:
+	_game_events = events
+
+
+## GameEventsを取得
+func get_game_events():
+	return _game_events
+
+
 # =============================================================================
 # 戦闘効果結果
 # =============================================================================
@@ -524,11 +546,15 @@ func apply_damage(
 	d_supp: float,
 	d_dmg: float,
 	current_tick: int = 0,
-	threat_class: WeaponData.ThreatClass = WeaponData.ThreatClass.SMALL_ARMS
+	threat_class: WeaponData.ThreatClass = WeaponData.ThreatClass.SMALL_ARMS,
+	shooter_id: String = "",
+	weapon_id: String = ""
 ) -> void:
 	# 既に破壊済みなら何もしない
 	if element.is_destroyed:
 		return
+
+	var old_suppression := element.suppression
 
 	# 装甲車両への抑圧上限を適用（ソフトスキン車両は対象外）
 	var effective_supp := d_supp
@@ -541,12 +567,33 @@ func apply_damage(
 	# 抑圧増加（d_suppは0-1範囲なのでそのまま加算）
 	element.suppression = clampf(element.suppression + effective_supp, 0.0, 1.0)
 
+	# 抑圧イベント発火
+	if _game_events and effective_supp > 0.001:
+		var supp_event = _SuppressionEvent.new()
+		supp_event.element_id = element.id
+		supp_event.old_value = old_suppression
+		supp_event.new_value = element.suppression
+		supp_event.delta = effective_supp
+		supp_event.source_id = shooter_id
+		_game_events.emit_suppression_applied(supp_event)
+
 	# Strength減少（小数点以下は蓄積し、1.0超過分を適用）
+	var applied_damage := 0
 	element.accumulated_damage += d_dmg
 	if element.accumulated_damage >= 1.0:
 		var strength_reduction := int(element.accumulated_damage)
 		element.accumulated_damage -= float(strength_reduction)
 		element.current_strength = maxi(0, element.current_strength - strength_reduction)
+		applied_damage = strength_reduction
+
+	# ダメージイベント発火
+	if _game_events and (d_dmg > 0.0 or applied_damage > 0):
+		var dmg_event = _DamageEvent.new()
+		dmg_event.target_id = element.id
+		dmg_event.shooter_id = shooter_id
+		dmg_event.weapon_id = weapon_id
+		dmg_event.damage = applied_damage if applied_damage > 0 else int(d_dmg)
+		_game_events.emit_damage_applied(dmg_event)
 
 	# 状態更新
 	element.state = get_suppression_state(element)
@@ -1432,7 +1479,9 @@ func calculate_soft_damage(category: GameEnums.DamageCategory) -> float:
 func _mark_destroyed(
 	element: ElementData.ElementInstance,
 	current_tick: int,
-	is_catastrophic: bool
+	is_catastrophic: bool,
+	killer_id: String = "",
+	weapon_id: String = ""
 ) -> void:
 	element.state = GameEnums.UnitState.DESTROYED
 	element.is_destroyed = true
@@ -1441,6 +1490,16 @@ func _mark_destroyed(
 	element.current_strength = 0
 	element.is_moving = false
 	element.current_path.clear()
+
+	# 破壊イベント発火
+	if _game_events:
+		var destroyed_event = _DestroyedEvent.new()
+		destroyed_event.element_id = element.id
+		destroyed_event.killer_id = killer_id
+		destroyed_event.weapon_id = weapon_id
+		destroyed_event.catastrophic = is_catastrophic
+		destroyed_event.position = element.position
+		_game_events.emit_unit_destroyed(destroyed_event)
 
 	print("[Combat] %s DESTROYED%s at tick %d" % [
 		element.id,

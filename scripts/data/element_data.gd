@@ -318,7 +318,10 @@ class ElementInstance:
 				return _movement_component.order_target_position
 			return _order_target_position_raw
 		set(value):
-			_order_target_position_raw = value
+			if _movement_component:
+				_movement_component.set_order_target_position(value)
+			else:
+				_order_target_position_raw = value
 	var _order_target_position_raw: Vector2 = Vector2.ZERO
 
 	var order_target_id: String:  ## 命令の対象ID（ATTACKコマンドなど）
@@ -327,7 +330,10 @@ class ElementInstance:
 				return _movement_component.order_target_id
 			return _order_target_id_raw
 		set(value):
-			_order_target_id_raw = value
+			if _movement_component:
+				_movement_component.set_order_target_id(value)
+			else:
+				_order_target_id_raw = value
 	var _order_target_id_raw: String = ""
 
 	var pending_move_order: Dictionary = {}  ## SACLOS誘導中の待機移動命令 {target: Vector2, use_route: bool}
