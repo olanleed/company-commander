@@ -25,6 +25,9 @@ const _ProtectionData: GDScript = preload("res://scripts/data/protection_data.gd
 # AmmoStateをpreload（弾薬管理用）
 const _AmmoState: GDScript = preload("res://scripts/data/ammo_state.gd")
 
+# CombatCalcをpreload（純粋関数への委譲用）
+const CombatCalc: GDScript = preload("res://scripts/systems/combat_calc.gd")
+
 # イベントクラスをpreload
 const _DamageEvent: GDScript = preload("res://scripts/events/damage_event.gd")
 const _SuppressionEvent: GDScript = preload("res://scripts/events/suppression_event.gd")
@@ -86,15 +89,9 @@ func calculate_shooter_coefficient(shooter: ElementData.ElementInstance) -> floa
 
 
 ## 抑圧レベルに応じた基本係数
+## @deprecated CombatCalc.calc_shooter_coeff() に委譲
 func _get_suppression_state_coefficient(suppression: float) -> float:
-	if suppression >= GameConstants.SUPP_THRESHOLD_BROKEN:
-		return GameConstants.M_SHOOTER_BROKEN
-	elif suppression >= GameConstants.SUPP_THRESHOLD_PINNED:
-		return GameConstants.M_SHOOTER_PINNED
-	elif suppression >= GameConstants.SUPP_THRESHOLD_SUPPRESSED:
-		return GameConstants.M_SHOOTER_SUPPRESSED
-	else:
-		return GameConstants.M_SHOOTER_NORMAL
+	return CombatCalc.calc_shooter_coeff(suppression)
 
 
 # =============================================================================
@@ -102,33 +99,15 @@ func _get_suppression_state_coefficient(suppression: float) -> float:
 # =============================================================================
 
 ## 直射遮蔽係数を取得
+## @deprecated CombatCalc.get_cover_coeff_df() に委譲
 func get_cover_coefficient_df(terrain: GameEnums.TerrainType) -> float:
-	match terrain:
-		GameEnums.TerrainType.OPEN:
-			return GameConstants.COVER_DF_OPEN
-		GameEnums.TerrainType.ROAD:
-			return GameConstants.COVER_DF_ROAD
-		GameEnums.TerrainType.FOREST:
-			return GameConstants.COVER_DF_FOREST
-		GameEnums.TerrainType.URBAN:
-			return GameConstants.COVER_DF_URBAN
-		_:
-			return GameConstants.COVER_DF_OPEN
+	return CombatCalc.get_cover_coeff_df(terrain)
 
 
 ## 間接遮蔽係数を取得
+## @deprecated CombatCalc.get_cover_coeff_if() に委譲
 func get_cover_coefficient_if(terrain: GameEnums.TerrainType) -> float:
-	match terrain:
-		GameEnums.TerrainType.OPEN:
-			return GameConstants.COVER_IF_OPEN
-		GameEnums.TerrainType.ROAD:
-			return GameConstants.COVER_IF_ROAD
-		GameEnums.TerrainType.FOREST:
-			return GameConstants.COVER_IF_FOREST
-		GameEnums.TerrainType.URBAN:
-			return GameConstants.COVER_IF_URBAN
-		_:
-			return GameConstants.COVER_IF_OPEN
+	return CombatCalc.get_cover_coeff_if(terrain)
 
 
 # =============================================================================
@@ -800,10 +779,9 @@ func get_vulnerability_supp(
 # =============================================================================
 
 ## v0.1R: ヒット確率を計算 (p_hit = 1 - exp(-K × E))
+## @deprecated CombatCalc.calc_hit_prob() に委譲
 func calculate_hit_probability(exposure: float) -> float:
-	if exposure <= 0.0:
-		return 0.0
-	return 1.0 - exp(-GameConstants.K_DF_HIT * exposure)
+	return CombatCalc.calc_hit_prob(exposure)
 
 
 ## v0.1R: 直射の期待危険度 E を計算
