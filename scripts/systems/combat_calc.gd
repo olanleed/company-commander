@@ -421,3 +421,139 @@ static func get_aspect_mult_light(aspect: GameEnums.ArmorAspect) -> float:
 			return GameConstants.ASPECT_LIGHT_REAR
 		_:
 			return 1.0
+
+
+# =============================================================================
+# 目標回避係数
+# =============================================================================
+
+## 目標の回避係数を取得
+## @param is_moving 目標が移動中か
+## @return 回避係数 (移動中は1.0超、静止は1.0)
+static func get_target_evasion_coeff(is_moving: bool) -> float:
+	if is_moving:
+		return GameConstants.M_EVASION_MOVING
+	else:
+		return GameConstants.M_EVASION_STATIONARY
+
+
+# =============================================================================
+# 戦力火力係数
+# =============================================================================
+
+## Strengthによる火力倍率を計算
+## @param current_strength 現在のStrength
+## @param max_strength 最大Strength
+## @return 火力倍率 (0.3-1.0)
+static func get_strength_fire_coeff(current_strength: int, max_strength: int) -> float:
+	if max_strength <= 0:
+		return 1.0
+	var strength_ratio := float(current_strength) / float(max_strength)
+	return GameConstants.M_STRENGTH_FIRE_MIN + GameConstants.M_STRENGTH_FIRE_SCALE * strength_ratio
+
+
+# =============================================================================
+# 視認性係数
+# =============================================================================
+
+## LoS透過率から視認性係数を計算
+## @param t_los LoS透過率 (0.0-1.0)
+## @return 視認性係数 (0.25-1.0)
+static func calc_visibility_coeff(t_los: float) -> float:
+	# 煙と森林の影響を統合したT_LoSから係数を算出
+	# 簡易化：T_LoSをそのまま係数として使用（0.25-1.0をクランプ）
+	return clampf(t_los, 0.25, 1.0)
+
+
+# =============================================================================
+# 脆弱性係数 (ダメージ)
+# =============================================================================
+
+## armor_classとthreat_classからダメージ脆弱性係数を取得
+## @param armor_class 装甲クラス (0=Soft, 1=Light, 2=Medium, 3+=Heavy)
+## @param threat_class 脅威クラス
+## @return ダメージ倍率
+static func get_vuln_dmg(armor_class: int, threat_class: WeaponData.ThreatClass) -> float:
+	# Soft (armor_class = 0)
+	if armor_class == 0:
+		match threat_class:
+			WeaponData.ThreatClass.SMALL_ARMS:
+				return GameConstants.VULN_SOFT_SMALLARMS_DMG
+			WeaponData.ThreatClass.AUTOCANNON:
+				return GameConstants.VULN_SOFT_AUTOCANNON_DMG
+			WeaponData.ThreatClass.HE_FRAG:
+				return GameConstants.VULN_SOFT_HEFRAG_DMG
+			WeaponData.ThreatClass.AT:
+				return GameConstants.VULN_SOFT_AT_DMG
+			_:
+				return 1.0
+
+	# Light (armor_class = 1)
+	if armor_class == 1:
+		match threat_class:
+			WeaponData.ThreatClass.SMALL_ARMS:
+				return GameConstants.VULN_LIGHT_SMALLARMS_DMG
+			WeaponData.ThreatClass.AUTOCANNON:
+				return GameConstants.VULN_LIGHT_AUTOCANNON_DMG
+			WeaponData.ThreatClass.HE_FRAG:
+				return GameConstants.VULN_LIGHT_HEFRAG_DMG
+			WeaponData.ThreatClass.AT:
+				return GameConstants.VULN_LIGHT_AT_DMG
+			_:
+				return 1.0
+
+	# Medium (armor_class = 2) - IFV/APC
+	if armor_class == 2:
+		match threat_class:
+			WeaponData.ThreatClass.SMALL_ARMS:
+				return GameConstants.VULN_MEDIUM_SMALLARMS_DMG
+			WeaponData.ThreatClass.AUTOCANNON:
+				return GameConstants.VULN_MEDIUM_AUTOCANNON_DMG
+			WeaponData.ThreatClass.HE_FRAG:
+				return GameConstants.VULN_MEDIUM_HEFRAG_DMG
+			WeaponData.ThreatClass.AT:
+				return GameConstants.VULN_MEDIUM_AT_DMG
+			_:
+				return 1.0
+
+	# Heavy (armor_class >= 3) - MBT
+	match threat_class:
+		WeaponData.ThreatClass.SMALL_ARMS:
+			return GameConstants.VULN_HEAVY_SMALLARMS_DMG
+		WeaponData.ThreatClass.AUTOCANNON:
+			return GameConstants.VULN_HEAVY_AUTOCANNON_DMG
+		WeaponData.ThreatClass.HE_FRAG:
+			return GameConstants.VULN_HEAVY_HEFRAG_DMG
+		WeaponData.ThreatClass.AT:
+			return GameConstants.VULN_HEAVY_AT_DMG
+		_:
+			return 1.0
+
+
+# =============================================================================
+# 期待危険度 (Exposure) 計算
+# =============================================================================
+
+## 直射の期待危険度を計算
+## E = (L/100) × M_shooter × M_strength × M_visibility × M_evasion × M_cover × M_entrench × M_vuln_dmg
+## @param lethality 殺傷力レーティング (0-100+)
+## @param m_shooter 射手係数 (抑圧影響)
+## @param m_strength 戦力火力係数
+## @param m_visibility 視認性係数 (LoS透過率)
+## @param m_evasion 目標回避係数
+## @param m_cover 遮蔽係数
+## @param is_entrenched 塹壕中か
+## @param m_vuln_dmg 脆弱性係数
+## @return 期待危険度 E (0.0+)
+static func calc_exposure_df(
+	lethality: int,
+	m_shooter: float,
+	m_strength: float,
+	m_visibility: float,
+	m_evasion: float,
+	m_cover: float,
+	is_entrenched: bool,
+	m_vuln_dmg: float
+) -> float:
+	var m_entrench := GameConstants.ENTRENCH_DF_MULT if is_entrenched else 1.0
+	return (float(lethality) / 100.0) * m_shooter * m_strength * m_visibility * m_evasion * m_cover * m_entrench * m_vuln_dmg

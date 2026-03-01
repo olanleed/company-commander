@@ -507,3 +507,239 @@ func test_vehicle_damage_major_range() -> void:
 		var dmg = CC.calc_vehicle_damage(GameEnums.DamageCategory.MAJOR, rng)
 		assert_true(dmg >= GameConstants.VEHICLE_DAMAGE_MAJOR_MIN)
 		assert_true(dmg <= GameConstants.VEHICLE_DAMAGE_MAJOR_MAX)
+
+
+# =============================================================================
+# get_target_evasion_coeff
+# =============================================================================
+
+func test_evasion_coeff_stationary() -> void:
+	var result = CC.get_target_evasion_coeff(false)
+	assert_almost_eq(result, GameConstants.M_EVASION_STATIONARY, 0.001)
+
+
+func test_evasion_coeff_moving() -> void:
+	var result = CC.get_target_evasion_coeff(true)
+	assert_almost_eq(result, GameConstants.M_EVASION_MOVING, 0.001)
+
+
+func test_evasion_coeff_moving_harder_to_hit() -> void:
+	# 移動中は当たりにくい（係数が大きい = 期待危険度に掛けると小さくなる？）
+	# 実際は移動中の係数 > 静止の係数 なので、期待危険度計算で使う場合は逆
+	# → 仕様確認: M_EVASION_MOVING = 0.7, M_EVASION_STATIONARY = 1.0
+	# 移動中の方が係数が小さい = 当たりにくい
+	var moving = CC.get_target_evasion_coeff(true)
+	var stationary = CC.get_target_evasion_coeff(false)
+	assert_true(moving < stationary)
+
+
+# =============================================================================
+# get_strength_fire_coeff
+# =============================================================================
+
+func test_strength_fire_coeff_full_strength() -> void:
+	# 最大戦力時
+	var result = CC.get_strength_fire_coeff(10, 10)
+	assert_almost_eq(result, GameConstants.M_STRENGTH_FIRE_MIN + GameConstants.M_STRENGTH_FIRE_SCALE, 0.001)
+
+
+func test_strength_fire_coeff_zero_strength() -> void:
+	# 戦力ゼロ時
+	var result = CC.get_strength_fire_coeff(0, 10)
+	assert_almost_eq(result, GameConstants.M_STRENGTH_FIRE_MIN, 0.001)
+
+
+func test_strength_fire_coeff_half_strength() -> void:
+	# 半分の戦力
+	var result = CC.get_strength_fire_coeff(5, 10)
+	var expected = GameConstants.M_STRENGTH_FIRE_MIN + GameConstants.M_STRENGTH_FIRE_SCALE * 0.5
+	assert_almost_eq(result, expected, 0.001)
+
+
+func test_strength_fire_coeff_zero_max() -> void:
+	# max_strengthが0の場合はフォールバックで1.0
+	var result = CC.get_strength_fire_coeff(5, 0)
+	assert_almost_eq(result, 1.0, 0.001)
+
+
+func test_strength_fire_coeff_monotonic() -> void:
+	# 戦力が上がると係数も上がる
+	var c1 = CC.get_strength_fire_coeff(3, 10)
+	var c2 = CC.get_strength_fire_coeff(5, 10)
+	var c3 = CC.get_strength_fire_coeff(8, 10)
+	assert_true(c1 < c2)
+	assert_true(c2 < c3)
+
+
+# =============================================================================
+# calc_visibility_coeff
+# =============================================================================
+
+func test_visibility_coeff_full() -> void:
+	var result = CC.calc_visibility_coeff(1.0)
+	assert_almost_eq(result, 1.0, 0.001)
+
+
+func test_visibility_coeff_minimum() -> void:
+	# 0.25以下はクランプ
+	var result = CC.calc_visibility_coeff(0.1)
+	assert_almost_eq(result, 0.25, 0.001)
+
+
+func test_visibility_coeff_zero() -> void:
+	var result = CC.calc_visibility_coeff(0.0)
+	assert_almost_eq(result, 0.25, 0.001)
+
+
+func test_visibility_coeff_mid() -> void:
+	var result = CC.calc_visibility_coeff(0.5)
+	assert_almost_eq(result, 0.5, 0.001)
+
+
+func test_visibility_coeff_clamp_high() -> void:
+	# 1.0以上もクランプ
+	var result = CC.calc_visibility_coeff(1.5)
+	assert_almost_eq(result, 1.0, 0.001)
+
+
+# =============================================================================
+# get_vuln_dmg
+# =============================================================================
+
+func test_vuln_dmg_soft_smallarms() -> void:
+	var result = CC.get_vuln_dmg(0, WeaponData.ThreatClass.SMALL_ARMS)
+	assert_almost_eq(result, GameConstants.VULN_SOFT_SMALLARMS_DMG, 0.001)
+
+
+func test_vuln_dmg_soft_autocannon() -> void:
+	var result = CC.get_vuln_dmg(0, WeaponData.ThreatClass.AUTOCANNON)
+	assert_almost_eq(result, GameConstants.VULN_SOFT_AUTOCANNON_DMG, 0.001)
+
+
+func test_vuln_dmg_soft_hefrag() -> void:
+	var result = CC.get_vuln_dmg(0, WeaponData.ThreatClass.HE_FRAG)
+	assert_almost_eq(result, GameConstants.VULN_SOFT_HEFRAG_DMG, 0.001)
+
+
+func test_vuln_dmg_soft_at() -> void:
+	var result = CC.get_vuln_dmg(0, WeaponData.ThreatClass.AT)
+	assert_almost_eq(result, GameConstants.VULN_SOFT_AT_DMG, 0.001)
+
+
+func test_vuln_dmg_light_smallarms() -> void:
+	var result = CC.get_vuln_dmg(1, WeaponData.ThreatClass.SMALL_ARMS)
+	assert_almost_eq(result, GameConstants.VULN_LIGHT_SMALLARMS_DMG, 0.001)
+
+
+func test_vuln_dmg_light_autocannon() -> void:
+	var result = CC.get_vuln_dmg(1, WeaponData.ThreatClass.AUTOCANNON)
+	assert_almost_eq(result, GameConstants.VULN_LIGHT_AUTOCANNON_DMG, 0.001)
+
+
+func test_vuln_dmg_medium_smallarms() -> void:
+	var result = CC.get_vuln_dmg(2, WeaponData.ThreatClass.SMALL_ARMS)
+	assert_almost_eq(result, GameConstants.VULN_MEDIUM_SMALLARMS_DMG, 0.001)
+
+
+func test_vuln_dmg_medium_at() -> void:
+	var result = CC.get_vuln_dmg(2, WeaponData.ThreatClass.AT)
+	assert_almost_eq(result, GameConstants.VULN_MEDIUM_AT_DMG, 0.001)
+
+
+func test_vuln_dmg_heavy_smallarms() -> void:
+	var result = CC.get_vuln_dmg(3, WeaponData.ThreatClass.SMALL_ARMS)
+	assert_almost_eq(result, GameConstants.VULN_HEAVY_SMALLARMS_DMG, 0.001)
+
+
+func test_vuln_dmg_heavy_at() -> void:
+	var result = CC.get_vuln_dmg(3, WeaponData.ThreatClass.AT)
+	assert_almost_eq(result, GameConstants.VULN_HEAVY_AT_DMG, 0.001)
+
+
+func test_vuln_dmg_very_heavy_uses_heavy() -> void:
+	# armor_class >= 3 は全てHeavy扱い
+	var result = CC.get_vuln_dmg(5, WeaponData.ThreatClass.AT)
+	assert_almost_eq(result, GameConstants.VULN_HEAVY_AT_DMG, 0.001)
+
+
+# =============================================================================
+# calc_exposure_df
+# =============================================================================
+
+func test_exposure_df_zero_lethality() -> void:
+	# 殺傷力0なら期待危険度も0
+	var result = CC.calc_exposure_df(0, 1.0, 1.0, 1.0, 1.0, 1.0, false, 1.0)
+	assert_almost_eq(result, 0.0, 0.001)
+
+
+func test_exposure_df_basic_calculation() -> void:
+	# E = (L/100) × M_shooter × M_strength × M_visibility × M_evasion × M_cover × M_entrench × M_vuln_dmg
+	# L=50, 全係数1.0, 塹壕なし → E = 0.5
+	var result = CC.calc_exposure_df(50, 1.0, 1.0, 1.0, 1.0, 1.0, false, 1.0)
+	assert_almost_eq(result, 0.5, 0.001)
+
+
+func test_exposure_df_with_entrench() -> void:
+	# 塹壕効果で期待危険度が下がる
+	var result_no_entrench = CC.calc_exposure_df(100, 1.0, 1.0, 1.0, 1.0, 1.0, false, 1.0)
+	var result_entrenched = CC.calc_exposure_df(100, 1.0, 1.0, 1.0, 1.0, 1.0, true, 1.0)
+	assert_almost_eq(result_entrenched, result_no_entrench * GameConstants.ENTRENCH_DF_MULT, 0.001)
+
+
+func test_exposure_df_shooter_suppressed() -> void:
+	# 抑圧された射手は期待危険度が下がる
+	var m_shooter_normal = GameConstants.M_SHOOTER_NORMAL
+	var m_shooter_suppressed = GameConstants.M_SHOOTER_SUPPRESSED
+	var result_normal = CC.calc_exposure_df(100, m_shooter_normal, 1.0, 1.0, 1.0, 1.0, false, 1.0)
+	var result_suppressed = CC.calc_exposure_df(100, m_shooter_suppressed, 1.0, 1.0, 1.0, 1.0, false, 1.0)
+	assert_true(result_suppressed < result_normal)
+
+
+func test_exposure_df_poor_visibility() -> void:
+	# 視界が悪いと期待危険度が下がる
+	var result_clear = CC.calc_exposure_df(100, 1.0, 1.0, 1.0, 1.0, 1.0, false, 1.0)
+	var result_poor = CC.calc_exposure_df(100, 1.0, 1.0, 0.5, 1.0, 1.0, false, 1.0)
+	assert_almost_eq(result_poor, result_clear * 0.5, 0.001)
+
+
+func test_exposure_df_moving_target() -> void:
+	# 移動中の目標は当たりにくい
+	var m_evasion_static = GameConstants.M_EVASION_STATIONARY
+	var m_evasion_moving = GameConstants.M_EVASION_MOVING
+	var result_static = CC.calc_exposure_df(100, 1.0, 1.0, 1.0, m_evasion_static, 1.0, false, 1.0)
+	var result_moving = CC.calc_exposure_df(100, 1.0, 1.0, 1.0, m_evasion_moving, 1.0, false, 1.0)
+	assert_true(result_moving < result_static)
+
+
+func test_exposure_df_in_cover() -> void:
+	# 遮蔽に入ると期待危険度が下がる
+	var cover_open = GameConstants.COVER_DF_OPEN
+	var cover_forest = GameConstants.COVER_DF_FOREST
+	var result_open = CC.calc_exposure_df(100, 1.0, 1.0, 1.0, 1.0, cover_open, false, 1.0)
+	var result_forest = CC.calc_exposure_df(100, 1.0, 1.0, 1.0, 1.0, cover_forest, false, 1.0)
+	assert_true(result_forest < result_open)
+
+
+func test_exposure_df_low_strength() -> void:
+	# 戦力が低いと火力も下がる
+	var m_str_full = GameConstants.M_STRENGTH_FIRE_MIN + GameConstants.M_STRENGTH_FIRE_SCALE
+	var m_str_half = GameConstants.M_STRENGTH_FIRE_MIN + GameConstants.M_STRENGTH_FIRE_SCALE * 0.5
+	var result_full = CC.calc_exposure_df(100, 1.0, m_str_full, 1.0, 1.0, 1.0, false, 1.0)
+	var result_half = CC.calc_exposure_df(100, 1.0, m_str_half, 1.0, 1.0, 1.0, false, 1.0)
+	assert_true(result_half < result_full)
+
+
+func test_exposure_df_all_factors_combined() -> void:
+	# 全ての係数を組み合わせた計算
+	var lethality = 80
+	var m_shooter = 0.6
+	var m_strength = 0.8
+	var m_visibility = 0.9
+	var m_evasion = 0.7
+	var m_cover = 0.5
+	var m_vuln = 1.2
+	var m_entrench = GameConstants.ENTRENCH_DF_MULT
+
+	var result = CC.calc_exposure_df(lethality, m_shooter, m_strength, m_visibility, m_evasion, m_cover, true, m_vuln)
+	var expected = (80.0 / 100.0) * m_shooter * m_strength * m_visibility * m_evasion * m_cover * m_entrench * m_vuln
+	assert_almost_eq(result, expected, 0.0001)
