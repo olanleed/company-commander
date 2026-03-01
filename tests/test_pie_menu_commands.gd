@@ -118,7 +118,7 @@ func test_ifv_transport_commands() -> void:
 	## IFV/APCの輸送コマンド: Unload, Load（将来実装）
 	# 現在のOrderTypeにはUnload/Loadがないので、将来追加が必要
 	# このテストは追加時に更新する
-	pass
+	pending("Transport commands (Unload/Load) not yet implemented")
 
 
 func _get_ifv_commands() -> Array:
@@ -552,7 +552,7 @@ func test_element_default_sop_mode() -> void:
 	## 新規ElementInstanceのデフォルトSOPはFIRE_AT_WILL
 	var elem := ElementDataScript.ElementInstance.new()
 	elem.id = "test_sop"
-	elem.archetype = "TANK_PLT"
+	# element_type.idでアーキタイプを参照する（archetypeプロパティは存在しない）
 
 	assert_eq(elem.sop_mode, GameEnums.SOPMode.FIRE_AT_WILL, "Default SOP is FIRE_AT_WILL")
 
@@ -561,7 +561,7 @@ func test_element_sop_mode_changeable() -> void:
 	## ElementInstanceのSOPモードを変更できる
 	var elem := ElementDataScript.ElementInstance.new()
 	elem.id = "test_sop"
-	elem.archetype = "TANK_PLT"
+	# element_type.idでアーキタイプを参照する（archetypeプロパティは存在しない）
 
 	elem.sop_mode = GameEnums.SOPMode.HOLD_FIRE
 	assert_eq(elem.sop_mode, GameEnums.SOPMode.HOLD_FIRE, "SOP changed to HOLD_FIRE")

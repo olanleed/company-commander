@@ -63,11 +63,11 @@ func test_all_main_gun_ids_exist_in_weapon_data() -> void:
 
 	var missing_weapons: Array = []
 	for vehicle in vehicles:
-		if vehicle.has("main_gun") and vehicle.main_gun != null:
-			if vehicle.main_gun.has("weapon_id"):
-				var weapon_id: String = vehicle.main_gun.weapon_id
-				if not weapons.has(weapon_id):
-					missing_weapons.append("%s: %s" % [vehicle.id, weapon_id])
+		# VehicleConfigはクラスなので、直接プロパティにアクセス
+		if vehicle.main_gun != null and vehicle.main_gun.has("weapon_id"):
+			var weapon_id: String = vehicle.main_gun["weapon_id"]
+			if not weapons.has(weapon_id):
+				missing_weapons.append("%s: %s" % [vehicle.id, weapon_id])
 
 	assert_eq(missing_weapons.size(), 0,
 		"All main_gun weapon_ids should exist. Missing: %s" % str(missing_weapons))
@@ -81,11 +81,11 @@ func test_all_atgm_ids_exist_in_weapon_data() -> void:
 
 	var missing_weapons: Array = []
 	for vehicle in vehicles:
-		if vehicle.has("atgm") and vehicle.atgm != null:
-			if vehicle.atgm.has("weapon_id"):
-				var weapon_id: String = vehicle.atgm.weapon_id
-				if not weapons.has(weapon_id):
-					missing_weapons.append("%s: %s" % [vehicle.id, weapon_id])
+		# VehicleConfigはクラスなので、直接プロパティにアクセス
+		if vehicle.atgm != null and vehicle.atgm.has("weapon_id"):
+			var weapon_id: String = vehicle.atgm["weapon_id"]
+			if not weapons.has(weapon_id):
+				missing_weapons.append("%s: %s" % [vehicle.id, weapon_id])
 
 	assert_eq(missing_weapons.size(), 0,
 		"All atgm weapon_ids should exist. Missing: %s" % str(missing_weapons))
@@ -99,7 +99,8 @@ func test_all_secondary_weapon_ids_exist_in_weapon_data() -> void:
 
 	var missing_weapons: Array = []
 	for vehicle in vehicles:
-		if vehicle.has("secondary_weapons") and vehicle.secondary_weapons != null:
+		# VehicleConfigはクラスなので、直接プロパティにアクセス
+		if vehicle.secondary_weapons != null:
 			for weapon_id in vehicle.secondary_weapons:
 				if not weapons.has(weapon_id):
 					missing_weapons.append("%s: %s" % [vehicle.id, weapon_id])
@@ -160,12 +161,13 @@ func test_all_vehicles_have_required_fields() -> void:
 	var vehicles = catalog.get_all_vehicles()
 
 	var incomplete_vehicles: Array = []
-	var required_fields = ["id", "display_name"]
 
 	for vehicle in vehicles:
-		for field in required_fields:
-			if not vehicle.has(field):
-				incomplete_vehicles.append("%s missing %s" % [vehicle.get("id", "unknown"), field])
+		# VehicleConfigはクラスなので、プロパティを直接チェック
+		if vehicle.id == null or vehicle.id.is_empty():
+			incomplete_vehicles.append("unknown missing id")
+		if vehicle.display_name == null or vehicle.display_name.is_empty():
+			incomplete_vehicles.append("%s missing display_name" % vehicle.id)
 
 	assert_eq(incomplete_vehicles.size(), 0,
 		"All vehicles should have required fields. Incomplete: %s" % str(incomplete_vehicles))
@@ -176,15 +178,17 @@ func test_combat_vehicles_have_main_gun() -> void:
 	catalog.load_all()
 	var vehicles = catalog.get_all_vehicles()
 
-	var combat_types = ["MBT", "IFV", "AFV", "TANK_DESTROYER", "LIGHT_TANK", "SPAAG", "SPH"]
+	# 戦闘車両のアーキタイプ
+	var combat_archetypes = ["TANK_PLT", "LIGHT_TANK", "IFV_PLT", "SPAAG", "SP_ARTILLERY", "SP_MORTAR", "RECON_VEH"]
 	var missing_main_gun: Array = []
 
 	for vehicle in vehicles:
-		if vehicle.has("type") and vehicle.type in combat_types:
-			if not vehicle.has("main_gun") or vehicle.main_gun == null:
+		# VehicleConfigはクラスなので、直接プロパティにアクセス
+		if vehicle.base_archetype in combat_archetypes:
+			if vehicle.main_gun == null or not vehicle.main_gun.has("weapon_id"):
 				missing_main_gun.append(vehicle.id)
-			elif not vehicle.main_gun.has("weapon_id"):
-				missing_main_gun.append("%s (no weapon_id)" % vehicle.id)
+			elif vehicle.main_gun["weapon_id"].is_empty():
+				missing_main_gun.append("%s (empty weapon_id)" % vehicle.id)
 
 	assert_eq(missing_main_gun.size(), 0,
 		"Combat vehicles should have main_gun. Missing: %s" % str(missing_main_gun))
@@ -343,3 +347,5 @@ func test_larger_caliber_higher_penetration() -> void:
 		assert_gt(mm30.pen_ke[WeaponDataClass.RangeBand.NEAR],
 			mm25.pen_ke[WeaponDataClass.RangeBand.NEAR],
 			"30mm should have higher penetration than 25mm")
+	else:
+		pending("CW_AUTOCANNON_30X173_USA or CW_AUTOCANNON_25_USA not found")

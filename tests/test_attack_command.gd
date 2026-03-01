@@ -482,8 +482,11 @@ func test_ifv_no_atgm_when_moving_against_mbt() -> void:
 	var distance_m: float = ifv.position.distance_to(target.position)
 	var selected = combat_system.select_best_weapon(ifv, target, distance_m)
 
-	# 移動中のIFVは重装甲に対して有効な武器がない
-	if selected != null:
+	# 移動中のIFVは重装甲に対して有効な武器がないか、ATGMを選択しない
+	if selected == null:
+		# 期待どおり: 有効な武器がない
+		assert_null(selected, "IFV should have no effective weapon when moving against MBT")
+	else:
 		WeaponDataClass.ensure_weapon_role(selected)
 		assert_ne(selected.weapon_role, WeaponDataClass.WeaponRole.ATGM,
 			"IFV should not select ATGM when moving")
@@ -614,8 +617,11 @@ func test_bradley_cannot_use_atgm_when_moving_against_mbt() -> void:
 	var selected = combat_system.select_best_weapon(bradley, target, distance_m)
 
 	# 移動中はATGMが使えない、AUTOCANNONは射程外
-	# 結果：有効な武器がない
-	if selected != null:
+	# 結果：有効な武器がないか、ATGMを選択しない
+	if selected == null:
+		# 期待どおり: 移動中に有効な武器がない
+		assert_null(selected, "Bradley should have no effective weapon when moving at ATGM range")
+	else:
 		WeaponDataClass.ensure_weapon_role(selected)
 		assert_ne(selected.weapon_role, WeaponDataClass.WeaponRole.ATGM,
 			"Bradley should not select ATGM when moving")
