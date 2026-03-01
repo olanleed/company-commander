@@ -652,7 +652,7 @@
         "cross_speed": 0.80
       },
       "main_gun": {
-        "weapon_id": "CW_AUTOCANNON_30X113_USA",
+        "weapon_id": "CW_AUTOCANNON_30_USA",
         "caliber_mm": 30,
         "type": "autocannon",
         "ammo_class": "30x113mm",

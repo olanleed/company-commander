@@ -753,6 +753,7 @@
         "cross_speed": 0.90
       },
       "main_gun": {
+        "weapon_id": "CW_AUTOCANNON_35_JGSDF",
         "caliber_mm": 35,
         "type": "autocannon_twin",
         "dual_feed": true,
