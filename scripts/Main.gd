@@ -1741,7 +1741,21 @@ func _on_escape_pressed() -> void:
 
 
 func _on_undo_requested() -> void:
-	if command_queue and command_queue.can_undo():
+	if not command_queue:
+		return
+
+	# 選択中のユニットがある場合、そのユニットに関連するコマンドをUndo
+	if _selected_elements.size() > 0:
+		var selected_ids: Array[String] = []
+		for element in _selected_elements:
+			selected_ids.append(element.id)
+
+		if command_queue.undo_for_elements(world_model, selected_ids):
+			print("Undo for selected units")
+			return
+
+	# 選択中のユニットがない場合、通常のUndo
+	if command_queue.can_undo():
 		var description: String = command_queue.get_undo_description()
 		if command_queue.undo_last(world_model):
 			print("Undo: %s" % description)

@@ -102,6 +102,38 @@ func get_undo_description() -> String:
 		return ""
 	return _executed_history.back().get_description()
 
+
+## 指定したエレメントに関連する最新コマンドを取り消し
+## @param element_ids 対象エレメントID
+## @return Undoに成功したらtrue
+func undo_for_elements(world_model: WorldModel, element_ids: Array[String]) -> bool:
+	if _executed_history.is_empty() or element_ids.is_empty():
+		return false
+
+	# 履歴を新しい順に検索
+	for i in range(_executed_history.size() - 1, -1, -1):
+		var command = _executed_history[i]
+
+		# コマンドが対象エレメントに関連しているかチェック
+		var cmd_element_ids: Array = command.get_element_ids()
+		var has_match := false
+		for cmd_id in cmd_element_ids:
+			if cmd_id in element_ids:
+				has_match = true
+				break
+
+		if has_match:
+			# このコマンドをUndo
+			var result = command.undo(world_model)
+			if result:
+				_executed_history.remove_at(i)
+				command_undone.emit(command)
+				queue_changed.emit()
+			return result
+
+	return false
+
+
 # =============================================================================
 # 履歴
 # =============================================================================
