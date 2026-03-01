@@ -350,6 +350,8 @@ class ElementInstance:
 	var sop_mode: GameEnums.SOPMode = GameEnums.SOPMode.FIRE_AT_WILL  ## 射撃ルール
 	var accumulated_damage: float = 0.0  ## 蓄積ダメージ（1.0超過でstrength-1）
 	var accumulated_armor_damage: float = 0.0  ## 連続射撃の装甲ダメージ蓄積（1.0超過で車両ダメージ判定）
+	var damage_window_start_tick: int = -1  ## ダメージウィンドウ開始tick
+	var damage_in_window: float = 0.0  ## 現在のウィンドウ内で受けたダメージ
 
 	## v0.1R: 車両サブシステムHP（armor_class >= 1 の場合のみ使用）
 	## CombatComponentに委譲

@@ -263,6 +263,14 @@ const K_DF_SUPP: float = 0.12   ## 抑圧係数（約4-5秒でSuppressed）
 const K_DF_HIT: float = 0.50    ## ヒット確率係数（0.25→0.50: AT武器のヒット率改善）
 const K_DF_DMG: float = 3.0     ## ダメージ係数（約40秒で擃滅）
 
+## ダメージキャップ（集中射撃による瞬間全滅を防止）(v0.4)
+## 1tickあたりの最大ダメージを制限
+## 設計意図: 小隊（Strength=10）が複数の敵から同時攻撃を受けても、
+## 1tickで最大1人しか損耗しない（壊滅まで最低10tick=1秒）
+const DAMAGE_CAP_PER_TICK: float = 1.5          ## 1tickあたりの最大ダメージ
+const DAMAGE_CAP_WINDOW_TICKS: int = 10         ## ダメージ蓄積ウィンドウ（1秒）
+const DAMAGE_CAP_PER_WINDOW: float = 3.0        ## ウィンドウあたりの最大ダメージ（約30%損耗/秒）
+
 ## 間接の基準係数（1発あたり）(v0.2)
 ## バランス目標: 開けた場所では致命的、塹壕・建物で大幅軽減
 ## 155mm直撃で歩兵分隊に3-5人ダメージ、至近弾で1-2人

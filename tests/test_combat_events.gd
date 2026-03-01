@@ -72,12 +72,14 @@ func test_apply_damage_emits_damage_event() -> void:
 		Vector2(0, 0)
 	)
 
-	combat_system.apply_damage(target, 0.1, 5.0, 100)
+	# v0.4: ダメージキャップにより、1tickあたり最大1.5ダメージに制限
+	# 1.0ダメージ → acc 1.0 → strength-1
+	combat_system.apply_damage(target, 0.1, 1.0, 100)
 
 	assert_eq(received_events.size(), 1, "Should emit 1 damage event")
 	var event = received_events[0]
 	assert_eq(event.target_id, target.id, "Event target should match")
-	assert_eq(event.damage, 5, "Event damage should be 5")
+	assert_eq(event.damage, 1, "Event damage should be 1")
 	assert_eq(event.tick, 100, "Event tick should be 100")
 
 

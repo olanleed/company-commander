@@ -114,24 +114,20 @@ func get_cover_coefficient_if(terrain: GameEnums.TerrainType) -> float:
 # 目標回避係数
 # =============================================================================
 
-## 目標の移動状態に応じた回避係数
+## @deprecated CombatCalc.get_target_evasion_coeff() に委譲
 func get_target_evasion_coefficient(target: ElementData.ElementInstance) -> float:
-	if target.is_moving:
-		return GameConstants.M_EVASION_MOVING
-	else:
-		return GameConstants.M_EVASION_STATIONARY
+	return CombatCalc.get_target_evasion_coeff(target.is_moving)
 
 
 # =============================================================================
 # Strength影響係数
 # =============================================================================
 
-## Strengthによる火力倍率
+## @deprecated CombatCalc.get_strength_fire_coeff() に委譲
 func get_strength_fire_coefficient(element: ElementData.ElementInstance) -> float:
 	if not element.element_type:
 		return 1.0
-	var strength_ratio := float(element.current_strength) / float(element.element_type.max_strength)
-	return GameConstants.M_STRENGTH_FIRE_MIN + GameConstants.M_STRENGTH_FIRE_SCALE * strength_ratio
+	return CombatCalc.get_strength_fire_coeff(element.current_strength, element.element_type.max_strength)
 
 
 # =============================================================================
@@ -202,11 +198,9 @@ func _get_target_class(target: ElementData.ElementInstance) -> WeaponData.Target
 			return WeaponData.TargetClass.SOFT
 
 
-## 視認・射撃困難係数を計算
+## @deprecated CombatCalc.calc_visibility_coeff() に委譲
 func _calculate_visibility_coefficient(t_los: float) -> float:
-	# 煙と森林の影響を統合したT_LoSから係数を算出
-	# 簡易化：T_LoSをそのまま係数として使用（0.10-1.0をクランプ）
-	return clampf(t_los, 0.25, 1.0)
+	return CombatCalc.calc_visibility_coeff(t_los)
 
 
 ## 脆弱性係数を取得
@@ -520,6 +514,11 @@ func _get_indirect_vulnerability(
 ## d_dmg: ダメージ量（Strength減少量、小数点以下は蓄積）
 ## current_tick: 現在のtick（破壊時刻記録用）
 ## threat_class: 脅威クラス（車両への小火器抑圧上限判定用、オプション）
+##
+## v0.4: ダメージキャップ実装
+## - 1tickあたりDAMAGE_CAP_PER_TICK（1.5）を超えるダメージは無効
+## - DAMAGE_CAP_WINDOW_TICKS（10tick=1秒）あたりDAMAGE_CAP_PER_WINDOW（3.0）を超えるダメージは無効
+## - これにより、集中射撃を受けても瞬間的な全滅を防止
 func apply_damage(
 	element: ElementData.ElementInstance,
 	d_supp: float,
@@ -556,9 +555,31 @@ func apply_damage(
 		supp_event.source_id = shooter_id
 		_game_events.emit_suppression_applied(supp_event)
 
+	# ========================================
+	# v0.4: ダメージキャップ適用
+	# ========================================
+	var capped_dmg := d_dmg
+
+	# 1tickあたりの上限
+	capped_dmg = minf(capped_dmg, GameConstants.DAMAGE_CAP_PER_TICK)
+
+	# ダメージウィンドウのリセット判定
+	if current_tick > 0:
+		if element.damage_window_start_tick < 0 or current_tick - element.damage_window_start_tick >= GameConstants.DAMAGE_CAP_WINDOW_TICKS:
+			# 新しいウィンドウを開始
+			element.damage_window_start_tick = current_tick
+			element.damage_in_window = 0.0
+
+		# ウィンドウあたりの上限チェック
+		var remaining_in_window := GameConstants.DAMAGE_CAP_PER_WINDOW - element.damage_in_window
+		capped_dmg = minf(capped_dmg, maxf(0.0, remaining_in_window))
+
+		# ウィンドウ内ダメージを記録
+		element.damage_in_window += capped_dmg
+
 	# Strength減少（小数点以下は蓄積し、1.0超過分を適用）
 	var applied_damage := 0
-	element.accumulated_damage += d_dmg
+	element.accumulated_damage += capped_dmg
 	if element.accumulated_damage >= 1.0:
 		var strength_reduction := int(element.accumulated_damage)
 		element.accumulated_damage -= float(strength_reduction)
@@ -566,12 +587,12 @@ func apply_damage(
 		applied_damage = strength_reduction
 
 	# ダメージイベント発火
-	if _game_events and (d_dmg > 0.0 or applied_damage > 0):
+	if _game_events and (capped_dmg > 0.0 or applied_damage > 0):
 		var dmg_event = _DamageEvent.new()
 		dmg_event.target_id = element.id
 		dmg_event.shooter_id = shooter_id
 		dmg_event.weapon_id = weapon_id
-		dmg_event.damage = applied_damage if applied_damage > 0 else int(d_dmg)
+		dmg_event.damage = applied_damage if applied_damage > 0 else int(capped_dmg)
 		_game_events.emit_damage_applied(dmg_event)
 
 	# 状態更新
@@ -642,70 +663,14 @@ func _get_vehicle_suppression_cap(
 # v0.1R: 脆弱性（分離）
 # =============================================================================
 
-## v0.1R: 損耗脆弱性を取得
+## @deprecated CombatCalc.get_vuln_dmg() に委譲
 func get_vulnerability_dmg(
 	target: ElementData.ElementInstance,
 	threat_class: WeaponData.ThreatClass
 ) -> float:
 	if not target.element_type:
 		return 1.0
-
-	var armor_class := target.element_type.armor_class
-
-	# Soft (armor_class = 0)
-	if armor_class == 0:
-		match threat_class:
-			WeaponData.ThreatClass.SMALL_ARMS:
-				return GameConstants.VULN_SOFT_SMALLARMS_DMG
-			WeaponData.ThreatClass.AUTOCANNON:
-				return GameConstants.VULN_SOFT_AUTOCANNON_DMG
-			WeaponData.ThreatClass.HE_FRAG:
-				return GameConstants.VULN_SOFT_HEFRAG_DMG
-			WeaponData.ThreatClass.AT:
-				return GameConstants.VULN_SOFT_AT_DMG
-			_:
-				return 1.0
-
-	# Light (armor_class = 1)
-	if armor_class == 1:
-		match threat_class:
-			WeaponData.ThreatClass.SMALL_ARMS:
-				return GameConstants.VULN_LIGHT_SMALLARMS_DMG
-			WeaponData.ThreatClass.AUTOCANNON:
-				return GameConstants.VULN_LIGHT_AUTOCANNON_DMG
-			WeaponData.ThreatClass.HE_FRAG:
-				return GameConstants.VULN_LIGHT_HEFRAG_DMG
-			WeaponData.ThreatClass.AT:
-				return GameConstants.VULN_LIGHT_AT_DMG
-			_:
-				return 1.0
-
-	# Medium (armor_class = 2) - IFV/APC
-	if armor_class == 2:
-		match threat_class:
-			WeaponData.ThreatClass.SMALL_ARMS:
-				return GameConstants.VULN_MEDIUM_SMALLARMS_DMG
-			WeaponData.ThreatClass.AUTOCANNON:
-				return GameConstants.VULN_MEDIUM_AUTOCANNON_DMG
-			WeaponData.ThreatClass.HE_FRAG:
-				return GameConstants.VULN_MEDIUM_HEFRAG_DMG
-			WeaponData.ThreatClass.AT:
-				return GameConstants.VULN_MEDIUM_AT_DMG
-			_:
-				return 1.0
-
-	# Heavy (armor_class >= 3) - MBT
-	match threat_class:
-		WeaponData.ThreatClass.SMALL_ARMS:
-			return GameConstants.VULN_HEAVY_SMALLARMS_DMG
-		WeaponData.ThreatClass.AUTOCANNON:
-			return GameConstants.VULN_HEAVY_AUTOCANNON_DMG
-		WeaponData.ThreatClass.HE_FRAG:
-			return GameConstants.VULN_HEAVY_HEFRAG_DMG
-		WeaponData.ThreatClass.AT:
-			return GameConstants.VULN_HEAVY_AT_DMG
-		_:
-			return 1.0
+	return CombatCalc.get_vuln_dmg(target.element_type.armor_class, threat_class)
 
 
 ## v0.1R: 抑圧脆弱性を取得

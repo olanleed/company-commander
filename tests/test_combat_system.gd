@@ -641,3 +641,93 @@ func test_tank_vs_ifv_higher_kill_than_mbt() -> void:
 	# IFVの方がMBTより撃破されやすい
 	if result_ifv.hit and result_mbt.hit:
 		assert_gt(result_ifv.p_kill, result_mbt.p_kill, "IFV should have higher kill probability than MBT")
+
+
+# =============================================================================
+# v0.4: ダメージキャップテスト
+# =============================================================================
+
+func test_damage_cap_per_tick() -> void:
+	var target := _create_test_element()
+	target.current_strength = 10
+	target.accumulated_damage = 0.0
+
+	# 1tickで大量ダメージ（5.0）を与えようとする
+	combat_system.apply_damage(target, 0.0, 5.0, 1)
+
+	# DAMAGE_CAP_PER_TICK=1.5 なので、蓄積ダメージは1.5のはず
+	# 1.5 → strength-1, 残り0.5蓄積
+	assert_eq(target.current_strength, 9, "Should lose only 1 strength due to per-tick cap")
+	assert_almost_eq(target.accumulated_damage, 0.5, 0.01)
+
+
+func test_damage_cap_per_window() -> void:
+	var target := _create_test_element()
+	target.current_strength = 10
+	target.accumulated_damage = 0.0
+
+	# 連続して1.5ダメージを3回与える（同一ウィンドウ内）
+	# tick 1: d_dmg=1.5 → capped=1.5, window=1.5 → acc=1.5 → str=9, acc=0.5
+	combat_system.apply_damage(target, 0.0, 1.5, 1)
+	# tick 2: d_dmg=1.5 → window残り=1.5 → capped=1.5, window=3.0 → acc=0.5+1.5=2.0 → str=7, acc=0.0
+	combat_system.apply_damage(target, 0.0, 1.5, 2)
+	# tick 3: d_dmg=1.5 → window残り=0 → capped=0 → str=7のまま
+	combat_system.apply_damage(target, 0.0, 1.5, 3)
+
+	# DAMAGE_CAP_PER_WINDOW=3.0 なので、ウィンドウ内で3.0以上は受けない
+	# 1.5 + 1.5 = 3.0 → str 7 (acc 1.5→str-1, acc 2.0→str-2)
+	# 3回目は0ダメージ → str 7のまま
+	assert_eq(target.current_strength, 7, "Should lose only 3 strength due to per-window cap")
+
+
+func test_damage_cap_window_reset() -> void:
+	var target := _create_test_element()
+	target.current_strength = 10
+	target.accumulated_damage = 0.0
+
+	# ウィンドウ内でキャップに達する
+	# tick 1: 1.5 → acc=1.5 → str=9, acc=0.5
+	combat_system.apply_damage(target, 0.0, 1.5, 1)
+	# tick 2: 1.5 → acc=0.5+1.5=2.0 → str=7, acc=0.0
+	combat_system.apply_damage(target, 0.0, 1.5, 2)
+
+	# ウィンドウをリセット（11tick後 = tick 1 + 10）
+	# tick 12: 新ウィンドウ → 1.5 → acc=1.5 → str=6, acc=0.5
+	combat_system.apply_damage(target, 0.0, 1.5, 12)
+
+	# ウィンドウリセット後は再度ダメージを受ける
+	assert_eq(target.current_strength, 6, "Should lose 4 strength total across two windows")
+
+
+func test_damage_cap_does_not_affect_single_shot() -> void:
+	var target := _create_test_element()
+	target.current_strength = 10
+	target.accumulated_damage = 0.0
+
+	# 通常の小さなダメージは影響を受けない
+	combat_system.apply_damage(target, 0.0, 0.5, 1)
+	combat_system.apply_damage(target, 0.0, 0.5, 2)
+	combat_system.apply_damage(target, 0.0, 0.5, 3)
+
+	# 0.5 * 3 = 1.5 → str 9, acc 0.5
+	assert_eq(target.current_strength, 9)
+	assert_almost_eq(target.accumulated_damage, 0.5, 0.01)
+
+
+func test_damage_cap_concentrated_fire_protection() -> void:
+	# 10ユニットから同時に攻撃を受けるシナリオ
+	var target := _create_test_element()
+	target.current_strength = 10
+	target.accumulated_damage = 0.0
+
+	# 10ユニットが同一tickで各1.0ダメージ（合計10.0）
+	for i in range(10):
+		combat_system.apply_damage(target, 0.0, 1.0, 1)
+
+	# キャップにより最大でもDAMAGE_CAP_PER_WINDOW=3.0
+	# 最初の1.0 → acc 1.0 → str 9, acc 0.0
+	# 2回目の1.0（キャップ到達前）→ acc 1.0 → str 8, acc 0.0
+	# 3回目の1.0（キャップ到達）→ acc 1.0 → str 7, acc 0.0
+	# 4回目以降: キャップ到達（3.0）のため0ダメージ
+	assert_true(target.current_strength >= 7, "Concentrated fire should be capped")
+	gut.p("Strength after 10x 1.0 damage: %d" % target.current_strength)
