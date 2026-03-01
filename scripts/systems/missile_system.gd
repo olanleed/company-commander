@@ -23,6 +23,7 @@ extends RefCounted
 
 const MissileData := preload("res://scripts/data/missile_data.gd")
 const AmmoStateClass := preload("res://scripts/data/ammo_state.gd")
+const MissileCalc := preload("res://scripts/systems/missile_calc.gd")
 
 # Tick/秒の定数
 const TICKS_PER_SEC: float = 10.0
@@ -58,7 +59,7 @@ const MIN_RANGE_INCREASE_M: Dictionary = {
 	MissileData.AttackProfile.OVERFLY_TOP: 100.0,
 }
 
-# 命中ゾーン（HitZone）
+# 命中ゾーン（HitZone）- MissileCalc.HitZoneと同一
 enum HitZone {
 	FRONT,   ## 正面
 	SIDE,    ## 側面
@@ -699,23 +700,23 @@ func can_use_attack_profile(
 
 
 ## 攻撃プロファイルに基づく有効最小射程を計算
+## MissileCalcの純粋関数に委譲
 func get_effective_min_range(
 	profile: MissileData.MissileProfile,
 	attack_profile: MissileData.AttackProfile
 ) -> float:
-	var base_min := profile.min_range_m
-	var increase: float = MIN_RANGE_INCREASE_M.get(attack_profile, 0.0)
-	return base_min + increase
+	return MissileCalc.calc_effective_min_range(profile.min_range_m, attack_profile)
 
 
 ## 攻撃プロファイルに基づくAPS回避補正を取得
+## MissileCalcの純粋関数に委譲
 ## 戻り値: APS迎撃確率に対する減算値（0.0〜0.3）
 func get_aps_evasion_bonus(attack_profile: MissileData.AttackProfile) -> float:
-	var bonus: float = APS_EVASION_BONUS.get(attack_profile, 0.0)
-	return bonus
+	return MissileCalc.get_aps_evasion_bonus(attack_profile)
 
 
 ## 攻撃プロファイルに基づく命中ゾーンを決定
+## MissileCalcの純粋関数に委譲
 ## target_facing: 目標の向き（ラジアン、0=東向き）
 ## shooter_pos: 射手位置
 ## target_pos: 目標位置
@@ -725,99 +726,39 @@ func determine_hit_zone(
 	shooter_pos: Vector2,
 	target_pos: Vector2
 ) -> HitZone:
-	# TOP_ATTACK / DIVING / OVERFLY_TOP は上面命中
-	if attack_profile in [
-		MissileData.AttackProfile.TOP_ATTACK,
-		MissileData.AttackProfile.DIVING,
-		MissileData.AttackProfile.OVERFLY_TOP
-	]:
-		return HitZone.TOP
-
-	# DIRECT の場合は射撃角度から決定
-	return _determine_direct_hit_zone(target_facing, shooter_pos, target_pos)
-
-
-## 直射攻撃の命中ゾーンを決定
-func _determine_direct_hit_zone(
-	target_facing: float,
-	shooter_pos: Vector2,
-	target_pos: Vector2
-) -> HitZone:
-	# 射手から目標への方向ベクトル
-	var attack_direction := (target_pos - shooter_pos).normalized()
-	var attack_angle := attack_direction.angle()
-
-	# 目標の向きとの角度差（-PI〜PIに正規化）
-	var angle_diff := _normalize_angle(attack_angle - target_facing)
-
-	# 角度差による判定
-	# 正面: ±45度以内
-	# 側面: 45〜135度
-	# 後面: 135度以上
-	var abs_diff := absf(angle_diff)
-
-	if abs_diff <= PI / 4.0:  # 45度
-		return HitZone.FRONT
-	elif abs_diff >= PI * 3.0 / 4.0:  # 135度
-		return HitZone.REAR
-	else:
-		return HitZone.SIDE
-
-
-## 角度を-PI〜PIに正規化
-func _normalize_angle(angle: float) -> float:
-	while angle > PI:
-		angle -= TAU
-	while angle < -PI:
-		angle += TAU
-	return angle
+	var calc_zone: int = MissileCalc.determine_hit_zone(attack_profile, target_facing, shooter_pos, target_pos)
+	# MissileCalc.HitZoneからMissileSystem.HitZoneへ変換（同一enum値）
+	match calc_zone:
+		MissileCalc.HitZone.FRONT:
+			return HitZone.FRONT
+		MissileCalc.HitZone.SIDE:
+			return HitZone.SIDE
+		MissileCalc.HitZone.REAR:
+			return HitZone.REAR
+		MissileCalc.HitZone.TOP:
+			return HitZone.TOP
+		_:
+			return HitZone.FRONT
 
 
 ## TOP_ATTACK軌道の飛翔時間を計算（ゲームバランス版）
+## MissileCalcの純粋関数に委譲
 ## 実際のJavelinは15-20秒程度かかるが、ゲームプレイ上は
 ## DIRECT攻撃より10-15%程度長い程度に抑える
 func calculate_top_attack_flight_time(
 	profile: MissileData.MissileProfile,
 	distance_m: float
 ) -> float:
-	if distance_m <= 0:
-		return 0.0
-
-	# 基本飛行時間（直線軌道）
-	var direct_time := profile.calculate_flight_time(distance_m)
-
-	# TOP_ATTACKは直線より10-15%長い（迂回軌道のペナルティ）
-	# 近距離（<500m）: ほぼペナルティなし（上昇する余裕がない）
-	# 中距離（500-1500m）: 5-10%増加
-	# 遠距離（>1500m）: 10-15%増加
-	var penalty_factor: float
-	if distance_m < 500.0:
-		penalty_factor = 1.02  # 2%増加
-	elif distance_m < 1500.0:
-		penalty_factor = 1.08  # 8%増加
-	else:
-		penalty_factor = 1.12  # 12%増加
-
-	return direct_time * penalty_factor
+	return MissileCalc.calc_top_attack_flight_time(profile.speed_mps, distance_m)
 
 
 ## 攻撃プロファイル別の終末段階開始条件を取得
+## MissileCalcの純粋関数に委譲
 ## 戻り値: 目標までの距離（m）がこの値以下で終末段階
 func get_terminal_phase_distance(
 	profile: MissileData.MissileProfile,
 	attack_profile: MissileData.AttackProfile
 ) -> float:
-	match attack_profile:
-		MissileData.AttackProfile.TOP_ATTACK:
-			# 上昇→降下に入る距離
-			var dive_angle := deg_to_rad(profile.dive_angle_deg)
-			return profile.top_attack_altitude_m / tan(dive_angle)
-		MissileData.AttackProfile.DIVING:
-			# 急降下開始距離
-			return 200.0
-		MissileData.AttackProfile.OVERFLY_TOP:
-			# オーバーフライ開始距離
-			return 100.0
-		_:
-			# DIRECT: 終末段階なし（着弾まで直進）
-			return 0.0
+	return MissileCalc.calc_terminal_phase_distance(
+		attack_profile, profile.top_attack_altitude_m, profile.dive_angle_deg
+	)
