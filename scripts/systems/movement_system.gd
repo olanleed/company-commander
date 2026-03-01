@@ -26,7 +26,8 @@ const ROTATION_SPEED: float = PI
 var nav_manager: NavigationManager
 var map_data: MapData
 var world_model: WorldModel
-var missile_system  ## MissileSystem（SACLOS射手拘束チェック用）
+var missile_system  ## MissileSystem（SACLOS射手拘束チェック用）- 後方互換
+var _constraint_checker  ## IConstraintChecker（制約チェック用）
 
 # =============================================================================
 # 初期化
@@ -37,6 +38,22 @@ func setup(p_nav_manager: NavigationManager, p_map_data: MapData, p_world_model:
 	map_data = p_map_data
 	world_model = p_world_model
 	missile_system = p_missile_system
+	# missile_systemがあればconstraint_checkerとしても設定
+	if p_missile_system:
+		_constraint_checker = p_missile_system
+
+
+## 制約チェッカーを設定（IConstraintChecker）
+func set_constraint_checker(checker) -> void:
+	_constraint_checker = checker
+	# 後方互換のためmissile_systemにも設定
+	if checker and checker.has_method("is_shooter_constrained"):
+		missile_system = checker
+
+
+## 制約チェッカーを取得
+func get_constraint_checker():
+	return _constraint_checker
 
 # =============================================================================
 # 移動命令
@@ -564,6 +581,10 @@ func _cancel_atgm_engagement_on_move(element: ElementData.ElementInstance) -> vo
 
 ## 射手がSACLOS誘導で拘束中かどうか
 func _is_shooter_constrained(shooter_id: String) -> bool:
+	# 新しいconstraint_checkerを優先
+	if _constraint_checker and _constraint_checker.has_method("can_move"):
+		return not _constraint_checker.can_move(shooter_id)
+	# 後方互換: missile_systemを直接使用
 	if not missile_system:
 		return false
 	return missile_system.is_shooter_constrained(shooter_id)

@@ -364,6 +364,30 @@ func can_shooter_fire(shooter_id: String) -> bool:
 	return not constraint.is_constrained()
 
 
+# =============================================================================
+# IConstraintChecker インターフェース実装
+# =============================================================================
+
+## ユニットが移動可能かチェック（IConstraintChecker）
+func can_move(element_id: String) -> bool:
+	return can_shooter_move(element_id)
+
+
+## ユニットが射撃可能かチェック（IConstraintChecker）
+func can_fire(element_id: String) -> bool:
+	return can_shooter_fire(element_id)
+
+
+## 制約理由を取得（IConstraintChecker）
+func get_constraint_reason(element_id: String) -> String:
+	if element_id not in shooter_constraints:
+		return ""
+	var constraint: MissileData.ShooterConstraint = shooter_constraints[element_id]
+	if constraint.is_constrained():
+		return "SACLOS_GUIDANCE"
+	return ""
+
+
 ## 射手の移動を試行（拘束違反チェック付き）
 ## 戻り値: 移動が許可されたか
 func try_shooter_move(shooter_id: String) -> bool:
