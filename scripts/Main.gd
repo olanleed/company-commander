@@ -2390,6 +2390,10 @@ func _process_indirect_fire(tick: int, _elements_under_fire: Dictionary, shooter
 		)
 		var impact_pos := target_pos + impact_offset
 
+		# 弾薬消費
+		if not combat_system.consume_ammo(shooter, indirect_weapon):
+			continue  # 弾切れ
+
 		# 発射タイミングを記録
 		shooter.last_fire_tick = tick
 		shooter.current_weapon = indirect_weapon

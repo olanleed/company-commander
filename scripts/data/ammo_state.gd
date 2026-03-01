@@ -410,7 +410,13 @@ static func _get_ammo_distribution(ammo_types: Array) -> Array[float]:
 		distribution.append(1.0)
 		return distribution
 
-	# 弾種名からカテゴリを推定して配分
+	# 砲兵弾種（全てHE系）かどうか判定
+	var is_artillery := _is_artillery_ammo_types(ammo_types)
+	if is_artillery:
+		# 砲兵は均等配分（または主弾種HEを多め）
+		return _get_artillery_distribution(ammo_types)
+
+	# 戦車砲用：弾種名からカテゴリを推定して配分
 	for ammo_type in ammo_types:
 		var type_str := str(ammo_type).to_upper()
 		if "APFSDS" in type_str or "SABOT" in type_str:
@@ -421,6 +427,68 @@ static func _get_ammo_distribution(ammo_types: Array) -> Array[float]:
 			distribution.append(0.10)
 		else:
 			distribution.append(1.0 / float(num_types))
+
+	# 正規化
+	var total := 0.0
+	for d in distribution:
+		total += d
+	if total > 0:
+		for i in distribution.size():
+			distribution[i] /= total
+
+	return distribution
+
+
+## 砲兵弾種かどうか判定（全てHE系、または口径指定がある）
+static func _is_artillery_ammo_types(ammo_types: Array) -> bool:
+	# APFSDSやHEATがあれば戦車砲
+	for ammo_type in ammo_types:
+		var type_str := str(ammo_type).to_upper()
+		if "APFSDS" in type_str or "SABOT" in type_str or "HEAT" in type_str:
+			return false
+	# 口径指定（155mm, 152mm, 120mm等）があれば砲兵
+	for ammo_type in ammo_types:
+		var type_str := str(ammo_type).to_upper()
+		if "155" in type_str or "152" in type_str or "122" in type_str or "120MM" in type_str:
+			return true
+		if "HOWITZER" in type_str or "MORTAR" in type_str:
+			return true
+		# M795, M982等の米軍砲弾
+		if type_str.begins_with("M7") or type_str.begins_with("M9"):
+			return true
+	# 全てHE系なら砲兵と判定
+	var all_he := true
+	for ammo_type in ammo_types:
+		var type_str := str(ammo_type).to_upper()
+		if not ("HE" in type_str or "SMOKE" in type_str or "ICM" in type_str or "EXCALIBUR" in type_str or "GUIDED" in type_str or "RAP" in type_str or "PGK" in type_str):
+			all_he = false
+			break
+	return all_he
+
+
+## 砲兵用弾種配分（主弾種HEを多め）
+static func _get_artillery_distribution(ammo_types: Array) -> Array[float]:
+	var distribution: Array[float] = []
+	var num_types := ammo_types.size()
+
+	# 標準HE（最初の弾種）を多め、特殊弾（誘導弾等）を少なめ
+	for i in num_types:
+		var ammo_type: String = str(ammo_types[i]).to_upper()
+		if i == 0:
+			# 最初の弾種（標準HE）は60-70%
+			distribution.append(0.70)
+		elif "EXCALIBUR" in ammo_type or "GUIDED" in ammo_type or "PGK" in ammo_type:
+			# 誘導弾は少なめ (10%)
+			distribution.append(0.10)
+		elif "SMOKE" in ammo_type:
+			# 煙幕弾は少なめ (10%)
+			distribution.append(0.10)
+		elif "ICM" in ammo_type or "DPICM" in ammo_type:
+			# クラスター弾は中程度 (15%)
+			distribution.append(0.15)
+		else:
+			# その他 (15%)
+			distribution.append(0.15)
 
 	# 正規化
 	var total := 0.0

@@ -70,6 +70,10 @@ var _selection_manager: SelectionManager
 var _selected_elements: Array[ElementData.ElementInstance] = []
 var _company_ai = null  # CompanyControllerAI
 
+## 更新タイマー（残弾など動的情報の定期更新用）
+var _update_timer: float = 0.0
+const UPDATE_INTERVAL: float = 0.5  # 0.5秒ごとに更新
+
 # =============================================================================
 # 定数
 # =============================================================================
@@ -84,6 +88,16 @@ const HEADER_HEIGHT := 30
 func _ready() -> void:
 	_setup_layout()
 	_setup_style()
+	set_process(true)
+
+
+func _process(delta: float) -> void:
+	# 残弾など動的情報を定期的に更新
+	_update_timer += delta
+	if _update_timer >= UPDATE_INTERVAL:
+		_update_timer = 0.0
+		if _selected_elements.size() > 0:
+			_refresh_dynamic_info()
 
 
 func setup(world_model: WorldModel, selection_manager: SelectionManager = null) -> void:
@@ -979,19 +993,32 @@ func _update_ammo_display(element: ElementData.ElementInstance) -> void:
 	# 主砲（弾薬容量があり、実際に主砲武器を持っている場合のみ表示）
 	if has_gun and ammo_state.main_gun and ammo_state.main_gun.get_max_total() > 0:
 		var gun_state = ammo_state.main_gun
-		var slot = gun_state.get_current_slot()
-		if slot:
-			var ready_count: int = slot.count_ready
-			var stowed_count: int = slot.count_stowed
-			var max_ready: int = slot.max_ready
-			var max_stowed: int = slot.max_stowed
-			var status := ""
-			if gun_state.is_reloading:
-				var progress: int = gun_state.reload_progress_ticks
-				var duration: int = gun_state.reload_duration_ticks
-				status = " [RELOAD %d%%]" % int(float(progress) / float(duration) * 100.0)
-			# 即発弾+予備弾の形式で表示 (例: Gun: 13+22/14+22)
-			ammo_lines.append("  Gun: %d+%d/%d+%d%s" % [ready_count, stowed_count, max_ready, max_stowed, status])
+		var status := ""
+		if gun_state.is_reloading:
+			var progress: int = gun_state.reload_progress_ticks
+			var duration: int = gun_state.reload_duration_ticks
+			status = " [RELOAD %d%%]" % int(float(progress) / float(duration) * 100.0)
+
+		# 複数弾種がある場合は総弾数を表示、単一弾種の場合はスロット詳細を表示
+		if gun_state.ammo_slots.size() > 1:
+			# 複数弾種: 総残弾数 / 総最大弾数 を表示
+			var total_remaining: int = gun_state.get_total_remaining()
+			var total_max: int = gun_state.get_max_total()
+			# 現在選択中の弾種名も表示
+			var current_slot = gun_state.get_current_slot()
+			var ammo_name := ""
+			if current_slot:
+				ammo_name = " [%s]" % _get_short_ammo_name(current_slot.ammo_type_id)
+			ammo_lines.append("  Gun: %d/%d%s%s" % [total_remaining, total_max, ammo_name, status])
+		else:
+			# 単一弾種: 即発弾+予備弾の形式で表示 (例: Gun: 13+22/14+22)
+			var slot = gun_state.get_current_slot()
+			if slot:
+				var ready_count: int = slot.count_ready
+				var stowed_count: int = slot.count_stowed
+				var max_ready: int = slot.max_ready
+				var max_stowed: int = slot.max_stowed
+				ammo_lines.append("  Gun: %d+%d/%d+%d%s" % [ready_count, stowed_count, max_ready, max_stowed, status])
 
 	# ATGM（弾薬容量がある場合のみ表示）
 	if ammo_state.atgm and ammo_state.atgm.get_max_total() > 0:
@@ -1027,6 +1054,42 @@ func _update_ammo_display(element: ElementData.ElementInstance) -> void:
 	else:
 		_ammo_label.text = "Ammo: (no tracked weapons)"
 		_ammo_label.remove_theme_color_override("font_color")
+
+
+## 弾種名を短縮して表示用に変換
+func _get_short_ammo_name(ammo_type_id: String) -> String:
+	# 口径プレフィックスを削除 (例: "155mm HE" -> "HE")
+	var name := ammo_type_id
+	for prefix in ["155mm ", "152mm ", "122mm ", "120mm ", "105mm "]:
+		if name.begins_with(prefix):
+			name = name.substr(prefix.length())
+			break
+	# 長すぎる名前を短縮
+	if name.length() > 10:
+		# M982 Excalibur -> Excalibur
+		if "Excalibur" in name:
+			return "Excalibur"
+		# Guided -> Guided
+		if "Guided" in name:
+			return "Guided"
+		# 先頭10文字
+		return name.substr(0, 10)
+	return name
+
+
+## 動的情報（残弾、HP、抑圧など）を定期的にリフレッシュ
+func _refresh_dynamic_info() -> void:
+	if _selected_elements.size() == 1:
+		var element := _selected_elements[0]
+		# 残弾表示を更新
+		_update_ammo_display(element)
+		# 補給ユニットの残量を更新
+		_update_supply_info(element)
+		# HP・抑圧も更新
+		_strength_bar.value = element.current_strength
+		_strength_label.text = "%d%%" % element.current_strength
+		_suppression_bar.value = element.suppression * 100.0
+		_suppression_label.text = "%d%%" % int(element.suppression * 100.0)
 
 
 ## 装備情報をクリア

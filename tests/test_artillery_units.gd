@@ -553,3 +553,58 @@ func test_hud_detects_mortar_weapon() -> void:
 			has_mortar = true
 			break
 	assert_true(has_mortar, "Type24 should have MORTAR weapon")
+
+
+# =============================================================================
+# 砲兵弾種配分テスト
+# =============================================================================
+
+func test_artillery_ammo_distribution_is_not_too_small() -> void:
+	## 砲兵の弾薬が過度に少なく分配されないことを確認
+	var element := ElementFactory.create_element_with_vehicle(
+		"USA_M109A7_Paladin",  # ammo_capacity_total: 42
+		GameEnums.Faction.BLUE,
+		Vector2(100, 100)
+	)
+
+	assert_not_null(element.ammo_state, "Should have ammo_state")
+	var main_gun: AmmoState.WeaponAmmoState = element.ammo_state.main_gun
+	assert_not_null(main_gun, "Should have main_gun")
+
+	var total_max: int = main_gun.get_max_total()
+	var total_remaining: int = main_gun.get_total_remaining()
+
+	# 初期状態は満載
+	assert_eq(total_remaining, total_max, "Initial ammo should be full")
+
+	# 全弾数が小さすぎないことを確認（最低20発以上）
+	assert_gt(total_max, 20, "M109A7 total ammo should be > 20 (got %d)" % total_max)
+	print("[Test] M109A7 ammo distribution: total=%d" % total_max)
+
+
+func test_artillery_first_slot_has_most_ammo() -> void:
+	## 砲兵の最初のスロット（標準HE）に最も多くの弾薬があることを確認
+	var element := ElementFactory.create_element_with_vehicle(
+		"USA_M109A7_Paladin",
+		GameEnums.Faction.BLUE,
+		Vector2(100, 100)
+	)
+
+	assert_not_null(element.ammo_state, "Should have ammo_state")
+	var main_gun: AmmoState.WeaponAmmoState = element.ammo_state.main_gun
+	assert_not_null(main_gun, "Should have main_gun")
+	assert_gt(main_gun.ammo_slots.size(), 1, "Should have multiple ammo types")
+
+	# 最初のスロットが最も多いはず
+	var first_slot: AmmoState.AmmoSlot = main_gun.ammo_slots[0]
+	var first_max: int = first_slot.max_total()
+
+	for i in range(1, main_gun.ammo_slots.size()):
+		var slot: AmmoState.AmmoSlot = main_gun.ammo_slots[i]
+		assert_gt(first_max, slot.max_total(),
+			"First slot (%s=%d) should have more than slot %d (%s=%d)" % [
+				first_slot.ammo_type_id, first_max, i, slot.ammo_type_id, slot.max_total()
+			])
+	print("[Test] First slot '%s' has %d rounds (total %d types)" % [
+		first_slot.ammo_type_id, first_max, main_gun.ammo_slots.size()
+	])
