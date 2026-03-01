@@ -123,37 +123,213 @@ class ElementInstance:
 	var faction: GameEnums.Faction = GameEnums.Faction.NONE
 	var company_id: String = ""
 
-	## 位置・移動
-	var position: Vector2 = Vector2.ZERO
-	var facing: float = 0.0  # ラジアン
-	var velocity: Vector2 = Vector2.ZERO
+	## コンポーネント（フェーズ1: 段階的導入）
+	## 後方互換性のためプロパティアクセサで委譲
+	var _position_component: RefCounted = null  # PositionComponent
+	var _combat_component: RefCounted = null    # CombatComponent
+	var _movement_component: RefCounted = null  # MovementComponent
+	var _weapon_component: RefCounted = null    # WeaponComponent
+	var _vision_component: RefCounted = null    # VisionComponent
+	var _comms_component: RefCounted = null     # CommsComponent
+	var _transport_component: RefCounted = null # TransportComponent (nullable)
+	var _artillery_component: RefCounted = null # ArtilleryComponent (nullable)
 
-	## 前tick位置 (補間用)
-	var prev_position: Vector2 = Vector2.ZERO
-	var prev_facing: float = 0.0
+	## 位置・移動（PositionComponentに委譲）
+	var position: Vector2:
+		get:
+			if _position_component:
+				return _position_component.position
+			return _position_raw
+		set(value):
+			if _position_component:
+				_position_component.position = value
+			else:
+				_position_raw = value
+	var _position_raw: Vector2 = Vector2.ZERO
+
+	var facing: float:  # ラジアン
+		get:
+			if _position_component:
+				return _position_component.facing
+			return _facing_raw
+		set(value):
+			if _position_component:
+				_position_component.facing = value
+			else:
+				_facing_raw = value
+	var _facing_raw: float = 0.0
+
+	var velocity: Vector2:
+		get:
+			if _position_component:
+				return _position_component.velocity
+			return _velocity_raw
+		set(value):
+			if _position_component:
+				_position_component.velocity = value
+			else:
+				_velocity_raw = value
+	var _velocity_raw: Vector2 = Vector2.ZERO
+
+	## 前tick位置 (補間用、PositionComponentに委譲)
+	var prev_position: Vector2:
+		get:
+			if _position_component:
+				return _position_component.prev_position
+			return _prev_position_raw
+		set(value):
+			_prev_position_raw = value  # 後方互換: 直接設定は_rawに
+	var _prev_position_raw: Vector2 = Vector2.ZERO
+
+	var prev_facing: float:
+		get:
+			if _position_component:
+				return _position_component.prev_facing
+			return _prev_facing_raw
+		set(value):
+			_prev_facing_raw = value
+	var _prev_facing_raw: float = 0.0
 
 	## 状態
 	var state: GameEnums.UnitState = GameEnums.UnitState.ACTIVE
-	var current_strength: int = 100  # 仕様: Strength 0-100 スケール
-	var suppression: float = 0.0  # 0.0 ~ 1.0
+
+	## 戦力（CombatComponentに委譲）
+	var current_strength: int:  # 仕様: Strength 0-100 スケール
+		get:
+			if _combat_component:
+				return _combat_component.current_strength
+			return _current_strength_raw
+		set(value):
+			if _combat_component:
+				_combat_component.set_strength(value)
+			else:
+				_current_strength_raw = value
+	var _current_strength_raw: int = 100
+
+	var suppression: float:  # 0.0 ~ 1.0
+		get:
+			if _combat_component:
+				return _combat_component.suppression
+			return _suppression_raw
+		set(value):
+			if _combat_component:
+				_combat_component.apply_suppression(value - _combat_component.suppression)
+			else:
+				_suppression_raw = value
+	var _suppression_raw: float = 0.0
 
 	## 視界状態 (他陣営から見た状態)
 	var contact_state: GameEnums.ContactState = GameEnums.ContactState.UNKNOWN
 	var last_seen_tick: int = -1
 	var last_known_position: Vector2 = Vector2.ZERO
 
-	## 移動
-	var current_path: PackedVector2Array = PackedVector2Array()
-	var path_index: int = 0
-	var is_moving: bool = false
-	var use_road_only: bool = false
-	var is_reversing: bool = false  ## 後退中フラグ（正面を維持して後退）
-	var break_contact_smoke_requested: bool = false  ## 離脱時の煙幕要請
+	## 移動（MovementComponentに委譲）
+	var current_path: PackedVector2Array:
+		get:
+			if _movement_component:
+				return _movement_component.current_path
+			return _current_path_raw
+		set(value):
+			if _movement_component:
+				_movement_component.set_path(value)
+			else:
+				_current_path_raw = value
+	var _current_path_raw: PackedVector2Array = PackedVector2Array()
 
-	## 命令
-	var current_order_type: GameEnums.OrderType = GameEnums.OrderType.HOLD
-	var order_target_position: Vector2 = Vector2.ZERO
-	var order_target_id: String = ""  ## 命令の対象ID（ATTACKコマンドなど）
+	var path_index: int:
+		get:
+			if _movement_component:
+				return _movement_component.path_index
+			return _path_index_raw
+		set(value):
+			if _movement_component:
+				_movement_component.set_path_index(value)
+			else:
+				_path_index_raw = value
+	var _path_index_raw: int = 0
+
+	var is_moving: bool:
+		get:
+			if _movement_component:
+				return _movement_component.is_moving
+			return _is_moving_raw
+		set(value):
+			if _movement_component:
+				_movement_component.set_is_moving(value)
+			else:
+				_is_moving_raw = value
+	var _is_moving_raw: bool = false
+
+	var use_road_only: bool:
+		get:
+			if _movement_component:
+				return _movement_component.use_road_only
+			return _use_road_only_raw
+		set(value):
+			if _movement_component:
+				_movement_component.set_use_road_only(value)
+			else:
+				_use_road_only_raw = value
+	var _use_road_only_raw: bool = false
+
+	var is_reversing: bool:  ## 後退中フラグ（正面を維持して後退）
+		get:
+			if _movement_component:
+				return _movement_component.is_reversing
+			return _is_reversing_raw
+		set(value):
+			if _movement_component:
+				_movement_component.set_reversing(value)
+			else:
+				_is_reversing_raw = value
+	var _is_reversing_raw: bool = false
+
+	var break_contact_smoke_requested: bool:  ## 離脱時の煙幕要請
+		get:
+			if _movement_component:
+				return _movement_component.break_contact_smoke_requested
+			return _break_contact_smoke_requested_raw
+		set(value):
+			if _movement_component:
+				if value:
+					_movement_component.request_break_contact_smoke()
+				else:
+					_movement_component.clear_break_contact_smoke()
+			else:
+				_break_contact_smoke_requested_raw = value
+	var _break_contact_smoke_requested_raw: bool = false
+
+	## 命令（MovementComponentに委譲）
+	var current_order_type: GameEnums.OrderType:
+		get:
+			if _movement_component:
+				return _movement_component.current_order_type
+			return _current_order_type_raw
+		set(value):
+			if _movement_component:
+				_movement_component.set_order(value, order_target_position, order_target_id)
+			else:
+				_current_order_type_raw = value
+	var _current_order_type_raw: GameEnums.OrderType = GameEnums.OrderType.HOLD
+
+	var order_target_position: Vector2:
+		get:
+			if _movement_component:
+				return _movement_component.order_target_position
+			return _order_target_position_raw
+		set(value):
+			_order_target_position_raw = value
+	var _order_target_position_raw: Vector2 = Vector2.ZERO
+
+	var order_target_id: String:  ## 命令の対象ID（ATTACKコマンドなど）
+		get:
+			if _movement_component:
+				return _movement_component.order_target_id
+			return _order_target_id_raw
+		set(value):
+			_order_target_id_raw = value
+	var _order_target_id_raw: String = ""
+
 	var pending_move_order: Dictionary = {}  ## SACLOS誘導中の待機移動命令 {target: Vector2, use_route: bool}
 
 	## 戦闘
@@ -170,14 +346,85 @@ class ElementInstance:
 	var accumulated_armor_damage: float = 0.0  ## 連続射撃の装甲ダメージ蓄積（1.0超過で車両ダメージ判定）
 
 	## v0.1R: 車両サブシステムHP（armor_class >= 1 の場合のみ使用）
-	var mobility_hp: int = 100      ## 機動力HP (0-100)
-	var firepower_hp: int = 100     ## 火力HP (0-100)
-	var sensors_hp: int = 100       ## センサーHP (0-100)
+	## CombatComponentに委譲
+	var mobility_hp: int:
+		get:
+			if _combat_component:
+				return _combat_component.mobility_hp
+			return _mobility_hp_raw
+		set(value):
+			if _combat_component:
+				var damage = _combat_component.mobility_hp - value
+				if damage > 0:
+					_combat_component.apply_subsystem_damage("MOBILITY", damage)
+			else:
+				_mobility_hp_raw = value
+	var _mobility_hp_raw: int = 100
 
-	## 破壊関連
-	var is_destroyed: bool = false       ## 完全破壊フラグ（フェードアウト開始）
-	var destroy_tick: int = -1           ## 破壊開始tick
-	var catastrophic_kill: bool = false  ## 爆発・炎上による破壊か（車両用）
+	var firepower_hp: int:
+		get:
+			if _combat_component:
+				return _combat_component.firepower_hp
+			return _firepower_hp_raw
+		set(value):
+			if _combat_component:
+				var damage = _combat_component.firepower_hp - value
+				if damage > 0:
+					_combat_component.apply_subsystem_damage("FIREPOWER", damage)
+			else:
+				_firepower_hp_raw = value
+	var _firepower_hp_raw: int = 100
+
+	var sensors_hp: int:
+		get:
+			if _combat_component:
+				return _combat_component.sensors_hp
+			return _sensors_hp_raw
+		set(value):
+			if _combat_component:
+				var damage = _combat_component.sensors_hp - value
+				if damage > 0:
+					_combat_component.apply_subsystem_damage("SENSORS", damage)
+			else:
+				_sensors_hp_raw = value
+	var _sensors_hp_raw: int = 100
+
+	## 破壊関連（CombatComponentに委譲）
+	var is_destroyed: bool:
+		get:
+			if _combat_component:
+				return _combat_component.is_destroyed
+			return _is_destroyed_raw
+		set(value):
+			if _combat_component:
+				_combat_component.set_destroyed(value)
+			else:
+				_is_destroyed_raw = value
+	var _is_destroyed_raw: bool = false
+
+	var destroy_tick: int:
+		get:
+			if _combat_component:
+				return _combat_component.destroy_tick
+			return _destroy_tick_raw
+		set(value):
+			if _combat_component:
+				_combat_component.set_destroy_tick(value)
+			else:
+				_destroy_tick_raw = value
+	var _destroy_tick_raw: int = -1
+
+	var catastrophic_kill: bool:  ## 爆発・炎上による破壊か（車両用）
+		get:
+			if _combat_component:
+				return _combat_component.catastrophic_kill
+			return _catastrophic_kill_raw
+		set(value):
+			if _combat_component:
+				_combat_component.set_catastrophic_kill(value)
+			else:
+				_catastrophic_kill_raw = value
+	var _catastrophic_kill_raw: bool = false
 
 	## 通信状態（データリンク）
 	var comm_state: GameEnums.CommState = GameEnums.CommState.LINKED  ## 現在の通信状態
@@ -221,15 +468,52 @@ class ElementInstance:
 	func _init(p_type: ElementType = null) -> void:
 		# 重要: 型付き配列はインスタンスごとに新しく初期化する必要がある
 		weapons = []
-		current_path = PackedVector2Array()
+		_current_path_raw = PackedVector2Array()
 
 		if p_type:
 			element_type = p_type
-			current_strength = p_type.max_strength
+			_current_strength_raw = p_type.max_strength
 			# v0.1R: 車両サブシステムHPを初期化
-			mobility_hp = 100
-			firepower_hp = 100
-			sensors_hp = 100
+			_mobility_hp_raw = 100
+			_firepower_hp_raw = 100
+			_sensors_hp_raw = 100
+
+
+	## コンポーネントを初期化（ElementFactoryから呼び出し）
+	func init_components() -> void:
+		# コンポーネントをpreloadで取得
+		var PositionComponent = preload("res://scripts/components/position_component.gd")
+		var CombatComponent = preload("res://scripts/components/combat_component.gd")
+		var MovementComponent = preload("res://scripts/components/movement_component.gd")
+		var WeaponComponent = preload("res://scripts/components/weapon_component.gd")
+		var VisionComponent = preload("res://scripts/components/vision_component.gd")
+		var CommsComponent = preload("res://scripts/components/comms_component.gd")
+		var TransportComponent = preload("res://scripts/components/transport_component.gd")
+		var ArtilleryComponent = preload("res://scripts/components/artillery_component.gd")
+
+		# 必須コンポーネント
+		_position_component = PositionComponent.new()
+		_combat_component = CombatComponent.new(id, element_type.max_strength if element_type else 100)
+		_movement_component = MovementComponent.new(id)
+		_weapon_component = WeaponComponent.new(id)
+		_vision_component = VisionComponent.new(id)
+		_comms_component = CommsComponent.new(id)
+
+		# オプショナルコンポーネント（条件付き）
+		# 輸送能力がある場合のみ
+		if element_type and element_type.can_transport_infantry:
+			_transport_component = TransportComponent.new(id)
+
+		# 砲兵ユニット（FS_ARTILLERY/FS_MORTAR）の場合のみ
+		if element_type and element_type.symbol_type in [SymbolType.FS_ARTILLERY, SymbolType.FS_MORTAR]:
+			var deploy_time = artillery_deploy_time_sec if artillery_deploy_time_sec > 0 else 30.0
+			var pack_time = artillery_pack_time_sec if artillery_pack_time_sec > 0 else 30.0
+			_artillery_component = ArtilleryComponent.new(id, deploy_time, pack_time)
+
+		# 既存の_raw値をコンポーネントに転送
+		_position_component.position = _position_raw
+		_position_component.facing = _facing_raw
+		_position_component.velocity = _velocity_raw
 
 
 	## シンボル名を取得 (SVGファイル名用)
@@ -305,18 +589,25 @@ class ElementInstance:
 
 	## 状態を保存 (補間用)
 	func save_prev_state() -> void:
-		prev_position = position
-		prev_facing = facing
+		if _position_component:
+			_position_component.save_prev_state()
+		else:
+			_prev_position_raw = _position_raw
+			_prev_facing_raw = _facing_raw
 
 
 	## 補間位置を取得
 	func get_interpolated_position(alpha: float) -> Vector2:
-		return prev_position.lerp(position, alpha)
+		if _position_component:
+			return _position_component.get_interpolated_position(alpha)
+		return _prev_position_raw.lerp(_position_raw, alpha)
 
 
 	## 補間角度を取得
 	func get_interpolated_facing(alpha: float) -> float:
-		return lerp_angle(prev_facing, facing, alpha)
+		if _position_component:
+			return _position_component.get_interpolated_facing(alpha)
+		return lerp_angle(_prev_facing_raw, _facing_raw, alpha)
 
 
 	## 車両かどうか（装甲の有無に関係なく、WHEELED/TRACKED = 車両）

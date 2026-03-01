@@ -3,6 +3,16 @@ extends SceneTree
 ## シンプルなテストランナー
 ## Usage: godot --headless --script tests/run_tests.gd
 
+# Component preloads
+const PositionComponent = preload("res://scripts/components/position_component.gd")
+const CombatComponent = preload("res://scripts/components/combat_component.gd")
+const MovementComponent = preload("res://scripts/components/movement_component.gd")
+const WeaponComponent = preload("res://scripts/components/weapon_component.gd")
+const VisionComponent = preload("res://scripts/components/vision_component.gd")
+const CommsComponent = preload("res://scripts/components/comms_component.gd")
+const TransportComponent = preload("res://scripts/components/transport_component.gd")
+const ArtilleryComponent = preload("res://scripts/components/artillery_component.gd")
+
 var _tests_passed: int = 0
 var _tests_failed: int = 0
 var _current_test: String = ""
@@ -103,6 +113,30 @@ func run_all_tests() -> void:
 
 	print("\n[Indirect Fire v0.2 Tests]")
 	test_indirect_fire()
+
+	print("\n[PositionComponent Tests]")
+	test_position_component()
+
+	print("\n[CombatComponent Tests]")
+	test_combat_component()
+
+	print("\n[MovementComponent Tests]")
+	test_movement_component()
+
+	print("\n[WeaponComponent Tests]")
+	test_weapon_component()
+
+	print("\n[VisionComponent Tests]")
+	test_vision_component()
+
+	print("\n[CommsComponent Tests]")
+	test_comms_component()
+
+	print("\n[TransportComponent Tests]")
+	test_transport_component()
+
+	print("\n[ArtilleryComponent Tests]")
+	test_artillery_component()
 
 
 # =============================================================================
@@ -4640,3 +4674,1403 @@ func _create_indirect_test_mbt(ElementDataClass: GDScript) -> RefCounted:
 	element.suppression = 0.0
 	element.current_strength = 4
 	return element
+
+
+# =============================================================================
+# PositionComponent Tests
+# =============================================================================
+
+func test_position_component() -> void:
+	# Test: Initial values
+	_current_test = "position_initial_values"
+	var comp = PositionComponent.new()
+	assert(comp.position == Vector2.ZERO, "Initial position should be ZERO")
+	assert(comp.facing == 0.0, "Initial facing should be 0.0")
+	assert(comp.velocity == Vector2.ZERO, "Initial velocity should be ZERO")
+	_pass()
+
+	# Test: Position change emits signal
+	_current_test = "position_change_emits_signal"
+	comp = PositionComponent.new()
+	var state = {"received": false, "old": Vector2.ZERO, "new": Vector2.ZERO}
+	comp.position_changed.connect(func(old, new):
+		state.received = true
+		state.old = old
+		state.new = new
+	)
+	comp.position = Vector2(100, 200)
+	assert(state.received, "Signal should be emitted")
+	assert(state.old == Vector2.ZERO, "Old position should be ZERO")
+	assert(state.new == Vector2(100, 200), "New position should be (100, 200)")
+	_pass()
+
+	# Test: Same position does not emit signal
+	_current_test = "same_position_no_signal"
+	comp = PositionComponent.new()
+	comp.position = Vector2(50, 50)
+	var count = {"value": 0}
+	comp.position_changed.connect(func(_old, _new): count.value += 1)
+	comp.position = Vector2(50, 50)
+	assert(count.value == 0, "Signal should not be emitted for same value")
+	_pass()
+
+	# Test: Facing change emits signal
+	_current_test = "facing_change_emits_signal"
+	comp = PositionComponent.new()
+	state = {"received": false}
+	comp.facing_changed.connect(func(_old, _new): state.received = true)
+	comp.facing = PI / 2
+	assert(state.received, "Facing signal should be emitted")
+	assert(absf(comp.facing - PI / 2) < 0.001, "Facing should be PI/2")
+	_pass()
+
+	# Test: Velocity change emits signal
+	_current_test = "velocity_change_emits_signal"
+	comp = PositionComponent.new()
+	state = {"received": false}
+	comp.velocity_changed.connect(func(_old, _new): state.received = true)
+	comp.velocity = Vector2(10, 0)
+	assert(state.received, "Velocity signal should be emitted")
+	assert(comp.velocity == Vector2(10, 0), "Velocity should be (10, 0)")
+	_pass()
+
+	# Test: Save prev state
+	_current_test = "save_prev_state"
+	comp = PositionComponent.new()
+	comp.position = Vector2(100, 100)
+	comp.facing = PI
+	comp.save_prev_state()
+	comp.position = Vector2(200, 200)
+	comp.facing = 0.0
+	var mid_pos = comp.get_interpolated_position(0.0)
+	assert(mid_pos == Vector2(100, 100), "Alpha 0 should return prev_position")
+	_pass()
+
+	# Test: Interpolation position
+	_current_test = "interpolation_position"
+	comp = PositionComponent.new()
+	comp.position = Vector2(0, 0)
+	comp.save_prev_state()
+	comp.position = Vector2(100, 100)
+	var mid = comp.get_interpolated_position(0.5)
+	assert(mid == Vector2(50, 50), "Midpoint should be (50, 50)")
+	_pass()
+
+	# Test: Interpolation facing
+	_current_test = "interpolation_facing"
+	comp = PositionComponent.new()
+	comp.facing = 0.0
+	comp.save_prev_state()
+	comp.facing = PI / 2  # 0からPI/2への補間（確実にPI/4）
+	mid = comp.get_interpolated_facing(0.5)
+	assert(absf(mid - PI / 4) < 0.001, "Midpoint facing should be PI/4")
+	_pass()
+
+	# Test: move_by
+	_current_test = "move_by"
+	comp = PositionComponent.new()
+	comp.position = Vector2(100, 100)
+	comp.move_by(Vector2(50, -25))
+	assert(comp.position == Vector2(150, 75), "Position should be updated by delta")
+	_pass()
+
+	# Test: set_position_and_facing
+	_current_test = "set_position_and_facing"
+	comp = PositionComponent.new()
+	comp.set_position_and_facing(Vector2(300, 400), PI / 4)
+	assert(comp.position == Vector2(300, 400), "Position should be set")
+	assert(absf(comp.facing - PI / 4) < 0.001, "Facing should be set")
+	_pass()
+
+
+# =============================================================================
+# CombatComponent Tests
+# =============================================================================
+
+func test_combat_component() -> void:
+	# Test: Initial values
+	_current_test = "combat_initial_values"
+	var comp = CombatComponent.new("test_unit", 100)
+	assert(comp.current_strength == 100, "Initial strength should be max")
+	assert(comp.max_strength == 100, "Max strength should be 100")
+	assert(comp.suppression == 0.0, "Initial suppression should be 0")
+	assert(not comp.is_destroyed, "Should not be destroyed initially")
+	_pass()
+
+	# Test: Custom max strength
+	_current_test = "custom_max_strength"
+	comp = CombatComponent.new("tank_plt", 4)
+	assert(comp.max_strength == 4, "Max strength should be 4")
+	assert(comp.current_strength == 4, "Current strength should be 4")
+	_pass()
+
+	# Test: Apply damage reduces strength
+	_current_test = "apply_damage_reduces_strength"
+	comp = CombatComponent.new("test_unit", 100)
+	comp.apply_damage(30)
+	assert(comp.current_strength == 70, "Strength should be reduced to 70")
+	_pass()
+
+	# Test: Apply damage emits signal
+	_current_test = "apply_damage_emits_signal"
+	comp = CombatComponent.new("test_unit", 100)
+	var events: Array = []
+	comp.strength_changed.connect(func(id, old, new):
+		events.append({"id": id, "old": old, "new": new})
+	)
+	comp.apply_damage(30)
+	assert(events.size() == 1, "One event should be emitted")
+	assert(events[0].id == "test_unit", "Event ID should match")
+	assert(events[0].old == 100, "Old value should be 100")
+	assert(events[0].new == 70, "New value should be 70")
+	_pass()
+
+	# Test: Zero damage does not emit
+	_current_test = "apply_damage_zero_no_emit"
+	comp = CombatComponent.new("test_unit", 100)
+	var count = {"value": 0}
+	comp.strength_changed.connect(func(_id, _old, _new): count.value += 1)
+	comp.apply_damage(0)
+	assert(count.value == 0, "No signal for zero damage")
+	_pass()
+
+	# Test: Damage clamped to zero
+	_current_test = "apply_damage_clamped_to_zero"
+	comp = CombatComponent.new("test_unit", 100)
+	comp.apply_damage(150)
+	assert(comp.current_strength == 0, "Strength should be clamped to 0")
+	_pass()
+
+	# Test: Destruction when strength zero
+	_current_test = "destruction_when_strength_zero"
+	comp = CombatComponent.new("test_unit", 10)
+	var state = {"destroyed": false, "catastrophic": false}
+	comp.unit_destroyed.connect(func(id, catastrophic):
+		state.destroyed = true
+		state.catastrophic = catastrophic
+	)
+	comp.apply_damage(15)
+	assert(state.destroyed, "Destroyed signal should be emitted")
+	assert(not state.catastrophic, "Should not be catastrophic by default")
+	assert(comp.is_destroyed, "is_destroyed flag should be true")
+	_pass()
+
+	# Test: Catastrophic kill
+	_current_test = "catastrophic_kill"
+	comp = CombatComponent.new("test_unit", 10)
+	state = {"catastrophic": false}
+	comp.unit_destroyed.connect(func(_id, catastrophic): state.catastrophic = catastrophic)
+	comp.apply_damage(15, true)
+	assert(state.catastrophic, "Should be catastrophic")
+	assert(comp.catastrophic_kill, "catastrophic_kill flag should be true")
+	_pass()
+
+	# Test: Multiple damage does not re-destroy
+	_current_test = "multiple_damage_no_redestroy"
+	comp = CombatComponent.new("test_unit", 10)
+	count = {"value": 0}
+	comp.unit_destroyed.connect(func(_id, _catastrophic): count.value += 1)
+	comp.apply_damage(10)
+	comp.apply_damage(5)
+	assert(count.value == 1, "Destroy signal should only fire once")
+	_pass()
+
+	# Test: Apply suppression
+	_current_test = "apply_suppression"
+	comp = CombatComponent.new("test_unit", 100)
+	comp.apply_suppression(0.3)
+	assert(absf(comp.suppression - 0.3) < 0.001, "Suppression should be 0.3")
+	_pass()
+
+	# Test: Suppression clamped to max
+	_current_test = "suppression_clamped_to_max"
+	comp = CombatComponent.new("test_unit", 100)
+	comp.apply_suppression(1.5)
+	assert(comp.suppression == 1.0, "Suppression should be clamped to 1.0")
+	_pass()
+
+	# Test: Suppression clamped to min
+	_current_test = "suppression_clamped_to_min"
+	comp = CombatComponent.new("test_unit", 100)
+	comp.apply_suppression(0.5)
+	comp.apply_suppression(-1.0)
+	assert(comp.suppression == 0.0, "Suppression should be clamped to 0.0")
+	_pass()
+
+	# Test: Recover suppression
+	_current_test = "recover_suppression"
+	comp = CombatComponent.new("test_unit", 100)
+	comp.apply_suppression(0.5)
+	comp.recover_suppression(0.1)
+	assert(absf(comp.suppression - 0.4) < 0.001, "Suppression should decrease")
+	_pass()
+
+	# Test: Accumulate damage
+	_current_test = "accumulate_damage"
+	comp = CombatComponent.new("test_unit", 100)
+	var applied1 = comp.accumulate_damage(0.5)
+	assert(applied1 == 0, "No damage applied yet")
+	assert(comp.current_strength == 100, "Strength unchanged")
+	var applied2 = comp.accumulate_damage(0.6)
+	assert(applied2 == 1, "1 damage should be applied")
+	assert(comp.current_strength == 99, "Strength should decrease by 1")
+	_pass()
+
+	# Test: Subsystem initial values
+	_current_test = "subsystem_initial_values"
+	comp = CombatComponent.new("tank", 4)
+	assert(comp.mobility_hp == 100, "Initial mobility HP should be 100")
+	assert(comp.firepower_hp == 100, "Initial firepower HP should be 100")
+	assert(comp.sensors_hp == 100, "Initial sensors HP should be 100")
+	_pass()
+
+	# Test: Apply subsystem damage mobility
+	_current_test = "apply_subsystem_damage_mobility"
+	comp = CombatComponent.new("tank", 4)
+	comp.apply_subsystem_damage("MOBILITY", 25)
+	assert(comp.mobility_hp == 75, "Mobility HP should be 75")
+	_pass()
+
+	# Test: Is mobility killed
+	_current_test = "is_mobility_killed"
+	comp = CombatComponent.new("tank", 4)
+	assert(not comp.is_mobility_killed(), "Not M-KILL initially")
+	comp.apply_subsystem_damage("MOBILITY", 100)
+	assert(comp.is_mobility_killed(), "Should be M-KILL")
+	_pass()
+
+	# Test: Get suppression state
+	_current_test = "get_suppression_state_active"
+	comp = CombatComponent.new("test_unit", 100)
+	comp.apply_suppression(0.2)
+	assert(comp.get_suppression_state() == GameEnums.SuppressionState.ACTIVE, "Should be ACTIVE")
+	_pass()
+
+	_current_test = "get_suppression_state_suppressed"
+	comp = CombatComponent.new("test_unit", 100)
+	comp.apply_suppression(0.5)
+	assert(comp.get_suppression_state() == GameEnums.SuppressionState.SUPPRESSED, "Should be SUPPRESSED")
+	_pass()
+
+	_current_test = "get_suppression_state_pinned"
+	comp = CombatComponent.new("test_unit", 100)
+	comp.apply_suppression(0.8)
+	assert(comp.get_suppression_state() == GameEnums.SuppressionState.PINNED, "Should be PINNED")
+	_pass()
+
+	_current_test = "get_suppression_state_broken"
+	comp = CombatComponent.new("test_unit", 100)
+	comp.apply_suppression(1.0)
+	assert(comp.get_suppression_state() == GameEnums.SuppressionState.BROKEN, "Should be BROKEN")
+	_pass()
+
+
+# =============================================================================
+# MovementComponent Tests
+# =============================================================================
+
+func test_movement_component() -> void:
+	# Test: Initial values
+	_current_test = "movement_initial_values"
+	var comp = MovementComponent.new("test_unit")
+	assert(not comp.is_moving, "Should not be moving initially")
+	assert(comp.current_path.size() == 0, "Path should be empty")
+	assert(comp.current_order_type == GameEnums.OrderType.HOLD, "Initial order should be HOLD")
+	assert(not comp.is_reversing, "Should not be reversing")
+	_pass()
+
+	# Test: Start movement
+	_current_test = "start_movement"
+	comp = MovementComponent.new("test_unit")
+	var path = PackedVector2Array([Vector2(100, 100), Vector2(200, 200), Vector2(300, 300)])
+	var state = {"received": false, "dest": Vector2.ZERO}
+	comp.movement_started.connect(func(id, destination):
+		state.received = true
+		state.dest = destination
+	)
+	comp.start_movement(path)
+	assert(comp.is_moving, "Should be moving")
+	assert(comp.current_path.size() == 3, "Path should have 3 waypoints")
+	assert(state.received, "Signal should be emitted")
+	assert(state.dest == Vector2(300, 300), "Destination should be last waypoint")
+	_pass()
+
+	# Test: Start movement with road flag
+	_current_test = "start_movement_road_flag"
+	comp = MovementComponent.new("test_unit")
+	path = PackedVector2Array([Vector2(100, 100)])
+	comp.start_movement(path, true)
+	assert(comp.use_road_only, "use_road_only should be true")
+	_pass()
+
+	# Test: Stop movement
+	_current_test = "stop_movement"
+	comp = MovementComponent.new("test_unit")
+	path = PackedVector2Array([Vector2(100, 100), Vector2(200, 200)])
+	comp.start_movement(path)
+	state = {"received": false}
+	comp.movement_completed.connect(func(_id): state.received = true)
+	comp.stop_movement()
+	assert(not comp.is_moving, "Should not be moving")
+	assert(comp.current_path.size() == 0, "Path should be cleared")
+	assert(state.received, "Completed signal should be emitted")
+	_pass()
+
+	# Test: Get next waypoint
+	_current_test = "get_next_waypoint"
+	comp = MovementComponent.new("test_unit")
+	path = PackedVector2Array([Vector2(100, 100), Vector2(200, 200)])
+	comp.start_movement(path)
+	var next = comp.get_next_waypoint()
+	assert(next == Vector2(100, 100), "First waypoint should be (100, 100)")
+	_pass()
+
+	# Test: Get next waypoint empty path
+	_current_test = "get_next_waypoint_empty"
+	comp = MovementComponent.new("test_unit")
+	next = comp.get_next_waypoint()
+	assert(next == Vector2.ZERO, "Should return ZERO for empty path")
+	_pass()
+
+	# Test: Advance waypoint
+	_current_test = "advance_waypoint"
+	comp = MovementComponent.new("test_unit")
+	path = PackedVector2Array([Vector2(100, 100), Vector2(200, 200), Vector2(300, 300)])
+	comp.start_movement(path)
+	assert(comp.get_next_waypoint() == Vector2(100, 100), "First waypoint")
+	var has_more = comp.advance_waypoint()
+	assert(has_more, "Should have more waypoints")
+	assert(comp.get_next_waypoint() == Vector2(200, 200), "Second waypoint")
+	_pass()
+
+	# Test: Advance waypoint to end
+	_current_test = "advance_waypoint_to_end"
+	comp = MovementComponent.new("test_unit")
+	path = PackedVector2Array([Vector2(100, 100), Vector2(200, 200)])
+	comp.start_movement(path)
+	comp.advance_waypoint()
+	has_more = comp.advance_waypoint()
+	assert(not has_more, "Should not have more waypoints")
+	_pass()
+
+	# Test: Set order move
+	_current_test = "set_order_move"
+	comp = MovementComponent.new("test_unit")
+	state = {"received": false, "order": GameEnums.OrderType.NONE}
+	comp.order_changed.connect(func(id, order_type):
+		state.received = true
+		state.order = order_type
+	)
+	comp.set_order(GameEnums.OrderType.MOVE, Vector2(500, 500))
+	assert(comp.current_order_type == GameEnums.OrderType.MOVE, "Order should be MOVE")
+	assert(comp.order_target_position == Vector2(500, 500), "Target position should be set")
+	assert(state.received, "Signal should be emitted")
+	_pass()
+
+	# Test: Set order attack
+	_current_test = "set_order_attack"
+	comp = MovementComponent.new("test_unit")
+	comp.set_order(GameEnums.OrderType.ATTACK, Vector2(600, 600), "enemy_1")
+	assert(comp.current_order_type == GameEnums.OrderType.ATTACK, "Order should be ATTACK")
+	assert(comp.order_target_id == "enemy_1", "Target ID should be set")
+	_pass()
+
+	# Test: Set reversing
+	_current_test = "set_reversing"
+	comp = MovementComponent.new("test_unit")
+	comp.set_reversing(true)
+	assert(comp.is_reversing, "Should be reversing")
+	comp.set_reversing(false)
+	assert(not comp.is_reversing, "Should not be reversing")
+	_pass()
+
+	# Test: Clear reversing on stop
+	_current_test = "clear_reversing_on_stop"
+	comp = MovementComponent.new("test_unit")
+	path = PackedVector2Array([Vector2(100, 100)])
+	comp.start_movement(path)
+	comp.set_reversing(true)
+	comp.stop_movement()
+	assert(not comp.is_reversing, "Reversing should be cleared on stop")
+	_pass()
+
+	# Test: Break contact smoke flag
+	_current_test = "break_contact_smoke_flag"
+	comp = MovementComponent.new("test_unit")
+	assert(not comp.break_contact_smoke_requested, "Initially false")
+	comp.request_break_contact_smoke()
+	assert(comp.break_contact_smoke_requested, "Should be true after request")
+	comp.clear_break_contact_smoke()
+	assert(not comp.break_contact_smoke_requested, "Should be cleared")
+	_pass()
+
+	# Test: Set pending move order
+	_current_test = "set_pending_move_order"
+	comp = MovementComponent.new("test_unit")
+	var pending = {"target": Vector2(400, 400), "use_route": true}
+	comp.set_pending_move_order(pending)
+	assert(comp.has_pending_order(), "Should have pending order")
+	_pass()
+
+	# Test: Get and clear pending order
+	_current_test = "get_and_clear_pending_order"
+	comp = MovementComponent.new("test_unit")
+	pending = {"target": Vector2(400, 400), "use_route": true}
+	comp.set_pending_move_order(pending)
+	var retrieved = comp.get_and_clear_pending_order()
+	assert(retrieved.target == Vector2(400, 400), "Target should match")
+	assert(not comp.has_pending_order(), "Pending order should be cleared")
+	_pass()
+
+	# Test: Path changed signal
+	_current_test = "path_changed_signal"
+	comp = MovementComponent.new("test_unit")
+	state = {"received": false, "path": PackedVector2Array()}
+	comp.path_changed.connect(func(id, new_path):
+		state.received = true
+		state.path = new_path
+	)
+	path = PackedVector2Array([Vector2(100, 100), Vector2(200, 200)])
+	comp.start_movement(path)
+	assert(state.received, "Path changed signal should be emitted")
+	assert(state.path.size() == 2, "Path should have 2 waypoints")
+	_pass()
+
+
+# =============================================================================
+# WeaponComponent Tests
+# =============================================================================
+
+func test_weapon_component() -> void:
+	# Test: Initial values
+	_current_test = "weapon_initial_values"
+	var comp = WeaponComponent.new("test_unit")
+	assert(comp.weapons.size() == 0, "Weapons should be empty initially")
+	assert(comp.primary_weapon == null, "Primary weapon should be null")
+	assert(comp.current_weapon == null, "Current weapon should be null")
+	assert(comp.current_target_id == "", "Target should be empty")
+	assert(comp.forced_target_id == "", "Forced target should be empty")
+	assert(comp.sop_mode == GameEnums.SOPMode.FIRE_AT_WILL, "Default SOP should be FIRE_AT_WILL")
+	assert(comp.last_fire_tick == -1, "Last fire tick should be -1")
+	_pass()
+
+	# Test: Add weapon sets primary and current
+	_current_test = "add_weapon_sets_primary"
+	comp = WeaponComponent.new("test_unit")
+	var mock_weapon = {"id": "rifle_m4", "name": "M4 Carbine"}  # Mock weapon object
+	comp.add_weapon(mock_weapon)
+	assert(comp.weapons.size() == 1, "Should have 1 weapon")
+	assert(comp.primary_weapon == mock_weapon, "Primary should be set")
+	assert(comp.current_weapon == mock_weapon, "Current should be set")
+	_pass()
+
+	# Test: Add multiple weapons
+	_current_test = "add_multiple_weapons"
+	comp = WeaponComponent.new("test_unit")
+	var weapon1 = {"id": "rifle_m4", "name": "M4"}
+	var weapon2 = {"id": "launcher_at4", "name": "AT4"}
+	comp.add_weapon(weapon1)
+	comp.add_weapon(weapon2)
+	assert(comp.weapons.size() == 2, "Should have 2 weapons")
+	assert(comp.primary_weapon == weapon1, "Primary should be first added")
+	_pass()
+
+	# Test: Clear weapons
+	_current_test = "clear_weapons"
+	comp = WeaponComponent.new("test_unit")
+	comp.add_weapon({"id": "test"})
+	comp.clear_weapons()
+	assert(comp.weapons.size() == 0, "Weapons should be cleared")
+	assert(comp.primary_weapon == null, "Primary should be null")
+	assert(comp.current_weapon == null, "Current should be null")
+	_pass()
+
+	# Test: Set current weapon emits signal
+	_current_test = "set_current_weapon_signal"
+	comp = WeaponComponent.new("test_unit")
+	weapon1 = {"id": "rifle_m4"}
+	weapon2 = {"id": "launcher_at4"}
+	comp.add_weapon(weapon1)
+	comp.add_weapon(weapon2)
+	var state = {"received": false, "old_id": "", "new_id": ""}
+	comp.weapon_changed.connect(func(elem_id, old_id, new_id):
+		state.received = true
+		state.old_id = old_id
+		state.new_id = new_id
+	)
+	comp.set_current_weapon(weapon2)
+	assert(state.received, "Signal should be emitted")
+	assert(state.old_id == "rifle_m4", "Old weapon ID should match")
+	assert(state.new_id == "launcher_at4", "New weapon ID should match")
+	_pass()
+
+	# Test: Set current weapon same value no signal
+	_current_test = "set_current_weapon_same_no_signal"
+	comp = WeaponComponent.new("test_unit")
+	var weapon = {"id": "rifle_m4"}
+	comp.add_weapon(weapon)
+	var signal_count = {"count": 0}
+	comp.weapon_changed.connect(func(_e, _o, _n): signal_count.count += 1)
+	comp.set_current_weapon(weapon)  # Same weapon
+	assert(signal_count.count == 0, "Signal should not be emitted for same weapon")
+	_pass()
+
+	# Test: Set current target emits signal
+	_current_test = "set_current_target_signal"
+	comp = WeaponComponent.new("test_unit")
+	var state2 = {"received": false, "old_id": "", "new_id": ""}
+	comp.target_changed.connect(func(elem_id, old_id, new_id):
+		state2.received = true
+		state2.old_id = old_id
+		state2.new_id = new_id
+	)
+	comp.set_current_target("enemy_1")
+	assert(state2.received, "Signal should be emitted")
+	assert(state2.old_id == "", "Old target should be empty")
+	assert(state2.new_id == "enemy_1", "New target should match")
+	_pass()
+
+	# Test: Clear current target
+	_current_test = "clear_current_target"
+	comp = WeaponComponent.new("test_unit")
+	comp.set_current_target("enemy_1")
+	comp.clear_current_target()
+	assert(comp.current_target_id == "", "Target should be cleared")
+	_pass()
+
+	# Test: Set forced target emits signal
+	_current_test = "set_forced_target_signal"
+	comp = WeaponComponent.new("test_unit")
+	var forced_state = {"set_received": false, "target_id": ""}
+	comp.forced_target_set.connect(func(elem_id, target_id):
+		forced_state.set_received = true
+		forced_state.target_id = target_id
+	)
+	comp.set_forced_target("enemy_tank_1")
+	assert(forced_state.set_received, "Set signal should be emitted")
+	assert(forced_state.target_id == "enemy_tank_1", "Target ID should match")
+	assert(comp.has_forced_target(), "Should have forced target")
+	_pass()
+
+	# Test: Clear forced target emits signal
+	_current_test = "clear_forced_target_signal"
+	comp = WeaponComponent.new("test_unit")
+	comp.set_forced_target("enemy_tank_1")
+	var cleared_state = {"received": false}
+	comp.forced_target_cleared.connect(func(elem_id): cleared_state.received = true)
+	comp.clear_forced_target()
+	assert(cleared_state.received, "Cleared signal should be emitted")
+	assert(not comp.has_forced_target(), "Should not have forced target")
+	_pass()
+
+	# Test: ATGM guided target
+	_current_test = "atgm_guided_target"
+	comp = WeaponComponent.new("test_unit")
+	comp.set_atgm_guided_target("missile_target_1")
+	assert(comp.atgm_guided_target_id == "missile_target_1", "ATGM target should be set")
+	comp.clear_atgm_guided_target()
+	assert(comp.atgm_guided_target_id == "", "ATGM target should be cleared")
+	_pass()
+
+	# Test: Record fire and can_fire cooldown
+	_current_test = "record_fire_cooldown"
+	comp = WeaponComponent.new("test_unit")
+	assert(comp.can_fire(0, 10), "Should be able to fire initially")
+	comp.record_fire(100)
+	assert(comp.last_fire_tick == 100, "Last fire tick should be recorded")
+	assert(not comp.can_fire(105, 10), "Should not fire during cooldown")
+	assert(comp.can_fire(110, 10), "Should fire after cooldown")
+	assert(comp.can_fire(115, 10), "Should fire after cooldown")
+	_pass()
+
+	# Test: Record hit
+	_current_test = "record_hit"
+	comp = WeaponComponent.new("test_unit")
+	comp.record_hit(50)
+	assert(comp.last_hit_tick == 50, "Last hit tick should be recorded")
+	assert(comp.ticks_since_last_hit(60) == 10, "Should calculate ticks since hit")
+	_pass()
+
+	# Test: SOP mode change emits signal
+	_current_test = "sop_mode_change_signal"
+	comp = WeaponComponent.new("test_unit")
+	var sop_state = {"received": false, "old": GameEnums.SOPMode.FIRE_AT_WILL, "new": GameEnums.SOPMode.FIRE_AT_WILL}
+	comp.sop_mode_changed.connect(func(elem_id, old_mode, new_mode):
+		sop_state.received = true
+		sop_state.old = old_mode
+		sop_state.new = new_mode
+	)
+	comp.set_sop_mode(GameEnums.SOPMode.HOLD_FIRE)
+	assert(sop_state.received, "Signal should be emitted")
+	assert(sop_state.old == GameEnums.SOPMode.FIRE_AT_WILL, "Old mode should be FIRE_AT_WILL")
+	assert(sop_state.new == GameEnums.SOPMode.HOLD_FIRE, "New mode should be HOLD_FIRE")
+	_pass()
+
+	# Test: SOP mode same value no signal
+	_current_test = "sop_mode_same_no_signal"
+	comp = WeaponComponent.new("test_unit")
+	var signal_count2 = {"count": 0}
+	comp.sop_mode_changed.connect(func(_e, _o, _n): signal_count2.count += 1)
+	comp.set_sop_mode(GameEnums.SOPMode.FIRE_AT_WILL)  # Same as default
+	assert(signal_count2.count == 0, "Signal should not be emitted for same mode")
+	_pass()
+
+	# Test: is_fire_allowed FIRE_AT_WILL
+	_current_test = "is_fire_allowed_fire_at_will"
+	comp = WeaponComponent.new("test_unit")
+	comp.set_sop_mode(GameEnums.SOPMode.FIRE_AT_WILL)
+	assert(comp.is_fire_allowed(false, false), "FIRE_AT_WILL allows firing")
+	assert(comp.is_fire_allowed(true, false), "FIRE_AT_WILL allows firing with forced target")
+	assert(comp.is_fire_allowed(false, true), "FIRE_AT_WILL allows firing when hit")
+	_pass()
+
+	# Test: is_fire_allowed RETURN_FIRE
+	_current_test = "is_fire_allowed_return_fire"
+	comp = WeaponComponent.new("test_unit")
+	comp.set_sop_mode(GameEnums.SOPMode.RETURN_FIRE)
+	assert(not comp.is_fire_allowed(false, false), "RETURN_FIRE denies without condition")
+	assert(comp.is_fire_allowed(false, true), "RETURN_FIRE allows when hit")
+	assert(comp.is_fire_allowed(true, false), "RETURN_FIRE allows with forced target")
+	_pass()
+
+	# Test: is_fire_allowed HOLD_FIRE
+	_current_test = "is_fire_allowed_hold_fire"
+	comp = WeaponComponent.new("test_unit")
+	comp.set_sop_mode(GameEnums.SOPMode.HOLD_FIRE)
+	assert(not comp.is_fire_allowed(false, false), "HOLD_FIRE denies normal fire")
+	assert(not comp.is_fire_allowed(false, true), "HOLD_FIRE denies even when hit")
+	assert(comp.is_fire_allowed(true, false), "HOLD_FIRE allows with forced target only")
+	_pass()
+
+	# Test: Weapon fired signal
+	_current_test = "weapon_fired_signal"
+	comp = WeaponComponent.new("test_unit")
+	var main_gun_weapon = {"id": "tank_main_gun"}
+	comp.add_weapon(main_gun_weapon)
+	comp.set_current_target("enemy_tank")
+	var fired_state = {"received": false, "weapon_id": "", "target_id": ""}
+	comp.weapon_fired.connect(func(elem_id, weapon_id, target_id):
+		fired_state.received = true
+		fired_state.weapon_id = weapon_id
+		fired_state.target_id = target_id
+	)
+	comp.record_fire(100)
+	assert(fired_state.received, "Fired signal should be emitted")
+	assert(fired_state.weapon_id == "tank_main_gun", "Weapon ID should match")
+	assert(fired_state.target_id == "enemy_tank", "Target ID should match")
+	_pass()
+
+	# Test: Find weapon by ID
+	_current_test = "find_weapon_by_id"
+	comp = WeaponComponent.new("test_unit")
+	var find_weapon1 = {"id": "rifle_m4", "name": "M4"}
+	var find_weapon2 = {"id": "launcher_at4", "name": "AT4"}
+	comp.add_weapon(find_weapon1)
+	comp.add_weapon(find_weapon2)
+	var found = comp.find_weapon_by_id("launcher_at4")
+	assert(found == find_weapon2, "Should find weapon by ID")
+	var not_found = comp.find_weapon_by_id("nonexistent")
+	assert(not_found == null, "Should return null for unknown ID")
+	_pass()
+
+	# Test: Get weapon at index
+	_current_test = "get_weapon_at_index"
+	comp = WeaponComponent.new("test_unit")
+	var idx_weapon1 = {"id": "rifle_m4"}
+	var idx_weapon2 = {"id": "launcher_at4"}
+	comp.add_weapon(idx_weapon1)
+	comp.add_weapon(idx_weapon2)
+	assert(comp.get_weapon_at(0) == idx_weapon1, "First weapon")
+	assert(comp.get_weapon_at(1) == idx_weapon2, "Second weapon")
+	assert(comp.get_weapon_at(5) == null, "Out of bounds returns null")
+	assert(comp.get_weapon_at(-1) == null, "Negative index returns null")
+	_pass()
+
+	# Test: Get weapon count
+	_current_test = "get_weapon_count"
+	comp = WeaponComponent.new("test_unit")
+	assert(comp.get_weapon_count() == 0, "Initially 0")
+	comp.add_weapon({"id": "w1"})
+	comp.add_weapon({"id": "w2"})
+	assert(comp.get_weapon_count() == 2, "Should be 2")
+	_pass()
+
+# =============================================================================
+# VisionComponent Tests
+# =============================================================================
+
+func test_vision_component() -> void:
+	# Test: Initial values
+	_current_test = "vision_initial_values"
+	var comp = VisionComponent.new("test_unit")
+	assert(comp.contact_state == GameEnums.ContactState.UNKNOWN, "Initial state should be UNKNOWN")
+	assert(comp.last_seen_tick == -1, "Last seen tick should be -1")
+	assert(comp.last_known_position == Vector2.ZERO, "Last known position should be ZERO")
+	assert(comp.is_unknown(), "Should be unknown")
+	assert(not comp.is_confirmed(), "Should not be confirmed")
+	_pass()
+
+	# Test: Set contact state emits signal
+	_current_test = "set_contact_state_signal"
+	comp = VisionComponent.new("test_unit")
+	var state = {"received": false, "old": GameEnums.ContactState.UNKNOWN, "new": GameEnums.ContactState.UNKNOWN}
+	comp.contact_state_changed.connect(func(elem_id, old_state, new_state):
+		state.received = true
+		state.old = old_state
+		state.new = new_state
+	)
+	comp.set_contact_state(GameEnums.ContactState.CONFIRMED)
+	assert(state.received, "Signal should be emitted")
+	assert(state.old == GameEnums.ContactState.UNKNOWN, "Old state should be UNKNOWN")
+	assert(state.new == GameEnums.ContactState.CONFIRMED, "New state should be CONFIRMED")
+	_pass()
+
+	# Test: Set contact state same value no signal
+	_current_test = "set_contact_state_same_no_signal"
+	comp = VisionComponent.new("test_unit")
+	var signal_count = {"count": 0}
+	comp.contact_state_changed.connect(func(_e, _o, _n): signal_count.count += 1)
+	comp.set_contact_state(GameEnums.ContactState.UNKNOWN)  # Same as default
+	assert(signal_count.count == 0, "Signal should not be emitted for same state")
+	_pass()
+
+	# Test: Confirm contact updates all fields
+	_current_test = "confirm_contact"
+	comp = VisionComponent.new("test_unit")
+	var pos_state = {"received": false, "pos": Vector2.ZERO}
+	comp.position_updated.connect(func(elem_id, pos):
+		pos_state.received = true
+		pos_state.pos = pos
+	)
+	comp.confirm_contact(100, Vector2(500, 300))
+	assert(comp.contact_state == GameEnums.ContactState.CONFIRMED, "State should be CONFIRMED")
+	assert(comp.last_seen_tick == 100, "Last seen tick should be 100")
+	assert(comp.last_known_position == Vector2(500, 300), "Position should be updated")
+	assert(pos_state.received, "Position updated signal should be emitted")
+	assert(comp.is_confirmed(), "is_confirmed should be true")
+	_pass()
+
+	# Test: Contact confirmed signal
+	_current_test = "contact_confirmed_signal"
+	comp = VisionComponent.new("test_unit")
+	var confirmed_state = {"received": false, "pos": Vector2.ZERO}
+	comp.contact_confirmed.connect(func(elem_id, pos):
+		confirmed_state.received = true
+		confirmed_state.pos = pos
+	)
+	comp.confirm_contact(50, Vector2(200, 100))
+	assert(confirmed_state.received, "Confirmed signal should be emitted")
+	assert(confirmed_state.pos == Vector2(200, 100), "Position should match")
+	_pass()
+
+	# Test: Set suspected
+	_current_test = "set_suspected"
+	comp = VisionComponent.new("test_unit")
+	comp.confirm_contact(100, Vector2(500, 300))
+	comp.set_suspected(150)
+	assert(comp.contact_state == GameEnums.ContactState.SUSPECTED, "State should be SUSPECTED")
+	_pass()
+
+	# Test: Set unknown (lost contact)
+	_current_test = "set_unknown"
+	comp = VisionComponent.new("test_unit")
+	comp.confirm_contact(100, Vector2(500, 300))
+	var lost_state = {"received": false}
+	comp.contact_lost.connect(func(elem_id): lost_state.received = true)
+	comp.set_unknown()
+	assert(comp.contact_state == GameEnums.ContactState.UNKNOWN, "State should be UNKNOWN")
+	assert(comp.is_unknown(), "is_unknown should be true")
+	assert(lost_state.received, "Lost signal should be emitted")
+	_pass()
+
+	# Test: Contact lost signal not emitted when already unknown
+	_current_test = "contact_lost_not_emitted_when_unknown"
+	comp = VisionComponent.new("test_unit")  # Starts as UNKNOWN
+	var lost_count = {"count": 0}
+	comp.contact_lost.connect(func(_e): lost_count.count += 1)
+	comp.set_unknown()  # Already UNKNOWN
+	assert(lost_count.count == 0, "Lost signal should not be emitted when already unknown")
+	_pass()
+
+	# Test: Update last known position
+	_current_test = "update_last_known_position"
+	comp = VisionComponent.new("test_unit")
+	var pos_state2 = {"received": false, "pos": Vector2.ZERO}
+	comp.position_updated.connect(func(elem_id, pos):
+		pos_state2.received = true
+		pos_state2.pos = pos
+	)
+	comp.update_last_known_position(Vector2(123, 456))
+	assert(comp.last_known_position == Vector2(123, 456), "Position should be updated")
+	assert(pos_state2.received, "Signal should be emitted")
+	_pass()
+
+	# Test: Ticks since last seen
+	_current_test = "ticks_since_last_seen"
+	comp = VisionComponent.new("test_unit")
+	assert(comp.ticks_since_last_seen(100) == -1, "Should be -1 when never seen")
+	comp.confirm_contact(50, Vector2(100, 100))
+	assert(comp.ticks_since_last_seen(100) == 50, "Should calculate correct elapsed ticks")
+	assert(comp.ticks_since_last_seen(200) == 150, "Should calculate correct elapsed ticks")
+	_pass()
+
+	# Test: Reset
+	_current_test = "vision_reset"
+	comp = VisionComponent.new("test_unit")
+	comp.confirm_contact(100, Vector2(500, 300))
+	comp.reset()
+	assert(comp.contact_state == GameEnums.ContactState.UNKNOWN, "State should be reset to UNKNOWN")
+	assert(comp.last_seen_tick == -1, "Last seen tick should be reset")
+	assert(comp.last_known_position == Vector2.ZERO, "Position should be reset")
+	_pass()
+
+	# Test: Direct setters for backward compatibility
+	_current_test = "vision_direct_setters"
+	comp = VisionComponent.new("test_unit")
+	comp.set_last_seen_tick(999)
+	assert(comp.last_seen_tick == 999, "Direct setter should work")
+	comp.set_last_known_position(Vector2(111, 222))
+	assert(comp.last_known_position == Vector2(111, 222), "Direct setter should work")
+	comp.set_contact_state_raw(GameEnums.ContactState.SUSPECTED)
+	assert(comp.contact_state == GameEnums.ContactState.SUSPECTED, "Raw setter should work")
+	_pass()
+
+# =============================================================================
+# CommsComponent Tests
+# =============================================================================
+
+func test_comms_component() -> void:
+	# Test: Initial values
+	_current_test = "comms_initial_values"
+	var comp = CommsComponent.new("test_unit")
+	assert(comp.comm_state == GameEnums.CommState.LINKED, "Initial state should be LINKED")
+	assert(comp.comm_hub_id == "", "Hub ID should be empty initially")
+	assert(comp.is_linked(), "Should be linked initially")
+	assert(not comp.is_isolated(), "Should not be isolated")
+	assert(not comp.has_hub(), "Should not have hub")
+	_pass()
+
+	# Test: Set comm state emits signal
+	_current_test = "set_comm_state_signal"
+	comp = CommsComponent.new("test_unit")
+	var state = {"received": false, "old": GameEnums.CommState.LINKED, "new": GameEnums.CommState.LINKED}
+	comp.comm_state_changed.connect(func(elem_id, old_state, new_state):
+		state.received = true
+		state.old = old_state
+		state.new = new_state
+	)
+	comp.set_comm_state(GameEnums.CommState.ISOLATED)
+	assert(state.received, "Signal should be emitted")
+	assert(state.old == GameEnums.CommState.LINKED, "Old state should be LINKED")
+	assert(state.new == GameEnums.CommState.ISOLATED, "New state should be ISOLATED")
+	_pass()
+
+	# Test: Set comm state same value no signal
+	_current_test = "set_comm_state_same_no_signal"
+	comp = CommsComponent.new("test_unit")
+	var signal_count = {"count": 0}
+	comp.comm_state_changed.connect(func(_e, _o, _n): signal_count.count += 1)
+	comp.set_comm_state(GameEnums.CommState.LINKED)  # Same as default
+	assert(signal_count.count == 0, "Signal should not be emitted for same state")
+	_pass()
+
+	# Test: Set hub ID emits signal
+	_current_test = "set_hub_id_signal"
+	comp = CommsComponent.new("test_unit")
+	var hub_state = {"received": false, "old": "", "new": ""}
+	comp.hub_changed.connect(func(elem_id, old_hub, new_hub):
+		hub_state.received = true
+		hub_state.old = old_hub
+		hub_state.new = new_hub
+	)
+	comp.set_hub_id("cmd_hub_1")
+	assert(hub_state.received, "Signal should be emitted")
+	assert(hub_state.old == "", "Old hub should be empty")
+	assert(hub_state.new == "cmd_hub_1", "New hub should match")
+	assert(comp.has_hub(), "Should have hub now")
+	_pass()
+
+	# Test: Link established signal
+	_current_test = "link_established_signal"
+	comp = CommsComponent.new("test_unit")
+	var link_state = {"received": false, "hub_id": ""}
+	comp.link_established.connect(func(elem_id, hub_id):
+		link_state.received = true
+		link_state.hub_id = hub_id
+	)
+	comp.set_hub_id("new_hub")
+	assert(link_state.received, "Link established signal should be emitted")
+	assert(link_state.hub_id == "new_hub", "Hub ID should match")
+	_pass()
+
+	# Test: Link lost signal
+	_current_test = "link_lost_signal"
+	comp = CommsComponent.new("test_unit")
+	var lost_state = {"received": false}
+	comp.link_lost.connect(func(elem_id): lost_state.received = true)
+	comp.isolate()
+	assert(lost_state.received, "Link lost signal should be emitted")
+	assert(comp.is_isolated(), "Should be isolated")
+	_pass()
+
+	# Test: Link lost not emitted when already isolated
+	_current_test = "link_lost_not_emitted_when_isolated"
+	comp = CommsComponent.new("test_unit")
+	comp.isolate()  # First isolate
+	var lost_count = {"count": 0}
+	comp.link_lost.connect(func(_e): lost_count.count += 1)
+	comp.isolate()  # Isolate again
+	assert(lost_count.count == 0, "Signal should not be emitted when already isolated")
+	_pass()
+
+	# Test: Establish link
+	_current_test = "establish_link"
+	comp = CommsComponent.new("test_unit")
+	comp.isolate()  # Start isolated
+	comp.establish_link("cmd_hub_1")
+	assert(comp.is_linked(), "Should be linked")
+	assert(comp.comm_hub_id == "cmd_hub_1", "Hub should be set")
+	_pass()
+
+	# Test: Degrade link
+	_current_test = "degrade_link"
+	comp = CommsComponent.new("test_unit")
+	comp.degrade_link()
+	assert(comp.is_degraded(), "Should be degraded")
+	assert(not comp.is_linked(), "Should not be linked")
+	assert(not comp.is_isolated(), "Should not be isolated")
+	_pass()
+
+	# Test: Clear link
+	_current_test = "clear_link"
+	comp = CommsComponent.new("test_unit")
+	comp.establish_link("cmd_hub_1")
+	comp.clear_link()
+	assert(comp.is_isolated(), "Should be isolated")
+	assert(comp.comm_hub_id == "", "Hub should be cleared")
+	_pass()
+
+	# Test: Can share info
+	_current_test = "can_share_info"
+	comp = CommsComponent.new("test_unit")
+	assert(comp.can_share_info(), "LINKED can share info")
+	comp.degrade_link()
+	assert(comp.can_share_info(), "DEGRADED can share info")
+	comp.isolate()
+	assert(not comp.can_share_info(), "ISOLATED cannot share info")
+	_pass()
+
+	# Test: Reset
+	_current_test = "comms_reset"
+	comp = CommsComponent.new("test_unit")
+	comp.establish_link("cmd_hub_1")
+	comp.isolate()
+	comp.reset()
+	assert(comp.comm_state == GameEnums.CommState.LINKED, "State should be reset to LINKED")
+	assert(comp.comm_hub_id == "", "Hub should be reset")
+	_pass()
+
+	# Test: Direct setters for backward compatibility
+	_current_test = "comms_direct_setters"
+	comp = CommsComponent.new("test_unit")
+	comp.set_comm_state_raw(GameEnums.CommState.DEGRADED)
+	assert(comp.comm_state == GameEnums.CommState.DEGRADED, "Raw setter should work")
+	comp.set_hub_id_raw("direct_hub")
+	assert(comp.comm_hub_id == "direct_hub", "Raw setter should work")
+	_pass()
+
+# =============================================================================
+# TransportComponent Tests
+# =============================================================================
+
+func test_transport_component() -> void:
+	# Test: Initial values (vehicle)
+	_current_test = "transport_initial_values_vehicle"
+	var comp = TransportComponent.new("test_ifv")
+	assert(comp.embarked_infantry_id == "", "No infantry initially")
+	assert(comp.awaiting_boarding_id == "", "No awaiting infantry")
+	assert(not comp.has_embarked_infantry(), "has_embarked_infantry should be false")
+	_pass()
+
+	# Test: Initial values (infantry)
+	_current_test = "transport_initial_values_infantry"
+	comp = TransportComponent.new("test_inf")
+	assert(comp.transport_vehicle_id == "", "No transport vehicle initially")
+	assert(not comp.is_embarked, "Not embarked initially")
+	assert(not comp.is_in_vehicle(), "Not in vehicle")
+	assert(comp.boarding_target_id == "", "No boarding target")
+	assert(not comp.is_boarding(), "Not boarding")
+	assert(comp.unloading_target_pos == Vector2.ZERO, "No unloading target")
+	_pass()
+
+	# Test: Embark infantry (vehicle side)
+	_current_test = "embark_infantry"
+	comp = TransportComponent.new("test_ifv")
+	var embark_state = {"received": false, "vehicle_id": "", "infantry_id": ""}
+	comp.infantry_embarked.connect(func(v_id, i_id):
+		embark_state.received = true
+		embark_state.vehicle_id = v_id
+		embark_state.infantry_id = i_id
+	)
+	comp.embark_infantry("inf_squad_1")
+	assert(comp.embarked_infantry_id == "inf_squad_1", "Infantry should be embarked")
+	assert(comp.has_embarked_infantry(), "has_embarked_infantry should be true")
+	assert(embark_state.received, "Signal should be emitted")
+	assert(embark_state.infantry_id == "inf_squad_1", "Infantry ID should match")
+	_pass()
+
+	# Test: Clear embarked infantry
+	_current_test = "clear_embarked_infantry"
+	comp = TransportComponent.new("test_ifv")
+	comp.embark_infantry("inf_squad_1")
+	comp.clear_embarked_infantry()
+	assert(comp.embarked_infantry_id == "", "Infantry should be cleared")
+	assert(not comp.has_embarked_infantry(), "has_embarked_infantry should be false")
+	_pass()
+
+	# Test: Set awaiting boarding
+	_current_test = "set_awaiting_boarding"
+	comp = TransportComponent.new("test_ifv")
+	comp.set_awaiting_boarding("inf_squad_1")
+	assert(comp.awaiting_boarding_id == "inf_squad_1", "Awaiting ID should be set")
+	comp.clear_awaiting_boarding()
+	assert(comp.awaiting_boarding_id == "", "Awaiting ID should be cleared")
+	_pass()
+
+	# Test: Embark clears awaiting
+	_current_test = "embark_clears_awaiting"
+	comp = TransportComponent.new("test_ifv")
+	comp.set_awaiting_boarding("inf_squad_1")
+	comp.embark_infantry("inf_squad_1")
+	assert(comp.awaiting_boarding_id == "", "Awaiting should be cleared on embark")
+	_pass()
+
+	# Test: Start boarding (infantry side)
+	_current_test = "start_boarding"
+	comp = TransportComponent.new("test_inf")
+	var boarding_state = {"received": false, "infantry_id": "", "vehicle_id": ""}
+	comp.boarding_started.connect(func(i_id, v_id):
+		boarding_state.received = true
+		boarding_state.infantry_id = i_id
+		boarding_state.vehicle_id = v_id
+	)
+	comp.start_boarding("test_ifv")
+	assert(comp.boarding_target_id == "test_ifv", "Boarding target should be set")
+	assert(comp.is_boarding(), "is_boarding should be true")
+	assert(boarding_state.received, "Signal should be emitted")
+	_pass()
+
+	# Test: Embark to vehicle (infantry side)
+	_current_test = "embark_to_vehicle"
+	comp = TransportComponent.new("test_inf")
+	comp.start_boarding("test_ifv")
+	var completed_state = {"received": false, "vehicle_id": ""}
+	comp.boarding_completed.connect(func(i_id, v_id):
+		completed_state.received = true
+		completed_state.vehicle_id = v_id
+	)
+	comp.embark_to_vehicle("test_ifv")
+	assert(comp.transport_vehicle_id == "test_ifv", "Transport vehicle should be set")
+	assert(comp.is_embarked, "is_embarked should be true")
+	assert(comp.is_in_vehicle(), "is_in_vehicle should be true")
+	assert(comp.boarding_target_id == "", "Boarding target should be cleared")
+	assert(not comp.is_boarding(), "is_boarding should be false")
+	assert(completed_state.received, "Signal should be emitted")
+	_pass()
+
+	# Test: Cancel boarding
+	_current_test = "cancel_boarding"
+	comp = TransportComponent.new("test_inf")
+	comp.start_boarding("test_ifv")
+	comp.cancel_boarding()
+	assert(comp.boarding_target_id == "", "Boarding target should be cleared")
+	assert(not comp.is_boarding(), "is_boarding should be false")
+	_pass()
+
+	# Test: Disembark
+	_current_test = "disembark"
+	comp = TransportComponent.new("test_inf")
+	comp.embark_to_vehicle("test_ifv")
+	comp.disembark_at(Vector2(100, 200))
+	assert(comp.transport_vehicle_id == "", "Transport vehicle should be cleared")
+	assert(not comp.is_embarked, "is_embarked should be false")
+	assert(not comp.is_in_vehicle(), "is_in_vehicle should be false")
+	_pass()
+
+	# Test: Set unloading target
+	_current_test = "set_unloading_target"
+	comp = TransportComponent.new("test_inf")
+	comp.set_unloading_target(Vector2(300, 400))
+	assert(comp.unloading_target_pos == Vector2(300, 400), "Target should be set")
+	comp.clear_unloading_target()
+	assert(comp.unloading_target_pos == Vector2.ZERO, "Target should be cleared")
+	_pass()
+
+	# Test: Start unload infantry (vehicle side)
+	_current_test = "start_unload_infantry"
+	comp = TransportComponent.new("test_ifv")
+	comp.embark_infantry("inf_squad_1")
+	var unload_state = {"received": false, "vehicle_id": "", "infantry_id": "", "target": Vector2.ZERO}
+	comp.unloading_started.connect(func(v_id, i_id, target):
+		unload_state.received = true
+		unload_state.vehicle_id = v_id
+		unload_state.infantry_id = i_id
+		unload_state.target = target
+	)
+	comp.start_unload_infantry(Vector2(500, 600))
+	assert(unload_state.received, "Signal should be emitted")
+	assert(unload_state.infantry_id == "inf_squad_1", "Infantry ID should match")
+	assert(unload_state.target == Vector2(500, 600), "Target should match")
+	_pass()
+
+	# Test: Complete unload infantry
+	_current_test = "complete_unload_infantry"
+	comp = TransportComponent.new("test_ifv")
+	comp.embark_infantry("inf_squad_1")
+	var disembark_state = {"received": false, "infantry_id": "", "position": Vector2.ZERO}
+	comp.infantry_disembarked.connect(func(v_id, i_id, pos):
+		disembark_state.received = true
+		disembark_state.infantry_id = i_id
+		disembark_state.position = pos
+	)
+	comp.complete_unload_infantry(Vector2(500, 600))
+	assert(comp.embarked_infantry_id == "", "Infantry should be cleared")
+	assert(not comp.has_embarked_infantry(), "has_embarked_infantry should be false")
+	assert(disembark_state.received, "Signal should be emitted")
+	assert(disembark_state.infantry_id == "inf_squad_1", "Infantry ID should match")
+	_pass()
+
+	# Test: Start unload without infantry does nothing
+	_current_test = "start_unload_without_infantry"
+	comp = TransportComponent.new("test_ifv")
+	var signal_count = {"count": 0}
+	comp.unloading_started.connect(func(_v, _i, _t): signal_count.count += 1)
+	comp.start_unload_infantry(Vector2(500, 600))
+	assert(signal_count.count == 0, "Signal should not be emitted without infantry")
+	_pass()
+
+	# Test: Reset
+	_current_test = "transport_reset"
+	comp = TransportComponent.new("test_unit")
+	comp.embark_infantry("inf_squad_1")
+	comp.set_awaiting_boarding("inf_squad_2")
+	comp.reset()
+	assert(comp.embarked_infantry_id == "", "Embarked infantry should be reset")
+	assert(comp.awaiting_boarding_id == "", "Awaiting boarding should be reset")
+	assert(comp.transport_vehicle_id == "", "Transport vehicle should be reset")
+	assert(not comp.is_embarked, "is_embarked should be reset")
+	assert(comp.boarding_target_id == "", "Boarding target should be reset")
+	assert(comp.unloading_target_pos == Vector2.ZERO, "Unloading target should be reset")
+	_pass()
+
+	# Test: Direct setters for backward compatibility
+	_current_test = "transport_direct_setters"
+	comp = TransportComponent.new("test_unit")
+	comp.set_embarked_infantry_id_raw("inf_1")
+	assert(comp.embarked_infantry_id == "inf_1", "Direct setter should work")
+	comp.set_transport_vehicle_id_raw("veh_1")
+	assert(comp.transport_vehicle_id == "veh_1", "Direct setter should work")
+	comp.set_is_embarked_raw(true)
+	assert(comp.is_embarked == true, "Direct setter should work")
+	comp.set_boarding_target_id_raw("target_veh")
+	assert(comp.boarding_target_id == "target_veh", "Direct setter should work")
+	comp.set_unloading_target_pos_raw(Vector2(99, 88))
+	assert(comp.unloading_target_pos == Vector2(99, 88), "Direct setter should work")
+	comp.set_awaiting_boarding_id_raw("awaiting_inf")
+	assert(comp.awaiting_boarding_id == "awaiting_inf", "Direct setter should work")
+	_pass()
+
+# =============================================================================
+# ArtilleryComponent Tests
+# =============================================================================
+
+func test_artillery_component() -> void:
+	# Test: Initial values
+	_current_test = "artillery_initial_values"
+	var comp = ArtilleryComponent.new("test_arty")
+	assert(comp.deploy_state == ArtilleryComponent.DeployState.STOWED, "Initial state should be STOWED")
+	assert(comp.deploy_progress == 0.0, "Progress should be 0")
+	assert(comp.deploy_time_sec == 30.0, "Default deploy time should be 30s")
+	assert(comp.pack_time_sec == 30.0, "Default pack time should be 30s")
+	assert(comp.is_stowed(), "is_stowed should be true")
+	assert(comp.can_move(), "Should be able to move when stowed")
+	assert(not comp.can_fire(), "Should not be able to fire when stowed")
+	assert(not comp.fire_mission_active, "No fire mission initially")
+	_pass()
+
+	# Test: Custom deploy/pack times
+	_current_test = "artillery_custom_times"
+	comp = ArtilleryComponent.new("test_arty", 60.0, 45.0)
+	assert(comp.deploy_time_sec == 60.0, "Deploy time should be 60s")
+	assert(comp.pack_time_sec == 45.0, "Pack time should be 45s")
+	_pass()
+
+	# Test: Start deploy
+	_current_test = "start_deploy"
+	comp = ArtilleryComponent.new("test_arty", 10.0, 10.0)
+	var state_change = {"received": false, "old": ArtilleryComponent.DeployState.STOWED, "new": ArtilleryComponent.DeployState.STOWED}
+	comp.deploy_state_changed.connect(func(elem_id, old_s, new_s):
+		state_change.received = true
+		state_change.old = old_s
+		state_change.new = new_s
+	)
+	comp.start_deploy()
+	assert(comp.deploy_state == ArtilleryComponent.DeployState.DEPLOYING, "Should be DEPLOYING")
+	assert(comp.is_deploying(), "is_deploying should be true")
+	assert(not comp.can_move(), "Cannot move while deploying")
+	assert(not comp.can_fire(), "Cannot fire while deploying")
+	assert(state_change.received, "Signal should be emitted")
+	assert(state_change.old == ArtilleryComponent.DeployState.STOWED, "Old state should be STOWED")
+	assert(state_change.new == ArtilleryComponent.DeployState.DEPLOYING, "New state should be DEPLOYING")
+	_pass()
+
+	# Test: Start deploy from wrong state does nothing
+	_current_test = "start_deploy_wrong_state"
+	comp = ArtilleryComponent.new("test_arty")
+	comp.start_deploy()
+	var signal_count = {"count": 0}
+	comp.deploy_state_changed.connect(func(_e, _o, _n): signal_count.count += 1)
+	comp.start_deploy()  # Already deploying
+	assert(signal_count.count == 0, "Signal should not be emitted when already deploying")
+	_pass()
+
+	# Test: Deploy progress update
+	_current_test = "deploy_progress_update"
+	comp = ArtilleryComponent.new("test_arty", 10.0, 10.0)
+	comp.start_deploy()
+	var progress_state = {"received": false, "progress": 0.0}
+	comp.deploy_progress_changed.connect(func(elem_id, progress):
+		progress_state.received = true
+		progress_state.progress = progress
+	)
+	var completed = comp.update_progress(5.0)  # 5 seconds = 50%
+	assert(not completed, "Should not be completed yet")
+	assert(progress_state.received, "Progress signal should be emitted")
+	assert(is_equal_approx(comp.deploy_progress, 0.5), "Progress should be 0.5")
+	_pass()
+
+	# Test: Deploy completes
+	_current_test = "deploy_completes"
+	comp = ArtilleryComponent.new("test_arty", 10.0, 10.0)
+	comp.start_deploy()
+	var completed_state = {"received": false}
+	comp.deploy_completed.connect(func(elem_id): completed_state.received = true)
+	comp.update_progress(5.0)  # 50%
+	var deploy_done = comp.update_progress(6.0)  # 110% total
+	assert(deploy_done, "Should be completed")
+	assert(completed_state.received, "Completed signal should be emitted")
+	assert(comp.deploy_state == ArtilleryComponent.DeployState.DEPLOYED, "Should be DEPLOYED")
+	assert(comp.is_deployed(), "is_deployed should be true")
+	assert(not comp.can_move(), "Cannot move when deployed")
+	assert(comp.can_fire(), "Can fire when deployed")
+	assert(is_equal_approx(comp.deploy_progress, 1.0), "Progress should be 1.0")
+	_pass()
+
+	# Test: Start pack
+	_current_test = "start_pack"
+	comp = ArtilleryComponent.new("test_arty", 10.0, 10.0)
+	comp.set_deploy_state(ArtilleryComponent.DeployState.DEPLOYED)  # Force deployed
+	var state_change2 = {"received": false, "old": ArtilleryComponent.DeployState.DEPLOYED, "new": ArtilleryComponent.DeployState.DEPLOYED}
+	comp.deploy_state_changed.connect(func(elem_id, old_s, new_s):
+		state_change2.received = true
+		state_change2.old = old_s
+		state_change2.new = new_s
+	)
+	comp.start_pack()
+	assert(comp.deploy_state == ArtilleryComponent.DeployState.PACKING, "Should be PACKING")
+	assert(comp.is_packing(), "is_packing should be true")
+	assert(not comp.can_move(), "Cannot move while packing")
+	assert(not comp.can_fire(), "Cannot fire while packing")
+	assert(state_change2.received, "Signal should be emitted")
+	_pass()
+
+	# Test: Start pack from wrong state does nothing
+	_current_test = "start_pack_wrong_state"
+	comp = ArtilleryComponent.new("test_arty")  # STOWED
+	var signal_count2 = {"count": 0}
+	comp.deploy_state_changed.connect(func(_e, _o, _n): signal_count2.count += 1)
+	comp.start_pack()  # Not deployed
+	assert(signal_count2.count == 0, "Signal should not be emitted")
+	_pass()
+
+	# Test: Pack completes
+	_current_test = "pack_completes"
+	comp = ArtilleryComponent.new("test_arty", 10.0, 10.0)
+	comp.set_deploy_state(ArtilleryComponent.DeployState.DEPLOYED)
+	comp.start_pack()
+	var pack_completed_state = {"received": false}
+	comp.pack_completed.connect(func(elem_id): pack_completed_state.received = true)
+	comp.update_progress(15.0)  # More than 10s pack time
+	assert(pack_completed_state.received, "Pack completed signal should be emitted")
+	assert(comp.deploy_state == ArtilleryComponent.DeployState.STOWED, "Should be STOWED")
+	assert(comp.is_stowed(), "is_stowed should be true")
+	assert(comp.can_move(), "Can move when stowed")
+	_pass()
+
+	# Test: Assign fire mission
+	_current_test = "assign_fire_mission"
+	comp = ArtilleryComponent.new("test_arty")
+	var mission_state = {"received": false, "target": Vector2.ZERO}
+	comp.fire_mission_assigned.connect(func(elem_id, target):
+		mission_state.received = true
+		mission_state.target = target
+	)
+	comp.assign_fire_mission(Vector2(1000, 2000))
+	assert(comp.fire_mission_active, "Fire mission should be active")
+	assert(comp.has_fire_mission(), "has_fire_mission should be true")
+	assert(comp.fire_mission_target == Vector2(1000, 2000), "Target should match")
+	assert(mission_state.received, "Signal should be emitted")
+	assert(mission_state.target == Vector2(1000, 2000), "Target in signal should match")
+	_pass()
+
+	# Test: Clear fire mission
+	_current_test = "clear_fire_mission"
+	comp = ArtilleryComponent.new("test_arty")
+	comp.assign_fire_mission(Vector2(1000, 2000))
+	var cleared_state = {"received": false}
+	comp.fire_mission_cleared.connect(func(elem_id): cleared_state.received = true)
+	comp.clear_fire_mission()
+	assert(not comp.fire_mission_active, "Fire mission should be inactive")
+	assert(not comp.has_fire_mission(), "has_fire_mission should be false")
+	assert(comp.fire_mission_target == Vector2.ZERO, "Target should be cleared")
+	assert(cleared_state.received, "Signal should be emitted")
+	_pass()
+
+	# Test: Clear fire mission when not active does nothing
+	_current_test = "clear_fire_mission_not_active"
+	comp = ArtilleryComponent.new("test_arty")
+	var signal_count3 = {"count": 0}
+	comp.fire_mission_cleared.connect(func(_e): signal_count3.count += 1)
+	comp.clear_fire_mission()
+	assert(signal_count3.count == 0, "Signal should not be emitted when not active")
+	_pass()
+
+	# Test: Reset
+	_current_test = "artillery_reset"
+	comp = ArtilleryComponent.new("test_arty")
+	comp.start_deploy()
+	comp.update_progress(100.0)  # Complete deploy
+	comp.assign_fire_mission(Vector2(1000, 2000))
+	comp.reset()
+	assert(comp.deploy_state == ArtilleryComponent.DeployState.STOWED, "State should be reset")
+	assert(comp.deploy_progress == 0.0, "Progress should be reset")
+	assert(not comp.fire_mission_active, "Fire mission should be reset")
+	assert(comp.fire_mission_target == Vector2.ZERO, "Target should be reset")
+	_pass()
+
+	# Test: Direct setters for backward compatibility
+	_current_test = "artillery_direct_setters"
+	comp = ArtilleryComponent.new("test_arty")
+	comp.set_deploy_state_raw(ArtilleryComponent.DeployState.DEPLOYED)
+	assert(comp.deploy_state == ArtilleryComponent.DeployState.DEPLOYED, "Direct setter should work")
+	comp.set_deploy_progress_raw(0.75)
+	assert(is_equal_approx(comp.deploy_progress, 0.75), "Direct setter should work")
+	comp.set_deploy_time_sec_raw(99.0)
+	assert(comp.deploy_time_sec == 99.0, "Direct setter should work")
+	comp.set_pack_time_sec_raw(88.0)
+	assert(comp.pack_time_sec == 88.0, "Direct setter should work")
+	comp.set_fire_mission_target_raw(Vector2(123, 456))
+	assert(comp.fire_mission_target == Vector2(123, 456), "Direct setter should work")
+	comp.set_fire_mission_active_raw(true)
+	assert(comp.fire_mission_active == true, "Direct setter should work")
+	_pass()

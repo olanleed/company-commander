@@ -78,10 +78,16 @@ static func create_element(
 	var element := ElementData.ElementInstance.new(element_type)
 	element.id = _generate_unique_id(archetype_id)
 	element.faction = faction
+
+	# コンポーネントを初期化（フェーズ1: 段階的導入）
+	element.init_components()
+
+	# 位置・向きを設定（コンポーネント経由）
 	element.position = position
-	element.prev_position = position
 	element.facing = facing
-	element.prev_facing = facing
+	# prev_positionを同期（PositionComponent経由）
+	if element._position_component:
+		element._position_component.save_prev_state()
 
 	# 武装を装備
 	_equip_weapons(element, archetype_id)
@@ -155,10 +161,16 @@ static func create_element_with_vehicle(
 	var element := ElementData.ElementInstance.new(element_type)
 	element.id = _generate_unique_id(archetype_id)
 	element.faction = faction
+
+	# コンポーネントを初期化（フェーズ1: 段階的導入）
+	element.init_components()
+
+	# 位置・向きを設定（コンポーネント経由）
 	element.position = position
-	element.prev_position = position
 	element.facing = facing
-	element.prev_facing = facing
+	# prev_positionを同期（PositionComponent経由）
+	if element._position_component:
+		element._position_component.save_prev_state()
 
 	# 車両IDを記録（将来の参照用）
 	element.vehicle_id = vehicle_id
