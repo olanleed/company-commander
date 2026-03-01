@@ -322,6 +322,43 @@ func _spawn_test_units() -> void:
 	blue_mmpm.sop_mode = GameEnums.SOPMode.HOLD_FIRE
 	world_model.add_element(blue_mmpm)
 
+	# --- 砲兵ユニット ---
+
+	# 99式自走155mm榴弾砲 (履帯自走砲、展開15秒)
+	var blue_type99_sph := ElementFactory.create_element_with_vehicle("JPN_Type99_SPH", GameEnums.Faction.BLUE, Vector2(50, 1100))
+	blue_type99_sph.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_type99_sph)
+
+	# 19式自走155mm榴弾砲 (装輪自走砲、展開30秒)
+	var blue_type19_sph := ElementFactory.create_element_with_vehicle("JPN_Type19_SPH", GameEnums.Faction.BLUE, Vector2(50, 1200))
+	blue_type19_sph.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_type19_sph)
+
+	# 24式自走迫撃砲 (120mm迫撃砲搭載)
+	var blue_type24_mortar := ElementFactory.create_element_with_vehicle("JPN_Type24_Mortar", GameEnums.Faction.BLUE, Vector2(50, 1300))
+	blue_type24_mortar.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_type24_mortar)
+
+	# M109A7 パラディン (米軍最新型155mm自走砲)
+	var blue_m109a7 := ElementFactory.create_element_with_vehicle("USA_M109A7_Paladin", GameEnums.Faction.BLUE, Vector2(50, 1400))
+	blue_m109a7.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_m109a7)
+
+	# M109A6 パラディン (米軍155mm自走砲)
+	var blue_m109a6 := ElementFactory.create_element_with_vehicle("USA_M109A6_Paladin", GameEnums.Faction.BLUE, Vector2(50, 1500))
+	blue_m109a6.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_m109a6)
+
+	# M1287 AMPV迫撃砲車両 (120mm迫撃砲搭載)
+	var blue_ampv_mc := ElementFactory.create_element_with_vehicle("USA_M1287_AMPV_MC", GameEnums.Faction.BLUE, Vector2(50, 1600))
+	blue_ampv_mc.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_ampv_mc)
+
+	# M1129 ストライカー迫撃砲車両 (120mm迫撃砲搭載)
+	var blue_stryker_mc := ElementFactory.create_element_with_vehicle("USA_M1129_Stryker_MC", GameEnums.Faction.BLUE, Vector2(50, 1700))
+	blue_stryker_mc.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_stryker_mc)
+
 	# --- 補給トラック ---
 
 	# 73式中型トラック (2.5t、補給容量60)
