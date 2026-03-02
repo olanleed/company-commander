@@ -288,124 +288,119 @@ func _spawn_test_units() -> void:
 		print("[VehicleCatalog] Loaded %d vehicles" % catalog.get_all_vehicle_ids().size())
 
 	# ==========================================================================
-	# BLUE陣営 - 日米戦車・IFV
+	# BLUE陣営 - ロシア軍
 	# ==========================================================================
 
-	# --- 自衛隊 戦車 ---
+	# --- 戦車 ---
 
-	# 10式戦車 (最新鋭MBT、自動装填装置搭載)
-	var blue_type10 := ElementFactory.create_element_with_vehicle("JPN_Type10", GameEnums.Faction.BLUE, Vector2(100, 300))
-	blue_type10.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type10)
+	# T-90M戦車 (最新型、Relikt ERA、Arena-M APS)
+	var blue_t90m := ElementFactory.create_element_with_vehicle("RUS_T90M", GameEnums.Faction.BLUE, Vector2(100, 300))
+	blue_t90m.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_t90m)
 
-	# 90式戦車 (主力MBT、自動装填装置搭載)
-	var blue_type90 := ElementFactory.create_element_with_vehicle("JPN_Type90", GameEnums.Faction.BLUE, Vector2(100, 400))
-	blue_type90.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type90)
+	# T-90A戦車 (Kontakt-5 ERA、Shtora-1 APS)
+	var blue_t90a := ElementFactory.create_element_with_vehicle("RUS_T90A", GameEnums.Faction.BLUE, Vector2(100, 400))
+	blue_t90a.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_t90a)
 
-	# --- 米軍 戦車 ---
+	# T-80BVM戦車 (ガスタービン、高機動性)
+	var blue_t80bvm := ElementFactory.create_element_with_vehicle("RUS_T80BVM", GameEnums.Faction.BLUE, Vector2(100, 500))
+	blue_t80bvm.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_t80bvm)
 
-	# M1A2 SEPv3 (最新型Abrams)
-	var blue_m1a2 := ElementFactory.create_element_with_vehicle("USA_M1A2_SEPv3", GameEnums.Faction.BLUE, Vector2(100, 500))
-	blue_m1a2.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_m1a2)
+	# T-72B3M戦車 (近代化改修型)
+	var blue_t72b3m := ElementFactory.create_element_with_vehicle("RUS_T72B3M", GameEnums.Faction.BLUE, Vector2(100, 600))
+	blue_t72b3m.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_t72b3m)
 
-	# M1A2 SEPv2
-	var blue_m1a2_v2 := ElementFactory.create_element_with_vehicle("USA_M1A2_SEPv2", GameEnums.Faction.BLUE, Vector2(100, 600))
-	blue_m1a2_v2.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_m1a2_v2)
+	# --- IFV ---
 
-	# --- IFV・偵察車両 ---
+	# BMP-3M (100mm/30mm + ATGM)
+	var blue_bmp3m := ElementFactory.create_element_with_vehicle("RUS_BMP3M", GameEnums.Faction.BLUE, Vector2(100, 750))
+	blue_bmp3m.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_bmp3m)
 
-	# M2A4 Bradley (TOW-2B搭載)
-	var blue_m2a4 := ElementFactory.create_element_with_vehicle("USA_M2A4_Bradley", GameEnums.Faction.BLUE, Vector2(100, 750))
-	blue_m2a4.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_m2a4)
+	# BMP-3 (100mm/30mm + Bastion ATGM)
+	var blue_bmp3 := ElementFactory.create_element_with_vehicle("RUS_BMP3", GameEnums.Faction.BLUE, Vector2(100, 850))
+	blue_bmp3.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_bmp3)
 
-	# 89式IFV (79式重MAT搭載)
-	var blue_type89 := ElementFactory.create_element_with_vehicle("JPN_Type89", GameEnums.Faction.BLUE, Vector2(100, 850))
-	blue_type89.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type89)
+	# BMP-2 (30mm + Konkurs-M ATGM)
+	var blue_bmp2 := ElementFactory.create_element_with_vehicle("RUS_BMP2", GameEnums.Faction.BLUE, Vector2(100, 950))
+	blue_bmp2.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_bmp2)
 
-	# MMPM搭載高機動車 (中距離多目的誘導弾)
-	var blue_mmpm := ElementFactory.create_element_with_vehicle("JPN_HMV_MMPM", GameEnums.Faction.BLUE, Vector2(100, 950))
-	blue_mmpm.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_mmpm)
+	# --- 偵察車両 ---
+
+	# BRM-3K (偵察車両、高性能センサー)
+	var blue_brm3k := ElementFactory.create_element_with_vehicle("RUS_BRM3K", GameEnums.Faction.BLUE, Vector2(100, 1050))
+	blue_brm3k.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_brm3k)
+
+	# BTR-82A (30mm機関砲)
+	var blue_btr82a := ElementFactory.create_element_with_vehicle("RUS_BTR82A", GameEnums.Faction.BLUE, Vector2(100, 1150))
+	blue_btr82a.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_btr82a)
 
 	# --- 砲兵ユニット ---
 
-	# 99式自走155mm榴弾砲 (履帯自走砲、展開15秒)
-	var blue_type99_sph := ElementFactory.create_element_with_vehicle("JPN_Type99_SPH", GameEnums.Faction.BLUE, Vector2(50, 1100))
-	blue_type99_sph.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type99_sph)
+	# 2S35 コアリツィヤ (最新型152mm自走砲、毎分16発)
+	var blue_2s35 := ElementFactory.create_element_with_vehicle("RUS_2S35", GameEnums.Faction.BLUE, Vector2(50, 1300))
+	blue_2s35.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_2s35)
 
-	# 19式自走155mm榴弾砲 (装輪自走砲、展開30秒)
-	var blue_type19_sph := ElementFactory.create_element_with_vehicle("JPN_Type19_SPH", GameEnums.Faction.BLUE, Vector2(50, 1200))
-	blue_type19_sph.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type19_sph)
+	# 2S19 ムスタ (152mm自走砲)
+	var blue_2s19 := ElementFactory.create_element_with_vehicle("RUS_2S19", GameEnums.Faction.BLUE, Vector2(50, 1400))
+	blue_2s19.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_2s19)
 
-	# 24式自走迫撃砲 (120mm迫撃砲搭載)
-	var blue_type24_mortar := ElementFactory.create_element_with_vehicle("JPN_Type24_Mortar", GameEnums.Faction.BLUE, Vector2(50, 1300))
-	blue_type24_mortar.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_type24_mortar)
+	# 2S34 ホスタ (120mm迫撃砲、自動装填)
+	var blue_2s34 := ElementFactory.create_element_with_vehicle("RUS_2S34_Khosta", GameEnums.Faction.BLUE, Vector2(50, 1500))
+	blue_2s34.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_2s34)
 
-	# M109A7 パラディン (米軍最新型155mm自走砲)
-	var blue_m109a7 := ElementFactory.create_element_with_vehicle("USA_M109A7_Paladin", GameEnums.Faction.BLUE, Vector2(50, 1400))
-	blue_m109a7.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_m109a7)
-
-	# M109A6 パラディン (米軍155mm自走砲)
-	var blue_m109a6 := ElementFactory.create_element_with_vehicle("USA_M109A6_Paladin", GameEnums.Faction.BLUE, Vector2(50, 1500))
-	blue_m109a6.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_m109a6)
-
-	# M1287 AMPV迫撃砲車両 (120mm迫撃砲搭載)
-	var blue_ampv_mc := ElementFactory.create_element_with_vehicle("USA_M1287_AMPV_MC", GameEnums.Faction.BLUE, Vector2(50, 1600))
-	blue_ampv_mc.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_ampv_mc)
-
-	# M1129 ストライカー迫撃砲車両 (120mm迫撃砲搭載)
-	var blue_stryker_mc := ElementFactory.create_element_with_vehicle("USA_M1129_Stryker_MC", GameEnums.Faction.BLUE, Vector2(50, 1700))
-	blue_stryker_mc.sop_mode = GameEnums.SOPMode.HOLD_FIRE
-	world_model.add_element(blue_stryker_mc)
+	# 2S9 ノーナ (120mm迫撃砲、空挺自走砲)
+	var blue_2s9 := ElementFactory.create_element_with_vehicle("RUS_2S9_Nona", GameEnums.Faction.BLUE, Vector2(50, 1600))
+	blue_2s9.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(blue_2s9)
 
 	# --- 補給トラック ---
 
-	# 73式中型トラック (2.5t、補給容量60)
-	var blue_truck_medium := ElementFactory.create_element_with_vehicle("JPN_Type73_MediumTruck", GameEnums.Faction.BLUE, Vector2(50, 500))
-	world_model.add_element(blue_truck_medium)
-	if blue_truck_medium.supply_config.size() > 0:
-		resupply_system.register_supply_unit(blue_truck_medium, blue_truck_medium.supply_config)
+	# Ural-4320補給車 (5t、補給容量50)
+	var blue_ural := ElementFactory.create_element_with_vehicle("RUS_Ural4320_Supply", GameEnums.Faction.BLUE, Vector2(50, 500))
+	world_model.add_element(blue_ural)
+	if blue_ural.supply_config.size() > 0:
+		resupply_system.register_supply_unit(blue_ural, blue_ural.supply_config)
 
-	# 73式大型トラック (6t、補給容量100)
-	var blue_truck_large := ElementFactory.create_element_with_vehicle("JPN_Type73_LargeTruck", GameEnums.Faction.BLUE, Vector2(50, 600))
-	world_model.add_element(blue_truck_large)
-	if blue_truck_large.supply_config.size() > 0:
-		resupply_system.register_supply_unit(blue_truck_large, blue_truck_large.supply_config)
+	# KamAZ-5350補給車 (6t、補給容量80)
+	var blue_kamaz5350 := ElementFactory.create_element_with_vehicle("RUS_KamAZ5350_Supply", GameEnums.Faction.BLUE, Vector2(50, 600))
+	world_model.add_element(blue_kamaz5350)
+	if blue_kamaz5350.supply_config.size() > 0:
+		resupply_system.register_supply_unit(blue_kamaz5350, blue_kamaz5350.supply_config)
 
-	# 74式特大型トラック (11t、補給容量150)
-	var blue_truck_xl := ElementFactory.create_element_with_vehicle("JPN_Type74_ExtraLargeTruck", GameEnums.Faction.BLUE, Vector2(50, 700))
-	world_model.add_element(blue_truck_xl)
-	if blue_truck_xl.supply_config.size() > 0:
-		resupply_system.register_supply_unit(blue_truck_xl, blue_truck_xl.supply_config)
+	# KamAZ-63501補給車 (12t、補給容量150)
+	var blue_kamaz63501 := ElementFactory.create_element_with_vehicle("RUS_KamAZ63501_Supply", GameEnums.Faction.BLUE, Vector2(50, 700))
+	world_model.add_element(blue_kamaz63501)
+	if blue_kamaz63501.supply_config.size() > 0:
+		resupply_system.register_supply_unit(blue_kamaz63501, blue_kamaz63501.supply_config)
 
 	# ==========================================================================
-	# RED陣営 - 戦車×3
+	# RED陣営 - M1A2×3
 	# ==========================================================================
 	# 全ユニット HOLD_FIRE
 
-	# T-90M戦車 #1
-	var red_tank1 := ElementFactory.create_element_with_vehicle("RUS_T90M", GameEnums.Faction.RED, Vector2(1800, 400))
+	# M1A2 SEPv3 #1
+	var red_tank1 := ElementFactory.create_element_with_vehicle("USA_M1A2_SEPv3", GameEnums.Faction.RED, Vector2(1800, 400))
 	red_tank1.sop_mode = GameEnums.SOPMode.HOLD_FIRE
 	world_model.add_element(red_tank1)
 
-	# T-90M戦車 #2
-	var red_tank2 := ElementFactory.create_element_with_vehicle("RUS_T90M", GameEnums.Faction.RED, Vector2(1800, 600))
+	# M1A2 SEPv3 #2
+	var red_tank2 := ElementFactory.create_element_with_vehicle("USA_M1A2_SEPv3", GameEnums.Faction.RED, Vector2(1800, 600))
 	red_tank2.sop_mode = GameEnums.SOPMode.HOLD_FIRE
 	world_model.add_element(red_tank2)
 
-	# T-90M戦車 #3
-	var red_tank3 := ElementFactory.create_element_with_vehicle("RUS_T90M", GameEnums.Faction.RED, Vector2(1800, 800))
+	# M1A2 SEPv3 #3
+	var red_tank3 := ElementFactory.create_element_with_vehicle("USA_M1A2_SEPv3", GameEnums.Faction.RED, Vector2(1800, 800))
 	red_tank3.sop_mode = GameEnums.SOPMode.HOLD_FIRE
 	world_model.add_element(red_tank3)
 
