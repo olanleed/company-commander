@@ -313,22 +313,34 @@ func _spawn_test_units() -> void:
 	blue_type15.sop_mode = GameEnums.SOPMode.HOLD_FIRE
 	world_model.add_element(blue_type15)
 
-	# --- IFV ---
+	# --- IFV + 歩兵 ---
 
-	# 04A式IFV (100mm砲+30mm同軸機関砲、HJ-8E ATGM)
+	# 04A式IFV (100mm砲+30mm同軸機関砲、HJ-8E ATGM) + 歩兵分隊
 	var blue_zbd04a := ElementFactory.create_element_with_vehicle("CHN_ZBD04A", GameEnums.Faction.BLUE, Vector2(100, 750))
 	blue_zbd04a.sop_mode = GameEnums.SOPMode.HOLD_FIRE
 	world_model.add_element(blue_zbd04a)
+	var infantry_04a := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, Vector2(100, 750))
+	infantry_04a.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(infantry_04a)
+	transport_system.embark_initial(blue_zbd04a, infantry_04a)
 
-	# 04式IFV (BMP-3類似、100mm砲+30mm)
+	# 04式IFV (BMP-3類似、100mm砲+30mm) + 歩兵分隊
 	var blue_zbd04 := ElementFactory.create_element_with_vehicle("CHN_ZBD04", GameEnums.Faction.BLUE, Vector2(100, 850))
 	blue_zbd04.sop_mode = GameEnums.SOPMode.HOLD_FIRE
 	world_model.add_element(blue_zbd04)
+	var infantry_04 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, Vector2(100, 850))
+	infantry_04.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(infantry_04)
+	transport_system.embark_initial(blue_zbd04, infantry_04)
 
-	# 09式IFV (8輪、30mm機関砲、HJ-73C ATGM)
+	# 09式IFV (8輪、30mm機関砲、HJ-73C ATGM) + 歩兵分隊
 	var blue_zbd09 := ElementFactory.create_element_with_vehicle("CHN_ZBD09", GameEnums.Faction.BLUE, Vector2(100, 950))
 	blue_zbd09.sop_mode = GameEnums.SOPMode.HOLD_FIRE
 	world_model.add_element(blue_zbd09)
+	var infantry_09 := ElementFactory.create_element("INF_LINE", GameEnums.Faction.BLUE, Vector2(100, 950))
+	infantry_09.sop_mode = GameEnums.SOPMode.HOLD_FIRE
+	world_model.add_element(infantry_09)
+	transport_system.embark_initial(blue_zbd09, infantry_09)
 
 	# --- 偵察・支援車両 ---
 
