@@ -328,6 +328,129 @@
 		}
 	},
 	{
+		"id": "M_CHN_HJ8E",
+		"display_name": "HJ-8E",
+		"weapon_id": "W_CHN_ATGM_HJ8E",
+		"guidance": {
+			"type": "SACLOS_WIRE",
+			"lock_mode": "CONTINUOUS_TRACK",
+			"lock_time_sec": 0.0,
+			"can_loal": false,
+			"loal_acquisition_range_m": 0.0
+		},
+		"flight": {
+			"speed_mps": 220.0,
+			"max_speed_mps": 250.0,
+			"boost_duration_sec": 0.3,
+			"max_range_m": 4000.0,
+			"min_range_m": 100.0
+		},
+		"attack_profile": {
+			"default": "DIRECT",
+			"selectable": ["DIRECT"],
+			"top_attack_altitude_m": 0.0,
+			"dive_angle_deg": 0.0
+		},
+		"warhead": {
+			"type": "TANDEM_HEAT",
+			"penetration_ce": 180,
+			"defeats_era": true,
+			"blast_radius_m": 2.5
+		},
+		"countermeasures": {
+			"aps_vulnerability": 1.0,
+			"smoke_vulnerability": 0.3,
+			"ecm_vulnerability": 0.0
+		},
+		"constraints": {
+			"requires_target_lock": false,
+			"shooter_immobile_during_flight": true,
+			"wire_max_range_m": 4000
+		}
+	},
+	{
+		"id": "M_CHN_HJ73",
+		"display_name": "HJ-73C",
+		"weapon_id": "W_CHN_ATGM_HJ73",
+		"guidance": {
+			"type": "SACLOS_WIRE",
+			"lock_mode": "CONTINUOUS_TRACK",
+			"lock_time_sec": 0.0,
+			"can_loal": false,
+			"loal_acquisition_range_m": 0.0
+		},
+		"flight": {
+			"speed_mps": 120.0,
+			"max_speed_mps": 150.0,
+			"boost_duration_sec": 0.5,
+			"max_range_m": 3000.0,
+			"min_range_m": 100.0
+		},
+		"attack_profile": {
+			"default": "DIRECT",
+			"selectable": ["DIRECT"],
+			"top_attack_altitude_m": 0.0,
+			"dive_angle_deg": 0.0
+		},
+		"warhead": {
+			"type": "HEAT",
+			"penetration_ce": 150,
+			"defeats_era": false,
+			"blast_radius_m": 2.0
+		},
+		"countermeasures": {
+			"aps_vulnerability": 1.0,
+			"smoke_vulnerability": 0.3,
+			"ecm_vulnerability": 0.0
+		},
+		"constraints": {
+			"requires_target_lock": false,
+			"shooter_immobile_during_flight": true,
+			"wire_max_range_m": 3000
+		}
+	},
+	{
+		"id": "M_CHN_GP105",
+		"display_name": "GP105",
+		"weapon_id": "W_CHN_ATGM_GP105",
+		"guidance": {
+			"type": "SACLOS_LASER_BEAM",
+			"lock_mode": "CONTINUOUS_TRACK",
+			"lock_time_sec": 0.0,
+			"can_loal": false,
+			"loal_acquisition_range_m": 0.0
+		},
+		"flight": {
+			"speed_mps": 300.0,
+			"max_speed_mps": 350.0,
+			"boost_duration_sec": 0.2,
+			"max_range_m": 5200.0,
+			"min_range_m": 100.0
+		},
+		"attack_profile": {
+			"default": "DIRECT",
+			"selectable": ["DIRECT"],
+			"top_attack_altitude_m": 0.0,
+			"dive_angle_deg": 0.0
+		},
+		"warhead": {
+			"type": "TANDEM_HEAT",
+			"penetration_ce": 220,
+			"defeats_era": true,
+			"blast_radius_m": 2.5
+		},
+		"countermeasures": {
+			"aps_vulnerability": 0.95,
+			"smoke_vulnerability": 0.5,
+			"ecm_vulnerability": 0.0
+		},
+		"constraints": {
+			"requires_target_lock": false,
+			"shooter_immobile_during_flight": true,
+			"wire_max_range_m": 0
+		}
+	},
+	{
 		"id": "M_JPN_01LMAT",
 		"display_name": "01 Shiki LMAT",
 		"weapon_id": "W_JPN_ATGM_01LMAT",
