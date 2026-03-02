@@ -396,22 +396,27 @@ func test_pen_prob_monotonic() -> void:
 
 ---
 
-### Phase 4: ArtillerySystem（優先度: 中）
+### Phase 4: ArtillerySystem（優先度: 中）✅ 完了
 
 砲兵システムの間接射撃計算を純粋関数化。着弾効果、散布界、遮蔽計算などが対象。
 
 #### ArtilleryCalc対象関数一覧
 
-| 現在の関数 | 純粋関数シグネチャ | テスト数目標 |
-| ---------- | ------------------ | ------------ |
-| `get_cover_coefficient_if(terrain)` | `static func get_cover_coeff_if(terrain: GameEnums.TerrainType) -> float` | 5 |
-| `calculate_indirect_impact_effect(...)` | `static func calc_indirect_falloff(distance: float, blast_radius: float, direct_hit_radius: float) -> float` | 6 |
-| `_get_indirect_vulnerability_dmg(...)` | `static func get_indirect_vuln_dmg(armor_class: int, heavy_he_class: int, is_direct_hit: bool) -> float` | 8 |
-| `_get_indirect_vulnerability_supp(...)` | `static func get_indirect_vuln_supp(armor_class: int, heavy_he_class: int) -> float` | 6 |
-| - | `static func get_dispersion_modifier(dispersion_mode: int) -> float` | 4 |
-| - | `static func calc_indirect_suppression(supp_power: float, falloff: float, m_total: float, m_vuln: float) -> float` | 5 |
-| - | `static func calc_indirect_damage(lethality: float, falloff: float, m_total: float, m_vuln: float) -> float` | 5 |
-| `ArtilleryComponent.update_progress(...)` | `static func calc_deploy_progress(current: float, delta: float, duration: float) -> float` | 4 |
+| 現在の関数 | 純粋関数シグネチャ | 状態 |
+| ---------- | ------------------ | ---- |
+| `get_cover_coefficient_if(terrain)` | `static func get_cover_coeff_if(terrain)` (CombatCalcに実装済) | ✅ |
+| `calculate_indirect_impact_effect(...)` | `static func calc_indirect_falloff(distance, blast_radius, direct_hit_radius)` | ✅ |
+| `_get_indirect_vulnerability_dmg(...)` | `static func get_indirect_vuln_dmg(armor_class, heavy_he_class, is_direct_hit)` | ✅ |
+| `_get_indirect_vulnerability_supp(...)` | `static func get_indirect_vuln_supp(armor_class, heavy_he_class)` | ✅ |
+| - | `static func get_dispersion_modifier(dispersion_mode)` | ✅ |
+| - | `static func calc_indirect_suppression(supp_power, falloff, m_total, m_vuln)` | ✅ |
+| - | `static func calc_indirect_damage(lethality, falloff, m_total, m_vuln)` | ✅ |
+| `ArtilleryComponent.update_progress(...)` | `static func calc_deploy_progress(current, delta, duration)` | ✅ |
+
+#### ArtilleryCalc成果物
+
+- `scripts/systems/artillery_calc.gd` - 7つの純粋関数
+- `tests/test_artillery_calc.gd` - 44件のユニットテスト
 
 #### 実装パターン
 
@@ -745,6 +750,55 @@ static func calc_hit_with_rng(exposure: float, rng: RandomNumberGenerator) -> bo
 - GDScriptではstatic呼び出しは十分高速
 - 必要ならインライン化を検討
 - プロファイリングで確認
+
+---
+
+## テスト実行方法
+
+### 基本コマンド
+
+```bash
+# プロジェクトディレクトリで実行
+cd /home/olanleed/work/github/company-commander
+
+# 全テスト実行（-gexit必須：テスト後に自動終了）
+godot --headless --script addons/gut/gut_cmdln.gd -gdir=res://tests -gexit
+
+# 特定のテストファイルを実行
+godot --headless --script addons/gut/gut_cmdln.gd -gtest=res://tests/test_artillery_calc.gd -gexit
+
+# 複数のテストファイルを実行
+godot --headless --script addons/gut/gut_cmdln.gd -gtest=res://tests/test_artillery_calc.gd,res://tests/test_combat_calc.gd -gexit
+```
+
+### 純粋関数テストのみ実行
+
+```bash
+# Phase 1-4 の純粋関数テスト（高速）
+godot --headless --script addons/gut/gut_cmdln.gd \
+  -gtest=res://tests/test_combat_calc.gd,res://tests/test_vision_calc.gd,res://tests/test_missile_calc.gd,res://tests/test_artillery_calc.gd \
+  -gexit
+```
+
+### 注意事項
+
+- **`-gexit`オプション必須**: このオプションがないとテスト完了後もGodotが終了せず、タイムアウトする
+- **`--headless`**: GUIなしで実行（CI/CD向け）
+- 全テスト（68ファイル、1100+テスト）は約0.4秒で完了
+
+### テスト結果の見方
+
+```text
+---- Totals ----
+Scripts           44      # テストファイル数
+Tests             1120    # テスト数
+  Passing         1116    # 成功
+  Risky/Pending   4       # 未実装/保留
+Asserts           3112    # アサーション数
+Time              0.355s  # 実行時間
+
+---- All tests passed! ----  # または失敗時はエラー詳細
+```
 
 ---
 

@@ -106,22 +106,23 @@ func start_pack() -> void:
 ## 展開/撤収の進捗を更新
 ## @param delta_sec: 経過秒数
 ## @return: 完了したか
+## 進捗計算はArtilleryCalc.calc_deploy_progress()に委譲
 func update_progress(delta_sec: float) -> bool:
 	if _deploy_state == DeployState.DEPLOYING:
-		_deploy_progress += delta_sec / _deploy_time_sec
+		_deploy_progress = ArtilleryCalc.calc_deploy_progress(
+			_deploy_progress, delta_sec, _deploy_time_sec)
 		deploy_progress_changed.emit(_element_id, _deploy_progress)
 		if _deploy_progress >= 1.0:
-			_deploy_progress = 1.0
 			var old_state = _deploy_state
 			_deploy_state = DeployState.DEPLOYED
 			deploy_state_changed.emit(_element_id, old_state, _deploy_state)
 			deploy_completed.emit(_element_id)
 			return true
 	elif _deploy_state == DeployState.PACKING:
-		_deploy_progress += delta_sec / _pack_time_sec
+		_deploy_progress = ArtilleryCalc.calc_deploy_progress(
+			_deploy_progress, delta_sec, _pack_time_sec)
 		deploy_progress_changed.emit(_element_id, _deploy_progress)
 		if _deploy_progress >= 1.0:
-			_deploy_progress = 1.0
 			var old_state = _deploy_state
 			_deploy_state = DeployState.STOWED
 			deploy_state_changed.emit(_element_id, old_state, _deploy_state)

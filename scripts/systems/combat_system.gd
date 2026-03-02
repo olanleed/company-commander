@@ -367,6 +367,7 @@ func calculate_area_attack_effect(
 
 ## 着弾効果を計算（1発あたり）
 ## 仕様書: docs/indirect_fire_v0.2.md
+## 計算ロジックはArtilleryCalcに委譲
 func calculate_indirect_impact_effect(
 	target: ElementData.ElementInstance,
 	weapon: WeaponData.WeaponType,
@@ -394,41 +395,36 @@ func calculate_indirect_impact_effect(
 	var lethality := weapon.get_lethality(400.0, target_class)  # Mid距離固定
 	var supp_power := weapon.get_suppression_power(400.0)
 
-	# 距離減衰（直撃半径内は最大効果）
-	var falloff := 1.0
-	if not is_direct_hit:
-		falloff = clampf(1.0 - distance_from_impact / blast_radius, 0.0, 1.0)
+	# 距離減衰 - ArtilleryCalcに委譲
+	var falloff := ArtilleryCalc.calc_indirect_falloff(
+		distance_from_impact, blast_radius, weapon.direct_hit_radius_m)
 
 	# 遮蔽係数
 	var m_cover := get_cover_coefficient_if(target_terrain)
 	var m_entrench := GameConstants.ENTRENCH_IF_MULT if is_entrenched else 1.0
 
-	# 分散モード係数
-	var m_dispersion := 1.0
-	match dispersion_mode:
-		0:  # Column
-			m_dispersion = GameConstants.DISPERSION_IF_COLUMN
-		1:  # Deployed
-			m_dispersion = GameConstants.DISPERSION_IF_DEPLOYED
-		2:  # Dispersed
-			m_dispersion = GameConstants.DISPERSION_IF_DISPERSED
+	# 分散モード係数 - ArtilleryCalcに委譲
+	var m_dispersion := ArtilleryCalc.get_dispersion_modifier(dispersion_mode)
 
 	var m_total := m_cover * m_entrench * m_dispersion
 
-	# 脆弱性取得（大口径HE対応）
+	# 脆弱性取得（大口径HE対応）- ArtilleryCalcに委譲
 	var m_vuln_dmg := _get_indirect_vulnerability_dmg(target, weapon, is_direct_hit)
 	var m_vuln_supp := _get_indirect_vulnerability_supp(target, weapon)
 
-	# 抑圧増加（装甲車両にも効果あり）
-	result.d_supp = GameConstants.K_IF_SUPP * (float(supp_power) / 100.0) * falloff * m_total * m_vuln_supp
+	# 抑圧増加 - ArtilleryCalcに委譲
+	result.d_supp = ArtilleryCalc.calc_indirect_suppression(
+		float(supp_power), falloff, m_total, m_vuln_supp)
 
-	# ダメージ
-	result.d_dmg = GameConstants.K_IF_DMG * (float(lethality) / 100.0) * falloff * m_total * m_vuln_dmg
+	# ダメージ - ArtilleryCalcに委譲
+	result.d_dmg = ArtilleryCalc.calc_indirect_damage(
+		float(lethality), falloff, m_total, m_vuln_dmg)
 
 	return result
 
 
 ## 間接火力に対するダメージ脆弱性（v0.2: 大口径HE対応）
+## @deprecated ArtilleryCalc.get_indirect_vuln_dmg() に委譲
 func _get_indirect_vulnerability_dmg(
 	target: ElementData.ElementInstance,
 	weapon: WeaponData.WeaponType,
@@ -438,37 +434,17 @@ func _get_indirect_vulnerability_dmg(
 		return 1.0
 
 	var armor_class := target.element_type.armor_class
+	var heavy_he_class := 1 if weapon.heavy_he_class == WeaponData.HeavyHEClass.HEAVY_HE else 0
 
-	# 大口径HE（155mm/152mm等）は装甲にも効果がある
-	if weapon.heavy_he_class == WeaponData.HeavyHEClass.HEAVY_HE:
-		if is_direct_hit:
-			# 直撃時は高い効果
-			match armor_class:
-				0: return GameConstants.HEAVY_HE_VULN_DMG_SOFT_DIRECT
-				1: return GameConstants.HEAVY_HE_VULN_DMG_LIGHT_DIRECT
-				2: return GameConstants.HEAVY_HE_VULN_DMG_MEDIUM_DIRECT
-				_: return GameConstants.HEAVY_HE_VULN_DMG_HEAVY_DIRECT
-		else:
-			# 至近弾は低い効果
-			match armor_class:
-				0: return GameConstants.HEAVY_HE_VULN_DMG_SOFT_INDIRECT
-				1: return GameConstants.HEAVY_HE_VULN_DMG_LIGHT_INDIRECT
-				2: return GameConstants.HEAVY_HE_VULN_DMG_MEDIUM_INDIRECT
-				_: return GameConstants.HEAVY_HE_VULN_DMG_HEAVY_INDIRECT
-
-	# 通常のBLAST_FRAGは装甲に弱い
-	if weapon.mechanism == WeaponData.Mechanism.BLAST_FRAG:
-		match armor_class:
-			0: return 1.0
-			1: return 0.4
-			2: return 0.15
-			_: return 0.05
+	# 大口径HEまたはBLAST_FRAGの場合はArtilleryCalcに委譲
+	if heavy_he_class == 1 or weapon.mechanism == WeaponData.Mechanism.BLAST_FRAG:
+		return ArtilleryCalc.get_indirect_vuln_dmg(armor_class, heavy_he_class, is_direct_hit)
 
 	return 1.0
 
 
 ## 間接火力に対する抑圧脆弱性（v0.2: 大口径HE対応）
-## 大口径HEの衝撃は装甲車両乗員にも心理的影響を与える
+## @deprecated ArtilleryCalc.get_indirect_vuln_supp() に委譲
 func _get_indirect_vulnerability_supp(
 	target: ElementData.ElementInstance,
 	weapon: WeaponData.WeaponType
@@ -477,22 +453,11 @@ func _get_indirect_vulnerability_supp(
 		return 1.0
 
 	var armor_class := target.element_type.armor_class
+	var heavy_he_class := 1 if weapon.heavy_he_class == WeaponData.HeavyHEClass.HEAVY_HE else 0
 
-	# 大口径HEは装甲車両にも抑圧効果がある
-	if weapon.heavy_he_class == WeaponData.HeavyHEClass.HEAVY_HE:
-		match armor_class:
-			0: return GameConstants.HEAVY_HE_VULN_SUPP_SOFT
-			1: return GameConstants.HEAVY_HE_VULN_SUPP_LIGHT
-			2: return GameConstants.HEAVY_HE_VULN_SUPP_MEDIUM
-			_: return GameConstants.HEAVY_HE_VULN_SUPP_HEAVY
-
-	# 通常のBLAST_FRAGは装甲への抑圧効果が低い（従来通り）
-	if weapon.mechanism == WeaponData.Mechanism.BLAST_FRAG:
-		match armor_class:
-			0: return 1.0
-			1: return 0.5
-			2: return 0.2
-			_: return 0.1
+	# 大口径HEまたはBLAST_FRAGの場合はArtilleryCalcに委譲
+	if heavy_he_class == 1 or weapon.mechanism == WeaponData.Mechanism.BLAST_FRAG:
+		return ArtilleryCalc.get_indirect_vuln_supp(armor_class, heavy_he_class)
 
 	return 1.0
 
