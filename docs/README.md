@@ -71,6 +71,7 @@ Company Commander v0.1 の設計仕様書インデックスです。
 | [map_v0.1.md](map_v0.1.md) | マップ仕様（座標系、地形タイプ、GeoJSON、MVP_01_CROSSROADS） |
 | [terrain_v0.1.md](terrain_v0.1.md) | 地形詳細（移動コスト、遮蔽、発見係数） |
 | [terrain_table_design_v0.1.md](terrain_table_design_v0.1.md) | 地形テーブル設計（地形属性と効果値） |
+| [elevation_system_v0.2.md](elevation_system_v0.2.md) | **標高システム（ハイトマップ、等高線、視界修正）** |
 | [navigation_v0.1.md](navigation_v0.1.md) | ナビゲーション（NavigationServer2D、6レイヤー、動的障害物） |
 
 ---
