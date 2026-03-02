@@ -1,8 +1,8 @@
 # Company Commander ドキュメント一覧
 
-Company Commander v1.0 の設計仕様書インデックスです。
+Company Commander v0.1 の設計仕様書インデックスです。
 
-**最終更新**: 2026-03-01
+**最終更新**: 2026-03-02
 **コード行数**: 約75,000行（GDScript）
 **テスト数**: 1,469件
 
@@ -14,10 +14,8 @@ Company Commander v1.0 の設計仕様書インデックスです。
 |-------------|------|
 | [architecture_current_v1.md](architecture_current_v1.md) | **★ 現行アーキテクチャ設計書（リファクタリング後）** |
 | [architecture_overview_v0.1.md](architecture_overview_v0.1.md) | アーキテクチャ概要（プロジェクト全体像、システム一覧） |
-| [refactoring_plan_v1.md](refactoring_plan_v1.md) | リファクタリング計画書（5フェーズ改善計画） |
 | [refactoring_pure_functions_v0.1.md](refactoring_pure_functions_v0.1.md) | **純粋関数化計画（計算ロジックのstatic化）** |
 | [spec_v0.1.md](spec_v0.1.md) | ゲーム全体仕様（コンセプト、ターゲット、基本ルール） |
-| [ruleset_v0.1.md](ruleset_v0.1.md) | ルールセットパラメータ（定数、係数、閾値） |
 | [game_loop_v0.1.md](game_loop_v0.1.md) | ゲームループ（10Hz Sim Tick、Phase構成） |
 | [naming_convention_v0.1.md](naming_convention_v0.1.md) | 命名規則（コード・データID命名ルール） |
 
@@ -32,8 +30,6 @@ Company Commander v1.0 の設計仕様書インデックスです。
 | ドキュメント | 内容 |
 |-------------|------|
 | [root/document_tree_architecture_v0.1.md](root/document_tree_architecture_v0.1.md) | **アーキテクチャ図・データフロー・責務境界** |
-| [root/document_tree_refactor_plan_v0.1.md](root/document_tree_refactor_plan_v0.1.md) | 設計方針・リファクタリング計画 |
-| [root/document_tree_refactor_execution_v0.1.md](root/document_tree_refactor_execution_v0.1.md) | 実施計画・インベントリ |
 | [root/catalog_docs_mapping.md](root/catalog_docs_mapping.md) | **カタログID⇔ドキュメント対応表** |
 
 ### サブツリー
@@ -74,6 +70,7 @@ Company Commander v1.0 の設計仕様書インデックスです。
 |-------------|------|
 | [map_v0.1.md](map_v0.1.md) | マップ仕様（座標系、地形タイプ、GeoJSON、MVP_01_CROSSROADS） |
 | [terrain_v0.1.md](terrain_v0.1.md) | 地形詳細（移動コスト、遮蔽、発見係数） |
+| [terrain_table_design_v0.1.md](terrain_table_design_v0.1.md) | 地形テーブル設計（地形属性と効果値） |
 | [navigation_v0.1.md](navigation_v0.1.md) | ナビゲーション（NavigationServer2D、6レイヤー、動的障害物） |
 
 ---
@@ -96,13 +93,19 @@ Company Commander v1.0 の設計仕様書インデックスです。
 | [combat_v0.1.md](combat_v0.1.md) | 戦闘システム概要（射撃フロー、命中判定） |
 | [combat_events_v0.1.md](combat_events_v0.1.md) | 戦闘イベント（イベント構造、状態遷移、エスカレーションルール） |
 | [damage_model_v0.1.md](damage_model_v0.1.md) | ダメージモデル（貫通判定、Wound/KIA、車両状態遷移） |
-| [weapon_system_profile_v0.1.md](weapon_system_profile_v0.1.md) | 武器システムプロファイル（WSP構造、射撃モード） |
-| [concrete_weapons_v0.1.md](concrete_weapons_v0.1.md) | 具体武器データ（M4、M240B、M2HB、Javelin等） |
 | [weapon_loadout_v0.1.md](weapon_loadout_v0.1.md) | 武装構成（Elementごとの装備スロット） |
-| [munition_system_v0.1.md](munition_system_v0.1.md) | 弾薬システム（MunitionClass、弾道計算） |
-| [munition_classes_v0.1.md](munition_classes_v0.1.md) | 弾薬クラス詳細（BALL、AP、HE、HEAT、ATGM等） |
+| [munition_system_v0.1.md](munition_system_v0.1.md) | 弾薬分類体系（MunitionClass、弾頭タイプ） |
+| [ammunition_system_v0.1.md](ammunition_system_v0.1.md) | **残弾・補給システム（弾薬管理、装填、補給ユニット）** |
 | [missile_system_v0.2.md](missile_system_v0.2.md) | **ミサイルシステム（誘導方式、飛翔モデル、射手拘束、対抗手段）** |
 | [indirect_fire_v0.2.md](indirect_fire_v0.2.md) | **間接射撃システム（榴弾砲・迫撃砲、CEP、着弾効果）** |
+
+---
+
+## 輸送システム
+
+| ドキュメント | 内容 |
+|-------------|------|
+| [transport_system_v0.1.md](transport_system_v0.1.md) | **輸送システム（乗車/下車、IFV/APC）** |
 
 ---
 
@@ -146,71 +149,6 @@ Company Commander v1.0 の設計仕様書インデックスです。
 
 ---
 
-## ドキュメント構成
-
-```text
-docs/
-├── README.md                       # このファイル（インデックス）
-│
-├── # コア設計
-├── architecture_current_v1.md      # ★ 現行アーキテクチャ（必読）
-├── architecture_overview_v0.1.md   # アーキテクチャ概要
-├── refactoring_plan_v1.md          # リファクタリング計画
-├── naming_convention_v0.1.md       # 命名規則
-├── spec_v0.1.md                    # ゲーム全体仕様
-├── ruleset_v0.1.md                 # ルールセットパラメータ
-├── game_loop_v0.1.md               # ゲームループ
-│
-├── # 装備知識ツリー
-├── root/                           # 装備知識ルート
-│   ├── military_equipment_2026_detailed.md
-│   ├── document_tree_*.md          # 設計・管理ドキュメント
-│   └── catalog_docs_mapping.md
-├── vehicles_tree/                  # 車両知識サブツリー
-│   └── *.md
-├── weapons_tree/                   # 兵器知識サブツリー
-│   └── *.md
-│
-├── # マップ・ナビ
-├── map_v0.1.md / terrain_v0.1.md / navigation_v0.1.md
-│
-├── # ユニット
-├── units_v0.1.md                   # ユニットデータモデル
-├── unit_archetypes_v0.1.md         # アーキタイプ一覧
-├── vehicle_catalog_v0.1.md         # 兵器カタログ
-├── spawn_v0.1.md                   # スポーン
-│
-├── # 戦闘
-├── combat_v0.1.md                  # 戦闘システム
-├── combat_events_v0.1.md           # 戦闘イベント
-├── damage_model_v0.1.md            # ダメージモデル
-├── weapon_*.md                     # 武器関連
-├── munition_*.md                   # 弾薬関連
-├── missile_system_v0.2.md          # ミサイルシステム
-├── indirect_fire_v0.2.md           # 間接射撃
-│
-├── # 視界・通信
-├── vision_v0.1.md                  # 視界システム
-├── data_link_v0.1.md               # データリンク
-│
-├── # AI・命令
-├── company_ai_v0.1.md              # 中隊AI
-├── risk_assessment_v0.1.md         # リスク評価
-├── sop_v0.1.md                     # SOP
-├── order_queue_v0.1.md             # 命令キュー
-│
-├── # 勝利条件
-├── capture_v0.1.md / victory_conditions_v0.1.md
-│
-└── # UI
-    ├── ui_design_v0.1.md           # UI設計
-    ├── ui_input_v0.1.md            # 入力システム
-    ├── controls.md                 # 操作方法
-    └── pie_menu_commands_v0.2.md   # パイメニュー
-```
-
----
-
 ## データアーキテクチャ（SSoT）
 
 ゲームデータは **Single Source of Truth (SSoT)** 原則に基づき、JSONファイルで一元管理されています。
@@ -219,19 +157,21 @@ docs/
 
 ```
 data/
-├── weapons/                    # 武器データ (66種)
+├── weapons/                    # 武器データ
 │   ├── weapons_usa.json        # 米軍武器
 │   ├── weapons_rus.json        # ロシア軍武器
 │   ├── weapons_chn.json        # 中国軍武器
 │   ├── weapons_jpn.json        # 陸自武器
 │   └── weapons_common.json     # 共通武器
-├── ammunition/                 # 弾薬データ (33種)
+├── ammunition/                 # 弾薬データ
 │   └── ammunition_profiles.json
-├── archetypes/                 # ユニットアーキタイプ (24種)
+├── archetypes/                 # ユニットアーキタイプ
 │   └── element_archetypes.json
-├── protection/                 # 防護プロファイル (7種)
+├── protection/                 # 防護プロファイル
 │   └── protection_profiles.json
-└── catalog/                    # 車両カタログ
+├── missiles/                   # ミサイルプロファイル
+│   └── missile_profiles.json
+└── vehicles/                   # 車両カタログ
     ├── vehicles_usa.json       # 米軍車両
     ├── vehicles_rus.json       # ロシア軍車両
     ├── vehicles_chn.json       # 中国軍車両
@@ -240,33 +180,18 @@ data/
 
 ### SSoT対応スクリプト
 
-| スクリプト | JSONパス | データ件数 | 内容 |
-|-----------|----------|-----------|------|
-| `weapon_data.gd` | `data/weapons/*.json` | 66武器 | 武器性能（射程、発射速度、貫通力） |
-| `ammunition_data.gd` | `data/ammunition/*.json` | 33弾薬 | 弾薬プロファイル（APFSDS、HEAT、HE等） |
-| `element_data.gd` | `data/archetypes/*.json` | 24アーキタイプ | ユニット定義（歩兵、戦車、IFV等） |
-| `protection_data.gd` | `data/protection/*.json` | 7プロファイル | 防護システム（ERA、APS、複合装甲） |
-| `vehicle_catalog.gd` | `data/catalog/*.json` | 4国 | 車両カタログ（武装、装甲、性能） |
+| スクリプト | JSONパス | 内容 |
+|-----------|----------|------|
+| `weapon_data.gd` | `data/weapons/*.json` | 武器性能（射程、発射速度、貫通力） |
+| `ammunition_data.gd` | `data/ammunition/*.json` | 弾薬プロファイル（APFSDS、HEAT、HE等） |
+| `element_data.gd` | `data/archetypes/*.json` | ユニット定義（歩兵、戦車、IFV等） |
+| `protection_data.gd` | `data/protection/*.json` | 防護システム（ERA、APS、複合装甲） |
+| `vehicle_catalog.gd` | `data/vehicles/*.json` | 車両カタログ（武装、装甲、性能） |
+| `missile_data.gd` | `data/missiles/*.json` | ミサイルプロファイル（誘導方式、飛翔性能） |
 
-### エクスポートツール
+---
 
-`tools/` ディレクトリにJSONエクスポートスクリプトがあります：
-
-```bash
-# 武器データをエクスポート
-godot --headless --script tools/export_weapons_to_json.gd
-
-# 弾薬データをエクスポート
-godot --headless --script tools/export_ammunition_to_json.gd
-
-# アーキタイプをエクスポート
-godot --headless --script tools/export_archetypes_to_json.gd
-
-# 防護プロファイルをエクスポート
-godot --headless --script tools/export_protection_to_json.gd
-```
-
-### アーカイブ
+## アーカイブ
 
 旧ハードコード実装は `scripts/archive/` に保存されています：
 
@@ -274,15 +199,3 @@ godot --headless --script tools/export_protection_to_json.gd
 - `ammunition_data_hardcoded.gd`
 - `element_data_hardcoded.gd`
 - `protection_data_hardcoded.gd`
-
----
-
-## 統合履歴
-
-v0.1 ドキュメント整理時に以下を統合:
-
-| 統合先 | 統合元（削除済み） |
-|--------|-------------------|
-| map_v0.1.md | map_data_v0.1.md |
-| vision_v0.1.md | fog_of_war_v0.1.md |
-| units_v0.1.md | unit_data_v0.1.md |
