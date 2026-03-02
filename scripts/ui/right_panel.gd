@@ -1028,7 +1028,8 @@ func _update_ammo_display(element: ElementData.ElementInstance) -> void:
 			var ready_count: int = slot.count_ready
 			var stowed_count: int = slot.count_stowed
 			var status := ""
-			if atgm_state.is_reloading:
+			# can_fire()を使用してHUD表示と射撃判定を一致させる
+			if not atgm_state.can_fire():
 				status = " [RELOAD]"
 			ammo_lines.append("  ATGM: %d+%d%s" % [ready_count, stowed_count, status])
 

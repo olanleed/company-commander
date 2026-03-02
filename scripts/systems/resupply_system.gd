@@ -83,9 +83,8 @@ func _update_element_resupply(element: ElementData.ElementInstance, current_tick
 	if element.ammo_state.main_gun:
 		_resupply_weapon(element, element.ammo_state.main_gun, RESUPPLY_RATE_TANK_GUN, mult)
 
-	# ATGMの補給
-	if element.ammo_state.atgm:
-		_resupply_weapon(element, element.ammo_state.atgm, RESUPPLY_RATE_ATGM, mult)
+	# ATGMは補給ユニット必須（自動補給なし）
+	# 補給ユニットからの補給は _resupply_from_supply_unit() で処理
 
 	# 副武装の補給
 	for sec in element.ammo_state.secondary:
