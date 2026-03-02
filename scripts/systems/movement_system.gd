@@ -321,6 +321,10 @@ func update_element(element: ElementData.ElementInstance, dt: float) -> void:
 		element.position.x = clampf(element.position.x, 0.0, map_data.size_m.x)
 		element.position.y = clampf(element.position.y, 0.0, map_data.size_m.y)
 
+	# UI更新用シグナル発火
+	if world_model:
+		world_model.notify_element_moved(element.id, element.position)
+
 
 func _stop_movement(element: ElementData.ElementInstance) -> void:
 	element.is_moving = false
