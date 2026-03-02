@@ -387,8 +387,23 @@ static func _create_atgm_state_from_catalog(atgm_data: Dictionary) -> WeaponAmmo
 	var weapon_state := WeaponAmmoState.new(atgm_data.get("weapon_id", ""))
 	weapon_state.has_autoloader = false  # ATGMは手動装填
 
-	var ready_count: int = atgm_data.get("ready_count", 2)
-	var reserve_count: int = atgm_data.get("reserve_count", 4)
+	var ready_count: int
+	var reserve_count: int
+
+	# ready_count/reserve_count が明示的に指定されている場合はそれを使用
+	if "ready_count" in atgm_data:
+		ready_count = atgm_data.get("ready_count", 2)
+		reserve_count = atgm_data.get("reserve_count", 4)
+	elif "count" in atgm_data:
+		# count のみが指定されている場合は分配する
+		# 一般的なIFV: 即発2発、予備は残り
+		var total_count: int = atgm_data.get("count", 4)
+		ready_count = mini(2, total_count)  # 最大2発を即発弾として
+		reserve_count = total_count - ready_count
+	else:
+		# デフォルト値
+		ready_count = 2
+		reserve_count = 4
 
 	var slot := AmmoSlot.new(atgm_data.get("type", "ATGM"))
 	slot.max_ready = ready_count
