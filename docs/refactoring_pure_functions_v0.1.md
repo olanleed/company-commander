@@ -354,26 +354,320 @@ func test_pen_prob_monotonic() -> void:
 
 ---
 
-### Phase 2: VisionSystem（優先度: 中）
+### Phase 2: VisionSystem（優先度: 中）✅ 完了
 
 #### 対象関数一覧
 
-| 現在の関数 | 純粋関数シグネチャ |
-|-----------|-------------------|
-| `calculate_detection_probability(...)` | `static func calc_detection_prob(distance: float, observer_range: float, target_signature: float, cover_factor: float) -> float` |
-| `get_suppression_modifier(suppression)` | `static func get_suppression_mod(suppression: float) -> float` |
-| `calculate_los_blocked(...)` | `static func is_los_blocked(from: Vector2, to: Vector2, obstacles: Array) -> bool` |
+| 現在の関数 | 純粋関数シグネチャ | 状態 |
+| ---------- | ------------------ | ---- |
+| `_calculate_forest_transmittance(...)` | `static func calc_forest_transmittance(forest_distance: float) -> float` | ✅ |
+| `_check_line_of_sight(...)` | `static func calc_los_transmittance(forest_distance: float, smoke: float) -> float` | ✅ |
+| `_get_concealment_modifier(terrain)` | `static func get_concealment_modifier(terrain: GameEnums.TerrainType) -> float` | ✅ |
+| `_calculate_effective_range(...)` | `static func calc_effective_range(base_range: float, concealment: float) -> float` | ✅ |
+| `_grow_position_error(...)` | `static func calc_position_error_growth(current: float, dt: float) -> float` | ✅ |
+
+#### VisionCalc成果物
+
+- `scripts/systems/vision_calc.gd` - 5つの純粋関数
+- `tests/test_vision_calc.gd` - 26件のユニットテスト
 
 ---
 
-### Phase 3: MissileSystem（優先度: 中）
+### Phase 3: MissileSystem（優先度: 中）✅ 完了
 
-#### 対象関数一覧
+#### MissileCalc対象関数一覧
 
-| 現在の関数 | 純粋関数シグネチャ |
-|-----------|-------------------|
-| `calculate_missile_position(...)` | `static func calc_missile_pos(start: Vector2, target: Vector2, speed: float, elapsed: float, profile: MissileProfile) -> Vector2` |
-| `calculate_intercept_probability(...)` | `static func calc_intercept_prob(aps_level: int, missile_type: String) -> float` |
+| 現在の関数 | 純粋関数シグネチャ | 状態 |
+| ---------- | ------------------ | ---- |
+| `_normalize_angle(angle)` | `static func normalize_angle(angle: float) -> float` | ✅ |
+| `get_effective_min_range(profile, attack_profile)` | `static func calc_effective_min_range(base_min: float, attack_profile) -> float` | ✅ |
+| `get_aps_evasion_bonus(attack_profile)` | `static func get_aps_evasion_bonus(attack_profile) -> float` | ✅ |
+| `calculate_top_attack_flight_time(profile, distance)` | `static func calc_top_attack_flight_time(speed: float, distance: float) -> float` | ✅ |
+| `get_terminal_phase_distance(profile, attack_profile)` | `static func calc_terminal_phase_distance(profile, altitude, dive_angle) -> float` | ✅ |
+| `determine_hit_zone(attack_profile, facing, shooter, target)` | `static func determine_hit_zone(...) -> HitZone` | ✅ |
+| `_update_missile_position(...)` | `static func calc_missile_progress(time, total) -> float` | ✅ |
+| - | `static func calc_missile_position(start, target, progress) -> Vector2` | ✅ |
+| `attempt_aps_intercept(...)` | `static func calc_final_aps_intercept_prob(base, vuln, evasion) -> float` | ✅ |
+
+#### MissileCalc成果物
+
+- `scripts/systems/missile_calc.gd` - 9つの純粋関数
+- `tests/test_missile_calc.gd` - 50件のユニットテスト
+
+---
+
+### Phase 4: ArtillerySystem（優先度: 中）
+
+砲兵システムの間接射撃計算を純粋関数化。着弾効果、散布界、遮蔽計算などが対象。
+
+#### ArtilleryCalc対象関数一覧
+
+| 現在の関数 | 純粋関数シグネチャ | テスト数目標 |
+| ---------- | ------------------ | ------------ |
+| `get_cover_coefficient_if(terrain)` | `static func get_cover_coeff_if(terrain: GameEnums.TerrainType) -> float` | 5 |
+| `calculate_indirect_impact_effect(...)` | `static func calc_indirect_falloff(distance: float, blast_radius: float, direct_hit_radius: float) -> float` | 6 |
+| `_get_indirect_vulnerability_dmg(...)` | `static func get_indirect_vuln_dmg(armor_class: int, heavy_he_class: int, is_direct_hit: bool) -> float` | 8 |
+| `_get_indirect_vulnerability_supp(...)` | `static func get_indirect_vuln_supp(armor_class: int, heavy_he_class: int) -> float` | 6 |
+| - | `static func get_dispersion_modifier(dispersion_mode: int) -> float` | 4 |
+| - | `static func calc_indirect_suppression(supp_power: float, falloff: float, m_total: float, m_vuln: float) -> float` | 5 |
+| - | `static func calc_indirect_damage(lethality: float, falloff: float, m_total: float, m_vuln: float) -> float` | 5 |
+| `ArtilleryComponent.update_progress(...)` | `static func calc_deploy_progress(current: float, delta: float, duration: float) -> float` | 4 |
+
+#### 実装パターン
+
+```gdscript
+# scripts/systems/artillery_calc.gd - 新規ファイル
+class_name ArtilleryCalc
+extends RefCounted
+
+## 砲兵システムの純粋計算関数群
+## 間接射撃の着弾効果、遮蔽、脆弱性計算
+
+
+## 間接射撃の遮蔽係数を取得
+## @param terrain 地形タイプ
+## @return 遮蔽係数 (0.0-1.0)
+static func get_cover_coeff_if(terrain: GameEnums.TerrainType) -> float:
+    match terrain:
+        GameEnums.TerrainType.OPEN:
+            return 1.0
+        GameEnums.TerrainType.ROAD:
+            return 1.0
+        GameEnums.TerrainType.FOREST:
+            return GameConstants.COVER_IF_FOREST
+        GameEnums.TerrainType.URBAN:
+            return GameConstants.COVER_IF_URBAN
+        _:
+            return 1.0
+
+
+## 距離減衰を計算
+## @param distance 着弾点からの距離 (m)
+## @param blast_radius 爆風半径 (m)
+## @param direct_hit_radius 直撃半径 (m)
+## @return 減衰係数 (0.0-1.0)
+static func calc_indirect_falloff(
+    distance: float,
+    blast_radius: float,
+    direct_hit_radius: float
+) -> float:
+    # 爆風半径外は影響なし
+    if distance > blast_radius:
+        return 0.0
+    # 直撃半径内は最大効果
+    if distance <= direct_hit_radius:
+        return 1.0
+    # 線形減衰
+    return clampf(1.0 - distance / blast_radius, 0.0, 1.0)
+
+
+## 分散モード係数を取得
+## @param dispersion_mode 分散モード (0=Column, 1=Deployed, 2=Dispersed)
+## @return 分散係数
+static func get_dispersion_modifier(dispersion_mode: int) -> float:
+    match dispersion_mode:
+        0:  # Column - 密集、被害大
+            return GameConstants.DISPERSION_IF_COLUMN
+        1:  # Deployed - 標準
+            return GameConstants.DISPERSION_IF_DEPLOYED
+        2:  # Dispersed - 分散、被害小
+            return GameConstants.DISPERSION_IF_DISPERSED
+        _:
+            return 1.0
+
+
+## 間接火力に対するダメージ脆弱性を取得
+## @param armor_class 装甲クラス (0=SOFT, 1=LIGHT, 2=MEDIUM, 3=HEAVY)
+## @param heavy_he_class 大口径HEクラス (0=NONE, 1=HEAVY_HE)
+## @param is_direct_hit 直撃か
+## @return 脆弱性係数
+static func get_indirect_vuln_dmg(
+    armor_class: int,
+    heavy_he_class: int,
+    is_direct_hit: bool
+) -> float:
+    # 大口径HE（155mm等）は装甲にも効果
+    if heavy_he_class == 1:  # HEAVY_HE
+        if is_direct_hit:
+            match armor_class:
+                0: return GameConstants.HEAVY_HE_VULN_DMG_SOFT_DIRECT
+                1: return GameConstants.HEAVY_HE_VULN_DMG_LIGHT_DIRECT
+                2: return GameConstants.HEAVY_HE_VULN_DMG_MEDIUM_DIRECT
+                _: return GameConstants.HEAVY_HE_VULN_DMG_HEAVY_DIRECT
+        else:
+            match armor_class:
+                0: return GameConstants.HEAVY_HE_VULN_DMG_SOFT_INDIRECT
+                1: return GameConstants.HEAVY_HE_VULN_DMG_LIGHT_INDIRECT
+                2: return GameConstants.HEAVY_HE_VULN_DMG_MEDIUM_INDIRECT
+                _: return GameConstants.HEAVY_HE_VULN_DMG_HEAVY_INDIRECT
+
+    # 通常HEは装甲車両にほぼ無効
+    match armor_class:
+        0: return 1.0   # SOFT
+        1: return 0.2   # LIGHT
+        2: return 0.05  # MEDIUM
+        _: return 0.0   # HEAVY
+
+
+## 間接火力に対する抑圧脆弱性を取得
+## @param armor_class 装甲クラス
+## @param heavy_he_class 大口径HEクラス
+## @return 脆弱性係数
+static func get_indirect_vuln_supp(
+    armor_class: int,
+    heavy_he_class: int
+) -> float:
+    # 大口径HEは装甲車両にも抑圧効果
+    if heavy_he_class == 1:  # HEAVY_HE
+        match armor_class:
+            0: return GameConstants.HEAVY_HE_VULN_SUPP_SOFT
+            1: return GameConstants.HEAVY_HE_VULN_SUPP_LIGHT
+            2: return GameConstants.HEAVY_HE_VULN_SUPP_MEDIUM
+            _: return GameConstants.HEAVY_HE_VULN_SUPP_HEAVY
+
+    # 通常HEの抑圧は装甲で大幅減衰
+    match armor_class:
+        0: return 1.0
+        1: return 0.5
+        2: return 0.2
+        _: return 0.1
+
+
+## 間接射撃の抑圧値を計算
+## @param supp_power 抑圧力 (0-100)
+## @param falloff 距離減衰 (0.0-1.0)
+## @param m_total 総合係数 (遮蔽*塹壕*分散)
+## @param m_vuln 脆弱性係数
+## @return 抑圧増加値
+static func calc_indirect_suppression(
+    supp_power: float,
+    falloff: float,
+    m_total: float,
+    m_vuln: float
+) -> float:
+    return GameConstants.K_IF_SUPP * (supp_power / 100.0) * falloff * m_total * m_vuln
+
+
+## 間接射撃のダメージを計算
+## @param lethality 殺傷力 (0-100)
+## @param falloff 距離減衰 (0.0-1.0)
+## @param m_total 総合係数 (遮蔽*塹壕*分散)
+## @param m_vuln 脆弱性係数
+## @return ダメージ値
+static func calc_indirect_damage(
+    lethality: float,
+    falloff: float,
+    m_total: float,
+    m_vuln: float
+) -> float:
+    return GameConstants.K_IF_DMG * (lethality / 100.0) * falloff * m_total * m_vuln
+
+
+## 展開/撤収進捗を計算
+## @param current_progress 現在の進捗 (0.0-1.0)
+## @param delta_sec 経過秒数
+## @param duration_sec 総所要時間
+## @return 新しい進捗 (0.0-1.0)
+static func calc_deploy_progress(
+    current_progress: float,
+    delta_sec: float,
+    duration_sec: float
+) -> float:
+    if duration_sec <= 0:
+        return 1.0
+    return clampf(current_progress + delta_sec / duration_sec, 0.0, 1.0)
+```
+
+#### テストファイル
+
+```gdscript
+# tests/test_artillery_calc.gd
+extends GutTest
+
+## ArtilleryCalc純粋関数のユニットテスト
+
+const AC = preload("res://scripts/systems/artillery_calc.gd")
+
+
+# =============================================================================
+# get_cover_coeff_if
+# =============================================================================
+
+func test_cover_coeff_if_open() -> void:
+    var result := AC.get_cover_coeff_if(GameEnums.TerrainType.OPEN)
+    assert_eq(result, 1.0)
+
+func test_cover_coeff_if_forest() -> void:
+    var result := AC.get_cover_coeff_if(GameEnums.TerrainType.FOREST)
+    assert_eq(result, GameConstants.COVER_IF_FOREST)
+
+func test_cover_coeff_if_urban() -> void:
+    var result := AC.get_cover_coeff_if(GameEnums.TerrainType.URBAN)
+    assert_eq(result, GameConstants.COVER_IF_URBAN)
+
+
+# =============================================================================
+# calc_indirect_falloff
+# =============================================================================
+
+func test_falloff_at_impact() -> void:
+    var result := AC.calc_indirect_falloff(0.0, 50.0, 5.0)
+    assert_eq(result, 1.0)
+
+func test_falloff_direct_hit() -> void:
+    var result := AC.calc_indirect_falloff(3.0, 50.0, 5.0)
+    assert_eq(result, 1.0)
+
+func test_falloff_outside_blast() -> void:
+    var result := AC.calc_indirect_falloff(60.0, 50.0, 5.0)
+    assert_eq(result, 0.0)
+
+func test_falloff_linear_decay() -> void:
+    var result := AC.calc_indirect_falloff(25.0, 50.0, 5.0)
+    assert_almost_eq(result, 0.5, 0.05)
+
+
+# =============================================================================
+# get_dispersion_modifier
+# =============================================================================
+
+func test_dispersion_column() -> void:
+    var result := AC.get_dispersion_modifier(0)
+    assert_eq(result, GameConstants.DISPERSION_IF_COLUMN)
+
+func test_dispersion_deployed() -> void:
+    var result := AC.get_dispersion_modifier(1)
+    assert_eq(result, GameConstants.DISPERSION_IF_DEPLOYED)
+
+func test_dispersion_dispersed() -> void:
+    var result := AC.get_dispersion_modifier(2)
+    assert_eq(result, GameConstants.DISPERSION_IF_DISPERSED)
+
+func test_dispersion_ordering() -> void:
+    # 密集 > 展開 > 分散（被害の大きさ）
+    var column := AC.get_dispersion_modifier(0)
+    var deployed := AC.get_dispersion_modifier(1)
+    var dispersed := AC.get_dispersion_modifier(2)
+    assert_gt(column, deployed)
+    assert_gt(deployed, dispersed)
+
+
+# =============================================================================
+# calc_deploy_progress
+# =============================================================================
+
+func test_deploy_progress_start() -> void:
+    var result := AC.calc_deploy_progress(0.0, 5.0, 30.0)
+    assert_almost_eq(result, 5.0 / 30.0, 0.001)
+
+func test_deploy_progress_complete() -> void:
+    var result := AC.calc_deploy_progress(0.9, 10.0, 30.0)
+    assert_eq(result, 1.0)
+
+func test_deploy_progress_zero_duration() -> void:
+    var result := AC.calc_deploy_progress(0.0, 5.0, 0.0)
+    assert_eq(result, 1.0)
+```
 
 ---
 
