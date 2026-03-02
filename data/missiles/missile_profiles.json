@@ -205,6 +205,47 @@
 		}
 	},
 	{
+		"id": "M_RUS_BASTION",
+		"display_name": "9M117 Bastion",
+		"weapon_id": "W_RUS_ATGM_BASTION",
+		"guidance": {
+			"type": "SACLOS_LASER_BEAM",
+			"lock_mode": "CONTINUOUS_TRACK",
+			"lock_time_sec": 0.0,
+			"can_loal": false,
+			"loal_acquisition_range_m": 0.0
+		},
+		"flight": {
+			"speed_mps": 370.0,
+			"max_speed_mps": 400.0,
+			"boost_duration_sec": 0.2,
+			"max_range_m": 4000.0,
+			"min_range_m": 100.0
+		},
+		"attack_profile": {
+			"default": "DIRECT",
+			"selectable": ["DIRECT"],
+			"top_attack_altitude_m": 0.0,
+			"dive_angle_deg": 0.0
+		},
+		"warhead": {
+			"type": "HEAT",
+			"penetration_ce": 110,
+			"defeats_era": false,
+			"blast_radius_m": 2.0
+		},
+		"countermeasures": {
+			"aps_vulnerability": 1.0,
+			"smoke_vulnerability": 0.5,
+			"ecm_vulnerability": 0.0
+		},
+		"constraints": {
+			"requires_target_lock": false,
+			"shooter_immobile_during_flight": true,
+			"wire_max_range_m": 0
+		}
+	},
+	{
 		"id": "M_CHN_HJ10",
 		"display_name": "HJ-10 Red Arrow",
 		"weapon_id": "W_CHN_ATGM_HJ10",
